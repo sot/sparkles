@@ -15,12 +15,18 @@ from astropy.table import Column
 import proseco
 from proseco.catalog import ACATable
 from proseco.core import StarsTable
-import proseco.characteristics as CHAR
 
 CACHE = {}
 VERSION = proseco.test(get_version=True)
 FILEDIR = Path(__file__).parent
 CATEGORIES = ('critical', 'warning', 'caution', 'info')
+
+# These characteristics items have moved in the data structures
+# from proseco 4.3.x to 4.4 so are hardcoded here for now.
+CHAR_window_pad = 8
+CHAR_max_ccd_row = 512 - 8
+CHAR_max_ccd_col = 512 - 1
+CHAR_ARC_2_PIX = 1.0 / 4.96289
 
 
 def preview_load(load_name, outdir=None):
@@ -136,10 +142,13 @@ class ACAReviewTable(ACATable):
 
         stars = StarsTable.from_agasc(self.att, date=self.date)
         self.stars = stars
+        self.acqs.stars = stars
+        # Explicitly set bad_stars so that plot_stars does not apply its
+        # internal version (which is not always the right answer).
+        self.acqs.bad_stars = np.zeros(len(stars), dtype=bool)
 
         fig = plt.figure(figsize=(4.5, 4))
         ax = fig.add_subplot(1, 1, 1)
-        self.acqs.stars
         self.plot(ax=ax)
         plt.tight_layout()
         fig.savefig(str(outfile))
@@ -276,8 +285,8 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}"""
         dither_track_y = 5.0 if (entry_type == 'FID') else dither_guide_y
         dither_track_p = 5.0 if (entry_type == 'FID') else dither_guide_p
 
-        row_lim = CHAR.max_ccd_row - CHAR.CCD['window_pad']
-        col_lim = CHAR.max_ccd_col - CHAR.CCD['window_pad']
+        row_lim = CHAR_max_ccd_row - CHAR_window_pad
+        col_lim = CHAR_max_ccd_col - CHAR_window_pad
 
         def sign(axis):
             """Return sign of the corresponding entry value.  Note that np.sign returns 0
@@ -285,8 +294,8 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}"""
             """
             return -1 if (entry[axis] < 0) else 1
 
-        track_lims = {'row': (row_lim - dither_track_y * CHAR.ARC_2_PIX) * sign('row'),
-                      'col': (col_lim - dither_track_p * CHAR.ARC_2_PIX) * sign('col')}
+        track_lims = {'row': (row_lim - dither_track_y * CHAR_ARC_2_PIX) * sign('row'),
+                      'col': (col_lim - dither_track_p * CHAR_ARC_2_PIX) * sign('col')}
 
         if entry_type in ('GUI', 'BOT', 'FID'):
             for axis in ('row', 'col'):
