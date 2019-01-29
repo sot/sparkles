@@ -8,7 +8,7 @@ import io
 import re
 from pathlib import Path
 import pickle
-from itertools import combinations
+from itertools import combinations, chain
 
 import matplotlib
 matplotlib.use('Agg')
@@ -291,6 +291,13 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
         aca.context = {}  # Jinja2 context for output HTML review
         aca.messages = MessagesList()  # Warning messages
         aca.loud = loud
+
+        # Pull a fast one and replace the (generally-useless) maxmag column
+        # with mag_err
+        mag_errs = {entry['id']: entry['mag_err'] for entry in chain(aca.guides, aca.acqs)}
+        mag_errs = [mag_errs.get(entry['id'], 0.0) for entry in aca]
+        aca.rename_column('maxmag', 'mag_err')
+        aca['mag_err'] = mag_errs
 
         # Input obsid could be a string repr of a number that might have have
         # up to 2 decimal points.  This is the case when obsid is taken from the
