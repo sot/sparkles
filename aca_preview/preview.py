@@ -32,6 +32,8 @@ ACA_PREVIEW_VERSION = aca_preview_test(get_version=True)
 PROSECO_VERSION = proseco.test(get_version=True)
 FILEDIR = Path(__file__).parent
 
+GAIA_BAD_PM = Table.read('/proj/sot/ska/analysis/gaia/agasc_gaia_xmatch_PM_gt_50mas.fits.gz')
+
 # Fix characteristics compatibility issues between 4.3.x and 4.4+
 if not hasattr(CHAR, 'CCD'):
     for attr in ('CCD', 'PIX_2_ARC', 'ARC_2_PIX'):
@@ -590,6 +592,7 @@ Predicted Acq CCD temperature (init) : {self.acqs.t_ccd:.1f}"""
                 self.check_pos_err_guide(guide_star)
                 self.check_imposters_guide(guide_star)
                 self.check_too_bright_guide(guide_star)
+                self.check_bad_pm(guide_star)
 
         self.check_guide_geometry()
         self.check_acq_p2()
@@ -813,6 +816,16 @@ Predicted Acq CCD temperature (init) : {self.acqs.t_ccd:.1f}"""
             self.add_message(
                 'warning',
                 f'Guide star {agasc_id} < 6.1. Double check selection.', idx=idx)
+
+    def check_bad_pm(self, star):
+        """Warn on guide star in list of large PM stars from GAIA with no AGASC PM
+        """
+        if star['id'] in GAIA_BAD_PM['AGASC_ID']:
+            agasc_id = star['id']
+            idx = self.get_id(agasc_id)['idx']
+            self.add_message(
+                'critical',
+                f'Guide star {agasc_id} has missing PM in AGASC large PM in GAIA')
 
 
 # Run from source ``python -m aca_preview.preview <load_name> [options]``
