@@ -24,24 +24,30 @@ ROLL_TABLE = Table.read(str(Path(__file__).parent / 'pitch_rolldev.csv'), format
 
 
 # Grab from chandra_aca PR #71
-def guide_count(mags, t_ccd, is_ER=False):
+def guide_count(mags, t_ccd, count_9th=False):
     """Calculate a guide star fractional count/metric using signal-to-noise scaled
     mag thresholds.
+
     This uses a modification of the guide star fractional counts that were
     suggested at the 7-Mar-2018 SSAWG and agreed upon at the 21-Mar-2018
     SSAWG.  The implementation here does a piecewise linear interpolation
     between the reference mag - fractional count points instead of the
     original "threshold interpolation" (nearest neighbor mag <= reference
     mag).  Approved at 16-Jan-2019 SSAWG.
+
     One feature is the slight incline in the guide_count curve from 1.0005 at
     mag=6.0 to 1.0 at mag=10.0.  This does not show up in standard outputs
     of guide_counts to two decimal places (8 * 0.0005 = 0.004), but helps with
     minimization.
+
+    :param mags: magnitude(s)
+    :param t_ccds: CCD temperature(s)
+    :param count_9th: return fractional count of 9th mag or brighter stars
     :returns: fractional count
     """
     # Generate interpolation curve for the specified input ``t_ccd``
     ref_t_ccd = -10.9
-    ref_mags0 = np.array([10.0, 10.2, 10.3, 10.4]) - (1.2 if is_ER else 0.0)
+    ref_mags0 = (9.0 if count_9th else 10.0) + np.array([0.0, 0.2, 0.3, 0.4])
     ref_mags_t_ccd = [snr_mag_for_t_ccd(t_ccd, ref_mag, ref_t_ccd) for ref_mag in ref_mags0]
 
     # The 5.85 and 5.95 limits are not temperature dependent, these reflect the
