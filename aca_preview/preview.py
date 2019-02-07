@@ -4,6 +4,7 @@
 """
 Preliminary review of ACA catalogs selected by proseco.
 """
+import os
 import io
 import re
 from pathlib import Path
@@ -19,6 +20,8 @@ from jinja2 import Template
 from chandra_aca.transform import yagzag_to_pixels, mag_to_count_rate
 from astropy.table import Column
 
+import agasc
+from agasc.agasc import IdNotFound
 import proseco
 from proseco.catalog import ACATable
 import proseco.characteristics as CHAR
@@ -32,6 +35,7 @@ ACA_PREVIEW_VERSION = aca_preview_test(get_version=True)
 PROSECO_VERSION = proseco.test(get_version=True)
 FILEDIR = Path(__file__).parent
 
+STARCAT_SUPPLEMENT = Path(os.environ['SKA']) / 'data' / 'agasc' / 'starcat_supplement_1p7.h5'
 
 # Fix characteristics compatibility issues between 4.3.x and 4.4+
 if not hasattr(CHAR, 'CCD'):
@@ -517,6 +521,7 @@ Predicted Acq CCD temperature (init) : {self.acqs.t_ccd:.1f}"""
                 self.check_pos_err_guide(guide_star)
                 self.check_imposters_guide(guide_star)
                 self.check_too_bright_guide(guide_star)
+                self.check_bad_guide_stars(guide_star)
 
         self.check_guide_geometry()
         self.check_acq_p2()
@@ -741,6 +746,19 @@ Predicted Acq CCD temperature (init) : {self.acqs.t_ccd:.1f}"""
                 'warning',
                 f'Guide star {agasc_id} < 6.1. Double check selection.', idx=idx)
 
+    def check_bad_guide_stars(self, star):
+        """Warn on star in list marked BAD_GUIDE in catalog supplement
+        """
+        try:
+            supp_star = agasc.get_star(star['id'], agasc_file=STARCAT_SUPPLEMENT)
+            if supp_star['BAD_GUIDE'] != 0:
+                agasc_id = star['id']
+                self.add_message(
+                    'critical',
+                    f'Guide star {agasc_id} marked a bad guide star in supplement',
+                    idx=self.get_id(agasc_id)['idx'])
+        except IdNotFound:
+            pass
 
 # Run from source ``python -m aca_preview.preview <load_name> [options]``
 if __name__ == '__main__':
