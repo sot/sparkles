@@ -626,11 +626,18 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
         catalog = '\n'.join(self.pformat(max_width=-1, max_lines=-1))
         self.acq_count = np.sum(self.acqs['p_acq'])
 
+        aca_att_string = f"RA, Dec, Roll (deg): {att.ra:.6f} {att.dec:.5f} {att.roll:.5f}"
+        if self.is_OR:
+            targ_att_string = (
+                f"(SI/Target Frame {self.att_targ.ra:.3f}, {self.att_targ.dec:.3f}, {self.att_targ.roll:.3f})")
+            att_string = f"{aca_att_string} {targ_att_string}"
+        else:
+            att_string = aca_att_string
         message_text = self.get_formatted_messages()
 
         text_pre = f"""\
 {self.detector} SIM-Z offset: {self.sim_offset}
-RA, Dec, Roll (deg): {att.ra:.6f} {att.dec:.5f} {att.roll:.5f}
+{att_string}
 Dither acq: Y_amp= {self.dither_acq.y:.1f}  Z_amp={self.dither_acq.z:.1f}
 Dither gui: Y_amp= {self.dither_guide.y:.1f}  Z_amp={self.dither_guide.z:.1f}
 Maneuver Angle: {self.man_angle:.2f}
