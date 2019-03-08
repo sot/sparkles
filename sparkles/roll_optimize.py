@@ -124,7 +124,7 @@ class RollOptimizeMixin:
         return q_out
 
     def get_roll_intervals(self, cand_idxs, y_off=0, z_off=0, d_roll=0.25,
-                           method='uniq_ids'):
+                           method='uniq_ids', max_roll_dev=None):
         """Find a list of rolls that might substantially improve guide or acq catalogs.
         If ``roll_nom`` is not specified then an approximate value is computed
         via Ska.Sun for the catalog ``date``.  if ``roll_dev`` (max allowed
@@ -185,6 +185,10 @@ class RollOptimizeMixin:
         att_nom_targ = self._calc_targ_from_aca(att_nom, y_off, z_off)
         roll_nom = att_nom_targ.roll
         roll_dev = allowed_rolldev(pitch)
+        
+        if max_roll_dev is not None:
+            roll_dev = min(roll_dev, max_roll_dev)
+            
 
         # Ensure roll_nom in range 0 <= roll_nom < 360 to match att_targ.roll.
         # Also ensure that roll_min < roll < roll_max.  It can happen that the
@@ -289,7 +293,8 @@ class RollOptimizeMixin:
                 roll_intervals.append(roll_interval)
         return roll_intervals
 
-    def get_roll_options(self, min_improvement=-300, d_roll=1, method='uniform'):
+    def get_roll_options(self, min_improvement=-300, d_roll=0.25, method='uniform',
+                         max_roll_dev=2.5):
         """
         Get roll options for this catalog.
 
@@ -339,7 +344,7 @@ class RollOptimizeMixin:
 
         cand_idxs = self.get_candidate_better_stars()
         roll_intervals, self.roll_info = self.get_roll_intervals(
-            cand_idxs, d_roll=d_roll, method=method)
+            cand_idxs, d_roll=d_roll, method=method, max_roll_dev=max_roll_dev)
 
         att_targ = self.att_targ
 
@@ -357,7 +362,9 @@ class RollOptimizeMixin:
                          'add_ids': set(),
                          'drop_ids': set()}]
 
+        print(roll_intervals)
         for roll_interval in roll_intervals:
+            print(roll_interval)
             roll = roll_interval['roll']
             att_targ_rolled = Quat([att_targ.ra, att_targ.dec, roll])
             att_rolled = self._calc_aca_from_targ(att_targ_rolled, 0, 0)
