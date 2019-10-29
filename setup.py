@@ -1,6 +1,7 @@
-from sparkles import __version__
+# from sparkles import __version__
 
 from setuptools import setup
+import versioneer
 
 try:
     from testr.setup_helper import cmdclass
@@ -13,11 +14,11 @@ setup(name='sparkles',
       author='Tom Aldcroft',
       description='Sparkles ACA review package',
       author_email='taldcroft@cfa.harvard.edu',
-      version=__version__,
       zip_safe=False,
       entry_points=entry_points,
       packages=['sparkles', 'sparkles.tests'],
       package_data={'sparkles': ['index_template*.html', 'pitch_rolldev.csv']},
       tests_require=['pytest'],
-      cmdclass=cmdclass,
+      version=versioneer.get_version(),
+      cmdclass=versioneer.get_cmdclass(cmdclass),
       )

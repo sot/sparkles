@@ -1,5 +1,4 @@
-__version__ = '4.3'
-
+from ._version import get_versions
 from .core import run_aca_review, ACAReviewTable  # noqa
 
 
@@ -9,3 +8,7 @@ def test(*args, **kwargs):
     """
     import testr
     return testr.test(*args, **kwargs)
+
+
+__version__ = get_versions()['version']
+del get_versions

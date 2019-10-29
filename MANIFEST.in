@@ -1,0 +1,2 @@
+include versioneer.py
+include sparkles/_version.py
