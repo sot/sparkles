@@ -54,6 +54,25 @@ def test_n_guide_check_not_enough_stars():
          'category': 'caution'}]
 
 
+def test_guide_is_candidate():
+    """Test the check that guide star meets candidate star requirements
+
+    Make a star catalog with a CLASS=3 star and force include it for guide.
+    """
+
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=6, mag=8.5, CLASS=[3, 0, 0, 0, 0, 0])
+    aca = get_aca_catalog(**mod_std_info(n_fid=3, n_guide=5, obsid=5000),
+                          stars=stars, dark=DARK40, include_ids_guide=[100],
+                          raise_exc=True)
+    acar = ACAReviewTable(aca)
+    acar.check_catalog()
+    assert acar.messages == [
+        {'text': 'Guide star 100 does not meet guide candidate criteria',
+         'category': 'critical',
+         'idx': 8}]
+
+
 def test_n_guide_check_atypical_request():
     """Test the check that number of guide stars selected is typical"""
 
@@ -283,6 +302,8 @@ def test_bad_star_set():
     acar = ACAReviewTable(aca)
     acar.check_catalog()
     assert acar.messages == [
+        {'text': 'Guide star 1248994952 does not meet guide candidate criteria',
+         'category': 'critical', 'idx': 5},
         {'text': 'Star 1248994952 is in proseco bad star set', 'category': 'critical', 'idx': 5},
         {'text': 'OR requested 0 fids but 3 is typical', 'category': 'caution'}]
 

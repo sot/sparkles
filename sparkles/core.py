@@ -748,6 +748,7 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
                 self.check_pos_err_guide(star)
                 self.check_imposters_guide(star)
                 self.check_too_bright_guide(star)
+                self.check_guide_is_candidate(star)
 
             if is_guide or is_acq:
                 self.check_bad_stars(entry)
@@ -973,6 +974,19 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
                     f'Guide star imposter offset {offset:.1f}, limit {limit} arcsec',
                     idx=idx)
                 break
+
+    def check_guide_is_candidate(self, star):
+        """Critical for guide star that is not a valid guide candidate.
+
+        This can occur for a manually included guide star.  In rare cases
+        the star may still be acceptable and ACA review can accept the warning.
+        """
+        if not self.guides.get_candidates_mask(star):
+            agasc_id = star['id']
+            idx = self.get_id(agasc_id)['idx']
+            self.add_message(
+                'critical',
+                f'Guide star {agasc_id} does not meet guide candidate criteria', idx=idx)
 
     def check_too_bright_guide(self, star):
         """Warn on guide stars that may be too bright.
