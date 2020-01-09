@@ -1,4 +1,6 @@
-__version__ = '4.3'
+import ska_helpers
+
+__version__ = ska_helpers.get_version(__package__)
 
 from .core import run_aca_review, ACAReviewTable  # noqa
 
