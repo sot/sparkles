@@ -47,16 +47,36 @@ span.monospace {
   font-family:monospace;
 }
 
+.callargs {
+  display: none;
+  unicode-bidi: embed;
+  font-family: monospace;
+  white-space: pre;
+}
+
 </style>
   </head>
 
   <body>
+
+    <script>
+
+      function hideShow(num) {
+        var x = document.getElementById("callargs" + num);
+        if (x.style.display === "none") {
+          x.style.display = "block";
+        } else {
+          x.style.display = "none";
+        }
+      }
+      </script>
 
 <h1> {{load_name}} sparkles review</h1>
 
 <pre>
 sparkles version: {{sparkles_version}}
 proseco version: {{proseco_version}}
+chandra_aca version: {{chandra_aca_version}}
 
 {{summary_text | safe}}
 </pre>
@@ -76,6 +96,12 @@ proseco version: {{proseco_version}}
 <pre>Reports: <a href="{{aca.context['reports_dir']}}/acq/index.html">Acquisition</a> <a href="{{aca.context['reports_dir']}}/guide/index.html">Guide</a></pre>
 {% endif %}
 <table>
+  <tr>
+    <td>
+      <button onclick="hideShow({{aca.report_id}})">Show/hide call args</button>
+      <div id="callargs{{aca.report_id}}" class="callargs">{{aca.context['call_args']}}</div>
+    </td>
+  </tr>
   <tr>
     <td>
       <pre>{{aca.context['text_pre']}}</pre>

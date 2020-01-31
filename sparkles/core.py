@@ -11,6 +11,7 @@ import traceback
 from pathlib import Path
 import pickle
 from itertools import combinations, chain
+import pprint
 
 import matplotlib
 
@@ -23,6 +24,7 @@ from jinja2 import Template
 from chandra_aca.star_probs import guide_count
 from chandra_aca.transform import (yagzag_to_pixels, mag_to_count_rate,
                                    snr_mag_for_t_ccd)
+import chandra_aca
 from astropy.table import Column, Table
 
 import proseco
@@ -208,6 +210,7 @@ def _run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=No
                 aca.make_roll_options_report()
 
             aca.context['text_pre'] = aca.get_text_pre()
+            aca.context['call_args'] = aca.get_call_args_pre()
 
     # noinspection PyDictCreation
     if make_html:
@@ -222,6 +225,7 @@ def _run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=No
         context['load_name'] = load_name.upper()
         context['proseco_version'] = proseco.__version__
         context['sparkles_version'] = __version__
+        context['chandra_aca_version'] = chandra_aca.__version__
         context['acas'] = acars
         context['summary_text'] = get_summary_text(acars)
 
@@ -650,6 +654,15 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
         plt.tight_layout()
         fig.savefig(str(outfile))
         plt.close(fig)
+
+    def get_call_args_pre(self):
+        call_args = self.call_args.copy()
+        call_args['att'] = call_args['att'].q.tolist()
+        call_args['include_ids_acq'] = self.acqs['id'].tolist()
+        call_args['include_halfws_acq'] = self.acqs['halfw'].tolist()
+        call_args['include_ids_guide'] = self.guides['id'].tolist()
+        out = pprint.pformat(call_args, width=120)
+        return out
 
     def get_text_pre(self):
         """Get pre-formatted text for report.
