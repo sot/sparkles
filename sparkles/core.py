@@ -657,7 +657,11 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
 
     def get_call_args_pre(self):
         call_args = self.call_args.copy()
-        call_args['att'] = call_args['att'].q.tolist()
+        try:
+            call_args['att'] = call_args['att'].q.tolist()
+        except AttributeError:
+            # Wasn't a quaternion, no action required.
+            pass
         call_args['include_ids_acq'] = self.acqs['id'].tolist()
         call_args['include_halfws_acq'] = self.acqs['halfw'].tolist()
         call_args['include_ids_guide'] = self.guides['id'].tolist()
