@@ -56,7 +56,7 @@ def test_review_catalog(tmpdir):
     assert acar.messages == [
         {'text': 'Guide star imposter offset 2.6, limit 2.5 arcsec', 'category': 'warning',
          'idx': 2},
-        {'text': 'P2: 2.84 less than 3.0 for ER', 'category': 'critical'},
+        {'text': 'P2: 3.33 less than 4.0 for ER', 'category': 'warning'},
         {'text': 'ER count of 9th (8.9 for -9.9C) mag guide stars 1.91 < 3.0',
          'category': 'critical'},
         {'text': 'ER with 6 guides but 8 were requested', 'category': 'caution'}]
@@ -65,7 +65,6 @@ def test_review_catalog(tmpdir):
 
     msgs = (acar.messages >= 'critical')
     assert msgs == [
-        {'text': 'P2: 2.84 less than 3.0 for ER', 'category': 'critical'},
         {'text': 'ER count of 9th (8.9 for -9.9C) mag guide stars 1.91 < 3.0',
          'category': 'critical'}]
 
@@ -175,7 +174,8 @@ def test_roll_options_with_include_ids():
     aca = get_aca_catalog(**kwargs)
     acar = aca.get_review_table()
     acar.run_aca_review(roll_level='all')
-    assert len(acar.roll_options) > 1
+    # As of the 2020-02 acq model update there is just one roll option
+    # assert len(acar.roll_options) > 1
 
 
 def test_catch_exception_from_function():
@@ -207,7 +207,7 @@ def test_run_aca_review_function(tmpdir):
     assert acar.messages == [
         {'text': 'Guide star imposter offset 2.6, limit 2.5 arcsec', 'category': 'warning',
          'idx': 2},
-        {'text': 'P2: 2.84 less than 3.0 for ER', 'category': 'critical'},
+        {'text': 'P2: 3.33 less than 4.0 for ER', 'category': 'warning'},
         {'text': 'ER count of 9th (8.9 for -9.9C) mag guide stars 1.91 < 3.0',
          'category': 'critical'},
         {'text': 'ER with 6 guides but 8 were requested', 'category': 'caution'}]
@@ -264,16 +264,17 @@ def test_roll_options_dec89_9():
     exp = {}
     exp[48000] = [' roll   P2  n_stars improvement roll_min roll_max  add_ids   drop_ids',
                   '------ ---- ------- ----------- -------- -------- --------- ---------',
-                  '287.25 3.22    0.55        0.00   287.25   287.25        --        --',
-                  '268.50 7.18    4.98        7.30   268.50   273.25 610927224 606601776',
-                  '270.62 7.18    4.22        6.38   268.50   273.25 610927224        --',
-                  '281.00 7.85    6.98       10.03   276.75   285.25 608567744        --']
+                  '287.25 3.61    0.55        0.00   287.25   287.25        --        --',
+                  '268.50 6.82    4.98        6.93   268.50   273.25 610927224 606601776',
+                  '270.62 6.82    4.22        6.01   268.50   273.25 610927224        --',
+                  '281.00 7.44    6.98        9.64   276.75   285.25 608567744        --']
+
     exp[18000] = [' roll   P2  n_stars improvement roll_min roll_max  add_ids   drop_ids',
                   '------ ---- ------- ----------- -------- -------- --------- ---------',
-                  '276.94 3.22    7.54        0.00   276.94   276.94        --        --',
-                  '258.19 7.18    8.00        2.05   258.19   262.69 610927224 606601776',
-                  '259.69 7.18    8.00        2.05   258.19   262.69 610927224        --',
-                  '270.57 7.85    8.00        2.39   266.19   274.94 608567744        --']
+                  '276.94 3.61    7.54        0.00   276.94   276.94        --        --',
+                  '258.19 6.82    8.00        1.68   258.19   262.69 610927224 606601776',
+                  '259.69 6.82    8.00        1.68   258.19   262.69 610927224        --',
+                  '270.57 7.44    8.00        1.99   266.19   274.94 608567744        --']
 
     for obsid in (48000, 18000):
         kwargs = mod_std_info(att=att, n_guide=8, obsid=obsid, date=date)
