@@ -70,7 +70,8 @@ def test_guide_is_candidate():
     assert acar.messages == [
         {'text': 'Guide star 100 does not meet guide candidate criteria',
          'category': 'critical',
-         'idx': 8}]
+         'idx': 8},
+        {'text': 'included guide ID(s): [100]', 'category': 'info'}]
 
 
 def test_n_guide_check_atypical_request():
@@ -146,6 +147,28 @@ def test_guide_count_er4():
     aca.check_guide_count()
     assert aca.messages == [
         {'text': 'ER with 6 guides but 8 were requested', 'category': 'caution'}]
+
+
+def test_include_exclude():
+    """Test INFO statement for explicitly included/excluded entries"""
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=8, mag=np.linspace(7.0, 8.75, 8))
+    aca = get_aca_catalog(**mod_std_info(obsid=50000, n_fid=0, n_acq=5, n_guide=8),
+                          stars=stars, dark=DARK40,
+                          exclude_ids_acq=100,
+                          include_ids_guide=107,
+                          exclude_ids_guide=[100, 101],
+                          include_ids_acq=[106, 107],
+                          include_halfws_acq=[140, 120],
+                          raise_exc=True)
+    acar = ACAReviewTable(aca)
+    acar.check_include_exclude()
+    assert acar.messages == [
+        {'category': 'info',
+         'text': 'included acq ID(s): [106, 107] halfwidths(s): [140, 120]'},
+        {'category': 'info', 'text': 'excluded acq ID(s): 100'},
+        {'category': 'info', 'text': 'included guide ID(s): 107'},
+        {'category': 'info', 'text': 'excluded guide ID(s): [100, 101]'}]
 
 
 def test_guide_count_er5():
@@ -268,7 +291,9 @@ def test_guide_edge_check():
          'text': 'Less than 3.0 pix edge margin col lim -502.4 val -499.5 delta 2.9'},
         {'category': 'info',
          'idx': 8,
-         'text': 'Less than 5.0 pix edge margin col lim -502.4 val -499.3 delta 3.1'}]
+         'text': 'Less than 5.0 pix edge margin col lim -502.4 val -499.3 delta 3.1'},
+        {'category': 'info',
+         'text': 'included guide ID(s): [101 102 103 104 105 106]'}]
 
 
 def test_imposters_on_guide():
@@ -305,7 +330,8 @@ def test_bad_star_set():
         {'text': 'Guide star 1248994952 does not meet guide candidate criteria',
          'category': 'critical', 'idx': 5},
         {'text': 'Star 1248994952 is in proseco bad star set', 'category': 'critical', 'idx': 5},
-        {'text': 'OR requested 0 fids but 3 is typical', 'category': 'caution'}]
+        {'text': 'OR requested 0 fids but 3 is typical', 'category': 'caution'},
+        {'category': 'info', 'text': 'included guide ID(s): [1248994952]'}]
 
 
 def test_too_bright_guide_magerr():

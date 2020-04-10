@@ -778,6 +778,7 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
         self.check_acq_p2()
         self.check_guide_count()
         self.check_fid_count()
+        self.check_include_exclude()
 
     def check_guide_geometry(self):
         """Check for guide stars too tightly clustered.
@@ -901,6 +902,25 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
             self.add_message('critical', f'P2: {P2:.2f} less than {P2_lim} for {obs_type}')
         elif P2 < P2_lim + 1:
             self.add_message('warning', f'P2: {P2:.2f} less than {P2_lim + 1} for {obs_type}')
+
+    def check_include_exclude(self):
+        """Check for included or excluded guide or acq stars or fids (info)
+
+        """
+        call_args = self.call_args
+        for typ in ('acq', 'guide', 'fid'):
+            for action in ('include', 'exclude'):
+                ids = call_args.get(f'{action}_ids_{typ}')
+                if ids is not None:
+                    msg = f'{action}d {typ} ID(s): {ids}'
+
+                    # Check for halfwidths.  This really only applies to
+                    # include_halfws_acq, but having it here in the loop doesn't hurt.
+                    halfws = call_args.get(f'{action}_halfws_{typ}')
+                    if halfws is not None:
+                        msg = msg + f' halfwidths(s): {halfws}'
+
+                    self.add_message('info', msg)
 
     def check_guide_count(self):
         """
