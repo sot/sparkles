@@ -150,8 +150,7 @@ def test_guide_count_er4():
 
 
 def test_include_exclude():
-    # This configuration should not warn with too many really bright stars
-    # (allowed to have 3 stars brighter than 6.1)
+    """Test INFO statement for explicitly included/excluded entries"""
     stars = StarsTable.empty()
     stars.add_fake_constellation(n_stars=8, mag=np.linspace(7.0, 8.75, 8))
     aca = get_aca_catalog(**mod_std_info(obsid=50000, n_fid=0, n_acq=5, n_guide=8),
