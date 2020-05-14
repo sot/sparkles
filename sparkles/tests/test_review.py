@@ -323,6 +323,8 @@ def test_get_roll_intervals():
     obs_kwargs = KWARGS_48464
     aca_er = get_aca_catalog(**obs_kwargs)
     acar_er = aca_er.get_review_table()
+    acar_er.target_offset_y = 20 / 60.
+    acar_er.target_offset_z = 30 / 60.
 
     kw_or = obs_kwargs.copy()
     # Set this one to have an OR obsid (and not 0 which is special)
@@ -332,17 +334,17 @@ def test_get_roll_intervals():
 
     # Use these values to override the get_roll_intervals ranges to get more interesting
     # outputs.  y_off and z_off are really 0 everywhere for now from ORViewer though.
-    y_off = 20 / 60.
-    z_off = 30 / 60.
+    acar_or.target_offset_y = 20 / 60.
+    acar_or.target_offset_z = 30 / 60.
     roll_dev = 5
 
     er_roll_intervs, er_info = acar_er.get_roll_intervals(
         acar_er.get_candidate_better_stars(),
-        roll_dev=roll_dev, y_off=y_off, z_off=z_off)
+        roll_dev=roll_dev)
 
     or_roll_intervs, or_info = acar_or.get_roll_intervals(
         acar_or.get_candidate_better_stars(),
-        roll_dev=roll_dev, y_off=y_off, z_off=z_off)
+        roll_dev=roll_dev)
 
     assert acar_er.att.roll <= er_info['roll_max']
     assert acar_er.att.roll >= er_info['roll_min']

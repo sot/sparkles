@@ -123,7 +123,7 @@ class RollOptimizeMixin:
         q_out = calc_aca_from_targ(q_att, y_off, z_off) if self.is_OR else q_att
         return q_out
 
-    def get_roll_intervals(self, cand_idxs, d_roll=0.25,
+    def get_roll_intervals(self, cand_idxs, d_roll=0.25, roll_dev=None,
                            method='uniq_ids', max_roll_dev=None):
         """Find a list of rolls that might substantially improve guide or acq catalogs.
         If ``roll_nom`` is not specified then an approximate value is computed
@@ -185,7 +185,9 @@ class RollOptimizeMixin:
         att_nom = Quat([att.ra, att.dec, roll_nom])
         att_nom_targ = self._calc_targ_from_aca(att_nom, self.target_offset_y, self.target_offset_z)
         roll_nom = att_nom_targ.roll
-        roll_dev = allowed_rolldev(pitch)
+
+        if roll_dev is None:
+            roll_dev = allowed_rolldev(pitch)
 
         if max_roll_dev is not None:
             roll_dev = min(roll_dev, max_roll_dev)
@@ -246,7 +248,7 @@ class RollOptimizeMixin:
         return roll_intervals
 
     @staticmethod
-    def _get_roll_intervals_uniq_ids(ids0, ids_list, roll, roll_max, roll_min,
+    def _get_roll_intervals_uniq_ids(ids0, ids_list, roll, roll_min, roll_max,
                                      roll_offsets, d_roll):
         """Private method to get roll intervals that span a range where there is a unique
         set of available candidate stars within the entire interval.
@@ -258,15 +260,14 @@ class RollOptimizeMixin:
         for ids in ids_list:
             if ids not in uniq_ids_sets and ids - ids0:
                 uniq_ids_sets.append(ids)
+
+        uniq_ids_sets.append(ids0)
+
         # print(f'Roll min, max={roll_min:.2f}, {roll_max:.2f}')
         # For each unique set, find the roll_offset range over which that set
         # is in the FOV.
         roll_intervals = []
         for uniq_ids in uniq_ids_sets:
-            # print(uniq_ids - ids0, ids0 - uniq_ids)
-            # for sid in uniq_ids - ids0:
-            #     star = self.stars.get_id(sid)
-            #     print(f'{sid} {star["mag"]} {star["yang"]} {star["zang"]}')
 
             # This says that ``uniq_ids`` is a subset of available ``ids`` in
             # FOV for roll_offset in the list comprehension below.  So everywhere
@@ -295,7 +296,7 @@ class RollOptimizeMixin:
         return roll_intervals
 
     def get_roll_options(self, min_improvement=0.3, d_roll=0.25, method='uniq_ids',
-                         max_roll_dev=None):
+                         max_roll_dev=None, roll_level='critical'):
         """
         Get roll options for this catalog.
 

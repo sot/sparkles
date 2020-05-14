@@ -181,7 +181,23 @@ def _run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=No
 
         if roll_level == 'all' or aca.messages >= roll_level:
             try:
-                aca.get_roll_options()  # sets roll_options, roll_info attributes
+                # Set roll_options, roll_info attributes
+                for method in ('uniq_ids', 'uniform'):
+                    aca.get_roll_options(roll_level=roll_level, method=method)
+                    # good_roll = False
+                    # for roll_option in aca.roll_options:
+                    #     if not (roll_option['acar'].messages >= roll_level):
+                    #         good_roll = True
+                    # if good_roll:
+                    #     break
+                    if True:
+                        break
+                    if any(not roll_option['acar'].messages >= roll_level
+                           for roll_option in aca.roll_options):
+                        break
+                    aca.roll_options = None
+                    aca.roll_info = None
+
             except Exception:  # as err:
                 err = traceback.format_exc()
                 aca.add_message('critical', text=f'Running get_roll_options() failed: \n{err}')
