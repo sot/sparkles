@@ -123,7 +123,7 @@ class RollOptimizeMixin:
         q_out = calc_aca_from_targ(q_att, y_off, z_off) if self.is_OR else q_att
         return q_out
 
-    def get_roll_intervals(self, cand_idxs, y_off=0, z_off=0, d_roll=0.25,
+    def get_roll_intervals(self, cand_idxs, d_roll=0.25,
                            method='uniq_ids', max_roll_dev=None):
         """Find a list of rolls that might substantially improve guide or acq catalogs.
         If ``roll_nom`` is not specified then an approximate value is computed
@@ -166,7 +166,8 @@ class RollOptimizeMixin:
                 att_targ_rolled = Quat([att_targ.ra, att_targ.dec, att_targ.roll + roll_offset])
 
                 # Transform back to ACA pointing for computing star positions.
-                att_rolled = self._calc_aca_from_targ(att_targ_rolled, y_off, z_off)
+                att_rolled = self._calc_aca_from_targ(
+                    att_targ_rolled, self.target_offset_y, self.target_offset_z)
 
                 # Get yag/zag row/col for candidates
                 yag, zag = radec_to_yagzag(cands['ra'], cands['dec'], att_rolled)
@@ -182,13 +183,12 @@ class RollOptimizeMixin:
         pitch = Ska.Sun.pitch(att.ra, att.dec, self.date)
         roll_nom = Ska.Sun.nominal_roll(att.ra, att.dec, self.date)
         att_nom = Quat([att.ra, att.dec, roll_nom])
-        att_nom_targ = self._calc_targ_from_aca(att_nom, y_off, z_off)
+        att_nom_targ = self._calc_targ_from_aca(att_nom, self.target_offset_y, self.target_offset_z)
         roll_nom = att_nom_targ.roll
         roll_dev = allowed_rolldev(pitch)
-        
+
         if max_roll_dev is not None:
             roll_dev = min(roll_dev, max_roll_dev)
-            
 
         # Ensure roll_nom in range 0 <= roll_nom < 360 to match att_targ.roll.
         # Also ensure that roll_min < roll < roll_max.  It can happen that the
@@ -221,6 +221,7 @@ class RollOptimizeMixin:
                      'roll_max': roll_max,
                      'roll_nom': roll_nom}
 
+        print(roll_intervals)
         return sorted(roll_intervals, key=lambda x: x['roll']), roll_info
 
     @staticmethod
@@ -293,8 +294,8 @@ class RollOptimizeMixin:
                 roll_intervals.append(roll_interval)
         return roll_intervals
 
-    def get_roll_options(self, min_improvement=-300, d_roll=0.25, method='uniform',
-                         max_roll_dev=2.5):
+    def get_roll_options(self, min_improvement=0.3, d_roll=0.25, method='uniq_ids',
+                         max_roll_dev=None):
         """
         Get roll options for this catalog.
 
@@ -388,6 +389,7 @@ class RollOptimizeMixin:
                                          count_9th=self.is_ER)
 
             improvement = improve_metric(n_stars, P2, n_stars_rolled, P2_rolled)
+            print(roll, P2_rolled, n_stars_rolled, improvement)
 
             if improvement > min_improvement:
                 acar = self.__class__(aca_rolled, obsid=self.obsid,

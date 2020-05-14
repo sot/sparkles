@@ -359,6 +359,8 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
     roll_options = MetaAttribute()
     roll_info = MetaAttribute()
     messages = MetaAttribute()
+    target_offset_y = MetaAttribute(default=0.0)
+    target_offset_z = MetaAttribute(default=0.0)
 
     def __init__(self, *args, **kwargs):
         """Init review methods and attrs in ``aca`` object *in-place*.
