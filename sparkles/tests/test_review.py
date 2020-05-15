@@ -394,6 +394,7 @@ def test_get_roll_intervals():
     # Set a function to do some looping and isclose logic to compare
     # the actual vs expected intervals.
     def compare_intervs(intervs, exp_intervs):
+        assert len(intervs) == len(exp_intervs)
         for interv, exp_interv in zip(intervs, exp_intervs):
             assert interv.keys() == exp_interv.keys()
             for key in interv.keys():
@@ -403,27 +404,27 @@ def test_get_roll_intervals():
                     assert interv[key] == exp_interv[key]
 
     # For the OR we expect this
-    or_exp_intervs = [{'roll': 281.63739755173594,
-                       'roll_min': 281.63739755173594,
-                       'roll_max': 281.67838289905592,
-                       'add_ids': {84943288},
-                       'drop_ids': {84937736}},
-                      {'roll': 291.63739755173594,
-                       'roll_min': 289.42838289905592,
-                       'roll_max': 291.63739755173594,
-                       'add_ids': {85328120},
-                       'drop_ids': set()}]
+    or_exp_intervs = [{'add_ids': set(),
+                       'drop_ids': set(),
+                       'roll': 284.42476093331379,
+                       'roll_max': 291.53501733258395,
+                       'roll_min': 281.53501733258395}]
     compare_intervs(or_roll_intervs, or_exp_intervs)
 
     # For the ER we expect these
-    er_exp_intervs = [{'roll': 291.63739755173594,
-                       'roll_min': 289.67838289905592,
+    er_exp_intervs = [{'add_ids': set(),
+                       'drop_ids': set(),
+                       'roll': 290.80338289905592,
                        'roll_max': 291.63739755173594,
-                       'add_ids': {84943288},
-                       'drop_ids': set()},
-                      {'roll': 291.63739755173594,
-                       'roll_min': 290.92838289905592,
+                       'roll_min': 285.17838289905592},
+                      {'add_ids': {84943288},
+                       'drop_ids': set(),
+                       'roll': 291.63739755173594,
                        'roll_max': 291.63739755173594,
-                       'add_ids': {85328120, 84943288},
-                       'drop_ids': set()}]
+                       'roll_min': 289.67838289905592},
+                      {'add_ids': {85328120, 84943288},
+                       'drop_ids': set(),
+                       'roll': 291.63739755173594,
+                       'roll_max': 291.63739755173594,
+                       'roll_min': 290.92838289905592}]
     compare_intervs(er_roll_intervs, er_exp_intervs)
