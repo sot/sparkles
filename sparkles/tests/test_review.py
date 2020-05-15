@@ -180,6 +180,35 @@ def test_roll_options_with_include_ids():
     # assert len(acar.roll_options) > 1
 
 
+def test_uniform_roll_options():
+    """Use obsid 22508 as a test case for failing to find a roll option using
+    the 'uniq_ids' algorithm and falling through to a 'uniform' search.
+
+    See https://github.com/sot/sparkles/issues/138 for context.
+    """
+    kwargs = {'att': [-0.25019352, -0.90540872, -0.21768747, 0.26504794],
+              'date': '2020:045:18:19:50.234',
+              'detector': 'ACIS-S',
+              'dither': 8.0,
+              'focus_offset': 0,
+              'man_angle': 1.56,
+              'obsid': 22508,
+              'sim_offset': 0,
+              't_ccd_acq': -9.8,
+              't_ccd_guide': -9.8}
+
+    aca = get_aca_catalog(**kwargs)
+    acar = aca.get_review_table()
+    acar.run_aca_review(roll_level='critical', roll_args={'max_roll_dev': 2.5})
+
+    # Fell through to uniform roll search
+    assert acar.roll_info['method'] == 'uniform'
+
+    # Found at least one roll option with no critical messages
+    assert any(len(roll_option['acar'].messages >= 'critical') == 0
+               for roll_option in acar.roll_options)
+
+
 def test_catch_exception_from_function():
     exc = run_aca_review(raise_exc=False, load_name='non-existent load name fail fail')
     assert 'FileNotFoundError: no matching pickle file' in exc
