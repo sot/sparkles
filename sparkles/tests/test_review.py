@@ -121,7 +121,7 @@ def test_review_roll_options():
     acar = aca.get_review_table()
     acar.run_aca_review(roll_level='critical')
 
-    assert len(acar.roll_options) == 2
+    assert len(acar.roll_options) == 3
 
     # First roll_option is at the same attitude (and roll) as original.  The check
     # code is run again independently but the outcome should be the same.
@@ -298,14 +298,16 @@ def test_roll_options_dec89_9():
                   '287.25 3.61    0.55        0.00   287.25   287.25        --        --',
                   '268.50 6.82    4.98        6.93   268.50   273.25 610927224 606601776',
                   '270.62 6.82    4.22        6.01   268.50   273.25 610927224        --',
-                  '281.00 7.44    6.98        9.64   276.75   285.25 608567744        --']
+                  '281.00 7.44    6.98        9.64   276.75   285.25 608567744        --',
+                  '287.50 7.25    5.43        7.68   268.50   306.00        --        --']
 
     exp[18000] = [' roll   P2  n_stars improvement roll_min roll_max  add_ids   drop_ids',
                   '------ ---- ------- ----------- -------- -------- --------- ---------',
                   '276.94 3.61    7.54        0.00   276.94   276.94        --        --',
                   '258.19 6.82    8.00        1.68   258.19   262.69 610927224 606601776',
                   '259.69 6.82    8.00        1.68   258.19   262.69 610927224        --',
-                  '270.57 7.44    8.00        1.99   266.19   274.94 608567744        --']
+                  '270.57 7.44    8.00        1.99   266.19   274.94 608567744        --',
+                  '277.07 7.25    8.00        1.89   258.19   295.69        --        --']
 
     for obsid in (48000, 18000):
         kwargs = mod_std_info(att=att, n_guide=8, obsid=obsid, date=date)

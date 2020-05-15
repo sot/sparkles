@@ -256,7 +256,7 @@ class RollOptimizeMixin:
         """
         # Get all unique sets of stars that are in the FOV over the sampled
         # roll offsets.  Ignore ids sets that do not add new candidate stars.
-        uniq_ids_sets = []
+        uniq_ids_sets = [ids0]
         for ids in ids_list:
             if ids not in uniq_ids_sets and ids - ids0:
                 uniq_ids_sets.append(ids)
