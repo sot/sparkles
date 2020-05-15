@@ -294,7 +294,7 @@ class RollOptimizeMixin:
         return roll_intervals
 
     def get_roll_options(self, min_improvement=0.3, d_roll=0.25, method='uniq_ids',
-                         max_roll_dev=None, roll_level='critical'):
+                         max_roll_dev=None):
         """
         Get roll options for this catalog.
 
@@ -304,6 +304,8 @@ class RollOptimizeMixin:
         :param min_improvement: minimum value of improvement metric to accept option
         :param d_roll: delta roll for sampling available roll range (deg)
         :param method: method for determining roll intervals ('uniq_ids' | 'uniform')
+        :param max_roll_dev: maximum roll deviation from nominal (default=max allowed by fish plot)
+
         :return: None
         """
 

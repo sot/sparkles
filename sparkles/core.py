@@ -121,6 +121,7 @@ def run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=Non
     - ``min_improvement``: min value of improvement metric to accept option
       (default=0.3)
     - ``d_roll``: delta roll for sampling available roll range (deg, default=0.25)
+    - ``max_roll_dev``: maximum roll deviation (deg, default=max allowed by pitch)
     - ``method``: method for determining roll intervals ('uniq_ids' | 'uniform').
       The 'uniq_ids' method is a faster method that frequently finds an acceptable
       roll option, while 'uniform' is a brute-force search of the entire roll
@@ -212,7 +213,8 @@ def _run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=No
                 for method in methods:
                     aca.roll_options = None
                     aca.roll_info = None
-                    aca.get_roll_options(roll_level=roll_level, method=method, **roll_args)
+                    aca.get_roll_options(method=method, **roll_args)
+                    aca.roll_info['method'] = method
 
                     # If there is at least one option with no messages at the
                     # roll_level (typically "critical") then declare success and
@@ -506,6 +508,7 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
         - ``min_improvement``: min value of improvement metric to accept option
           (default=0.3)
         - ``d_roll``: delta roll for sampling available roll range (deg, default=0.25)
+        - ``max_roll_dev``: maximum roll deviation (deg, default=max allowed by pitch)
         - ``method``: method for determining roll intervals ('uniq_ids' | 'uniform').
           The 'uniq_ids' method is a faster method that frequently finds an acceptable
           roll option, while 'uniform' is a brute-force search of the entire roll
