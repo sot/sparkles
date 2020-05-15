@@ -166,8 +166,7 @@ class RollOptimizeMixin:
                 att_targ_rolled = Quat([att_targ.ra, att_targ.dec, att_targ.roll + roll_offset])
 
                 # Transform back to ACA pointing for computing star positions.
-                att_rolled = self._calc_aca_from_targ(
-                    att_targ_rolled, self.target_offset_y, self.target_offset_z)
+                att_rolled = self._calc_aca_from_targ(att_targ_rolled, *self.target_offset)
 
                 # Get yag/zag row/col for candidates
                 yag, zag = radec_to_yagzag(cands['ra'], cands['dec'], att_rolled)
@@ -183,7 +182,7 @@ class RollOptimizeMixin:
         pitch = Ska.Sun.pitch(att.ra, att.dec, self.date)
         roll_nom = Ska.Sun.nominal_roll(att.ra, att.dec, self.date)
         att_nom = Quat([att.ra, att.dec, roll_nom])
-        att_nom_targ = self._calc_targ_from_aca(att_nom, self.target_offset_y, self.target_offset_z)
+        att_nom_targ = self._calc_targ_from_aca(att_nom, *self.target_offset)
         roll_nom = att_nom_targ.roll
 
         if roll_dev is None:

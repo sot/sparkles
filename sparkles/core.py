@@ -402,8 +402,6 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
     roll_options = MetaAttribute()
     roll_info = MetaAttribute()
     messages = MetaAttribute()
-    target_offset_y = MetaAttribute(default=0.0)
-    target_offset_z = MetaAttribute(default=0.0)
 
     def __init__(self, *args, **kwargs):
         """Init review methods and attrs in ``aca`` object *in-place*.
@@ -548,7 +546,7 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
     @property
     def att_targ(self):
         if not hasattr(self, '_att_targ'):
-            self._att_targ = self._calc_targ_from_aca(self.att, 0, 0)
+            self._att_targ = self._calc_targ_from_aca(self.att, *self.target_offset)
         return self._att_targ
 
     @property

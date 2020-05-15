@@ -217,7 +217,6 @@ def test_uniform_roll_options():
     assert len(acar.roll_options) == 3
 
 
-
 def test_catch_exception_from_function():
     exc = run_aca_review(raise_exc=False, load_name='non-existent load name fail fail')
     assert 'FileNotFoundError: no matching pickle file' in exc
@@ -362,11 +361,12 @@ def test_get_roll_intervals():
 
     # This uses the catalog at KWARGS_48464, but would really be better as a fully
     # synthetic test
-    obs_kwargs = KWARGS_48464
+    obs_kwargs = KWARGS_48464.copy()
+    # Use these values to override the get_roll_intervals ranges to get more interesting
+    # outputs.
+    obs_kwargs['target_offset'] = (20 / 60., 30 / 60)  # deg
     aca_er = get_aca_catalog(**obs_kwargs)
     acar_er = aca_er.get_review_table()
-    acar_er.target_offset_y = 20 / 60.
-    acar_er.target_offset_z = 30 / 60.
 
     kw_or = obs_kwargs.copy()
     # Set this one to have an OR obsid (and not 0 which is special)
@@ -374,10 +374,6 @@ def test_get_roll_intervals():
     aca_or = get_aca_catalog(**kw_or)
     acar_or = aca_or.get_review_table()
 
-    # Use these values to override the get_roll_intervals ranges to get more interesting
-    # outputs.  y_off and z_off are really 0 everywhere for now from ORViewer though.
-    acar_or.target_offset_y = 20 / 60.
-    acar_or.target_offset_z = 30 / 60.
     roll_dev = 5
 
     er_roll_intervs, er_info = acar_er.get_roll_intervals(
