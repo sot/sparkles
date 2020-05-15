@@ -261,8 +261,6 @@ class RollOptimizeMixin:
             if ids not in uniq_ids_sets and ids - ids0:
                 uniq_ids_sets.append(ids)
 
-        uniq_ids_sets.append(ids0)
-
         # print(f'Roll min, max={roll_min:.2f}, {roll_max:.2f}')
         # For each unique set, find the roll_offset range over which that set
         # is in the FOV.
@@ -305,7 +303,7 @@ class RollOptimizeMixin:
 
         :param min_improvement: minimum value of improvement metric to accept option
         :param d_roll: delta roll for sampling available roll range (deg)
-        :param method: method for determine roll intervals ('uniq_ids' | 'uniform')
+        :param method: method for determining roll intervals ('uniq_ids' | 'uniform')
         :return: None
         """
 

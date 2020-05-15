@@ -72,15 +72,17 @@ def test_review_catalog(tmpdir):
 
     # Run the review but without making the HTML and ensure review messages
     # are available on roll options.
-    acar.run_aca_review(roll_level='critical')
+    acar.run_aca_review(roll_level='critical', roll_args={'method': 'uniq_ids'})
     assert len(acar.roll_options) > 1
     assert acar.roll_options[0]['acar'].messages == acar.messages
     assert len(acar.roll_options[1]['acar'].messages) > 0
+    for roll_option in acar.roll_options[1:]:
+        print(roll_option['acar'].messages)
 
     # Check doing a full review for this obsid
     acar = aca.get_review_table()
     acar.run_aca_review(make_html=True, report_dir=tmpdir, report_level='critical',
-                        roll_level='critical')
+                        roll_level='critical', roll_args={'method': 'uniq_ids'})
 
     path = Path(str(tmpdir))
     assert (path / 'index.html').exists()
@@ -117,7 +119,7 @@ def test_review_roll_options():
 
     aca = get_aca_catalog(**kwargs)
     acar = aca.get_review_table()
-    acar.run_aca_review(roll_level='critical')
+    acar.run_aca_review(roll_level='critical') # , roll_args={'method': 'uniq_ids'})
 
     assert len(acar.roll_options) == 2
 
@@ -173,7 +175,7 @@ def test_roll_options_with_include_ids():
 
     aca = get_aca_catalog(**kwargs)
     acar = aca.get_review_table()
-    acar.run_aca_review(roll_level='all')
+    acar.run_aca_review(roll_level='all', roll_args={'method': 'uniq_ids'})
     # As of the 2020-02 acq model update there is just one roll option
     # assert len(acar.roll_options) > 1
 
@@ -285,7 +287,7 @@ def test_roll_options_dec89_9():
 
         aca = get_aca_catalog(**kwargs)
         acar = aca.get_review_table()
-        acar.run_aca_review(roll_level='all', make_html=False)
+        acar.run_aca_review(roll_level='all', roll_args={'method': 'uniq_ids'}, make_html=False)
         tbl = acar.get_roll_options_table()
         out = tbl.pformat(max_lines=-1, max_width=-1)
         assert out == exp[obsid]

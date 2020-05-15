@@ -81,8 +81,8 @@ def main(sys_args=None):
 
 
 def run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=None,
-                   report_level='none', roll_level='none', loud=False, obsids=None,
-                   open_html=False, context=None, raise_exc=True):
+                   report_level='none', roll_level='none', roll_args=None,
+                   loud=False, obsids=None, open_html=False, context=None, raise_exc=True):
     """Do ACA load review based on proseco pickle file from ORviewer.
 
     The ``load_name`` specifies the pickle file from which the ``ACATable``
@@ -110,6 +110,23 @@ def run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=Non
     default is "none", meaning no reports are generated.  A final option is
     "all" which generates a report for every obsid.
 
+    The ``roll_level`` arg specifies the message category at which the review
+    process will also attempt to find and report on available star catalogs for
+    different roll options. The available categories are the same as for
+    ``report_level``, with the most common choice being "critical".
+
+    The ``roll_args`` arg specifies an optional dict of arguments used in the
+    call to the ``get_roll_options`` method. Possible args include:
+
+    - ``min_improvement``: min value of improvement metric to accept option
+      (default=0.3)
+    - ``d_roll``: delta roll for sampling available roll range (deg, default=0.25)
+    - ``method``: method for determining roll intervals ('uniq_ids' | 'uniform').
+      The 'uniq_ids' method is a faster method that frequently finds an acceptable
+      roll option, while 'uniform' is a brute-force search of the entire roll
+      range at ``d_roll`` increments. If not provided, the default is to try
+      *both* methods in order, stopping when an acceptable option is found.
+
     :param load_name: name of loads
     :param acars: list of ACAReviewTable objects (optional)
     :param make_html: make HTML output report
@@ -117,6 +134,7 @@ def run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=Non
     :param report_dir: output directory
     :param report_level: report level threshold for generating acq and guide report
     :param roll_level: level threshold for suggesting alternate rolls
+    :param roll_args: None or dict of arguments for ``get_roll_options``
     :param loud: print status information during checking
     :param obsids: list of obsids for selecting a subset for review (mostly for debug)
     :param is_ORs: list of is_OR values (for roll options review page)
@@ -128,8 +146,8 @@ def run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=Non
     try:
         _run_aca_review(load_name=load_name, acars=acars, make_html=make_html,
                         report_dir=report_dir, report_level=report_level,
-                        roll_level=roll_level, loud=loud, obsids=obsids,
-                        open_html=open_html, context=context)
+                        roll_level=roll_level, roll_args=roll_args,
+                        loud=loud, obsids=obsids, open_html=open_html, context=context)
     except Exception:
         if raise_exc:
             raise
@@ -141,8 +159,8 @@ def run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=Non
 
 
 def _run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=None,
-                    report_level='none', roll_level='none', loud=False, obsids=None,
-                    open_html=False, context=None):
+                    report_level='none', roll_level='none', roll_args=None,
+                    loud=False, obsids=None, open_html=False, context=None):
 
     if acars is None:
         acars = get_acas_from_pickle(load_name, loud)
@@ -152,6 +170,9 @@ def _run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=No
 
     if not acars:
         raise ValueError('no catalogs founds (check obsid filtering?)')
+
+    if roll_args is None:
+        roll_args = {}
 
     # Make output directory if needed
     if make_html:
@@ -179,24 +200,26 @@ def _run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=No
         aca.set_stars_and_mask()  # Not stored in pickle, need manual restoration
         aca.check_catalog()
 
+        # Find roll options if requested
         if roll_level == 'all' or aca.messages >= roll_level:
+            # Get roll selection algorithms to try
+            methods = roll_args.pop('method', ('uniq_ids', 'uniform'))
+            if isinstance(methods, str):
+                methods = [methods]
+
             try:
                 # Set roll_options, roll_info attributes
-                for method in ('uniq_ids', 'uniform'):
-                    aca.get_roll_options(roll_level=roll_level, method=method)
-                    # good_roll = False
-                    # for roll_option in aca.roll_options:
-                    #     if not (roll_option['acar'].messages >= roll_level):
-                    #         good_roll = True
-                    # if good_roll:
-                    #     break
-                    if True:
-                        break
+                for method in methods:
+                    aca.roll_options = None
+                    aca.roll_info = None
+                    aca.get_roll_options(roll_level=roll_level, method=method, **roll_args)
+
+                    # If there is at least one option with no messages at the
+                    # roll_level (typically "critical") then declare success and
+                    # stop looking for roll options.
                     if any(not roll_option['acar'].messages >= roll_level
                            for roll_option in aca.roll_options):
                         break
-                    aca.roll_options = None
-                    aca.roll_info = None
 
             except Exception:  # as err:
                 err = traceback.format_exc()
@@ -462,7 +485,7 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
             self.rename_column('idx_temp', 'idx')
 
     def run_aca_review(self, *, make_html=False, report_dir='.', report_level='none',
-                       roll_level='none', raise_exc=True):
+                       roll_level='none', roll_args=None, raise_exc=True):
         """Do aca review based for this catalog
 
         The ``report_level`` arg specifies the message category at which the full
@@ -472,10 +495,28 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
         default is "none", meaning no reports are generated.  A final option is
         "all" which generates a report for every obsid.
 
+        The ``roll_level`` arg specifies the message category at which the review
+        process will also attempt to find and report on available star catalogs for
+        different roll options. The available categories are the same as for
+        ``report_level``, with the most common choice being "critical".
+
+        The ``roll_args`` arg specifies an optional dict of arguments used in the
+        call to the ``get_roll_options`` method. Possible args include:
+
+        - ``min_improvement``: min value of improvement metric to accept option
+          (default=0.3)
+        - ``d_roll``: delta roll for sampling available roll range (deg, default=0.25)
+        - ``method``: method for determining roll intervals ('uniq_ids' | 'uniform').
+          The 'uniq_ids' method is a faster method that frequently finds an acceptable
+          roll option, while 'uniform' is a brute-force search of the entire roll
+          range at ``d_roll`` increments. If not provided, the default is to try
+          *both* methods in order, stopping when an acceptable option is found.
+
         :param make_html: make HTML report (default=False)
         :param report_dir: output directory for report (default='.')
         :param report_level: report level threshold for generating acq and guide report
         :param roll_level: level threshold for suggesting alternate rolls
+        :param roll_args: None or dict of arguments for ``get_roll_options``
         :param raise_exc: if False then catch exception and return traceback (default=True)
         :returns: exception message: str or None
 
@@ -485,7 +526,7 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
         # Do aca review checks and update acas[0] in place
         exc = run_aca_review(load_name=f'Obsid {self.obsid}', acars=acars, make_html=make_html,
                              report_dir=report_dir, report_level=report_level,
-                             roll_level=roll_level,
+                             roll_level=roll_level, roll_args=roll_args,
                              loud=False, raise_exc=raise_exc)
         return exc
 
