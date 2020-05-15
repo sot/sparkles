@@ -208,6 +208,15 @@ def test_uniform_roll_options():
     assert any(len(roll_option['acar'].messages >= 'critical') == 0
                for roll_option in acar.roll_options)
 
+    assert len(acar.roll_options) == 5
+
+    # Now limit the number of roll options
+    acar = aca.get_review_table()
+    acar.run_aca_review(roll_level='critical',
+                        roll_args={'max_roll_dev': 2.5, 'max_roll_options': 3})
+    assert len(acar.roll_options) == 3
+
+
 
 def test_catch_exception_from_function():
     exc = run_aca_review(raise_exc=False, load_name='non-existent load name fail fail')

@@ -339,7 +339,6 @@ class RollOptimizeMixin:
                          'add_ids': set(),
                          'drop_ids': set()}]
 
-        print(roll_intervals)
         for roll_interval in roll_intervals:
             print(roll_interval)
             roll = roll_interval['roll']
@@ -382,6 +381,27 @@ class RollOptimizeMixin:
                 roll_options.append(roll_option)
 
         self.roll_options = roll_options
+
+    def sort_and_limit_roll_options(self, roll_level, max_roll_options):
+        """Sort the roll options based on two keys:
+        - Number of warnings at roll_level or worse (e.g. number of criticals,
+          so smaller is better)
+        - Negative of improvement (larger improvement is better)
+
+        This updates self.roll_options and also limits the list to a length of
+        ``max_roll_options``.
+
+        The first item is special and corresponds to the baseline roll used
+        by proseco, so it is left in place.
+        """
+        if len(self.roll_options) < 2:
+            return
+
+        def roll_option_sort_key(ro):
+            return (len(ro['acar'].messages >= roll_level), -ro['improvement'])
+
+        ros = sorted(self.roll_options[1:], key=roll_option_sort_key)
+        self.roll_options = ([self.roll_options[0]] + ros)[:max_roll_options]
 
 
 def calc_improve_metric(n_stars, P2, n_stars_new, P2_new):

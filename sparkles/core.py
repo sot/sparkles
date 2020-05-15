@@ -204,6 +204,7 @@ def _run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=No
         # Find roll options if requested
         if roll_level == 'all' or aca.messages >= roll_level:
             # Get roll selection algorithms to try
+            max_roll_options = roll_args.pop('max_roll_options', 10)
             methods = roll_args.pop('method', ('uniq_ids', 'uniform'))
             if isinstance(methods, str):
                 methods = [methods]
@@ -221,6 +222,7 @@ def _run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=No
                     # stop looking for roll options.
                     if any(not roll_option['acar'].messages >= roll_level
                            for roll_option in aca.roll_options):
+                        aca.sort_and_limit_roll_options(roll_level, max_roll_options)
                         break
 
             except Exception:  # as err:
