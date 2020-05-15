@@ -119,7 +119,7 @@ def test_review_roll_options():
 
     aca = get_aca_catalog(**kwargs)
     acar = aca.get_review_table()
-    acar.run_aca_review(roll_level='critical') # , roll_args={'method': 'uniq_ids'})
+    acar.run_aca_review(roll_level='critical')
 
     assert len(acar.roll_options) == 2
 
