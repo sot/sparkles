@@ -316,31 +316,6 @@ class RollOptimizeMixin:
             warnings.warn('roll_options already available, not re-computing')
             return
 
-        def improve_metric(n_stars, P2, n_stars_new, P2_new):
-            """Ad-hoc metric defining improvement of a catalog.
-
-            :param n_stars: original n_stars
-            :param P2: original P2
-            :param n_stars_new: new n_stars
-            :param P2_new: new P2
-            :returns: metric
-            """
-            n_stars_mult_x = np.array([2.0, 3.0, 4.0, 5.0])
-            n_stars_mult_y = np.array([1.2, 0.6, 0.3, 0.15])
-
-            P2_mult_x = np.array([1.0, 2.0, 3.0])
-            P2_mult_y = np.array([2.0, 1.0, 0.5])
-
-            n_stars_mult = np.interp(x=n_stars, xp=n_stars_mult_x, fp=n_stars_mult_y)
-            P2_mult = np.interp(x=P2, xp=P2_mult_x, fp=P2_mult_y)
-            dn = n_stars_rolled - n_stars
-            dP2 = P2_rolled - P2
-            n_stars_sign_mult = 2 if dn < 0 else 1
-            P2_sign_mult = 2 if dP2 < 0 else 1
-            out = (dn * n_stars_sign_mult * n_stars_mult +
-                   dP2 * P2_sign_mult * P2_mult)
-            return out
-
         P2 = -np.log10(self.acqs.calc_p_safe())
         n_stars = guide_count(self.guides['mag'], self.guides.t_ccd, self.is_ER)
 
@@ -389,7 +364,7 @@ class RollOptimizeMixin:
             n_stars_rolled = guide_count(aca_rolled.guides['mag'], aca_rolled.guides.t_ccd,
                                          count_9th=self.is_ER)
 
-            improvement = improve_metric(n_stars, P2, n_stars_rolled, P2_rolled)
+            improvement = calc_improve_metric(n_stars, P2, n_stars_rolled, P2_rolled)
             print(roll, P2_rolled, n_stars_rolled, improvement)
 
             if improvement > min_improvement:
@@ -407,3 +382,29 @@ class RollOptimizeMixin:
                 roll_options.append(roll_option)
 
         self.roll_options = roll_options
+
+
+def calc_improve_metric(n_stars, P2, n_stars_new, P2_new):
+    """Ad-hoc metric defining improvement of a catalog.
+
+    :param n_stars: original n_stars
+    :param P2: original P2
+    :param n_stars_new: new n_stars
+    :param P2_new: new P2
+    :returns: metric
+    """
+    n_stars_mult_x = np.array([2.0, 3.0, 4.0, 5.0])
+    n_stars_mult_y = np.array([1.2, 0.6, 0.3, 0.15])
+
+    P2_mult_x = np.array([1.0, 2.0, 3.0])
+    P2_mult_y = np.array([2.0, 1.0, 0.5])
+
+    n_stars_mult = np.interp(x=n_stars, xp=n_stars_mult_x, fp=n_stars_mult_y)
+    P2_mult = np.interp(x=P2, xp=P2_mult_x, fp=P2_mult_y)
+    dn = n_stars_new - n_stars
+    dP2 = P2_new - P2
+    n_stars_sign_mult = 2 if dn < 0 else 1
+    P2_sign_mult = 2 if dP2 < 0 else 1
+    out = (dn * n_stars_sign_mult * n_stars_mult
+           + dP2 * P2_sign_mult * P2_mult)
+    return out
