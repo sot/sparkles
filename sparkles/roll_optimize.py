@@ -342,7 +342,7 @@ class RollOptimizeMixin:
             print(roll_interval)
             roll = roll_interval['roll']
             att_targ_rolled = Quat([att_targ.ra, att_targ.dec, roll])
-            att_rolled = self._calc_aca_from_targ(att_targ_rolled, 0, 0)
+            att_rolled = self._calc_aca_from_targ(att_targ_rolled, *self.target_offset)
 
             kwargs = self.call_args.copy()
 
