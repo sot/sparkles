@@ -76,8 +76,6 @@ def test_review_catalog(tmpdir):
     assert len(acar.roll_options) > 1
     assert acar.roll_options[0]['acar'].messages == acar.messages
     assert len(acar.roll_options[1]['acar'].messages) > 0
-    for roll_option in acar.roll_options[1:]:
-        print(roll_option['acar'].messages)
 
     # Check doing a full review for this obsid
     acar = aca.get_review_table()

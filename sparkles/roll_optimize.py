@@ -222,7 +222,6 @@ class RollOptimizeMixin:
                      'roll_max': roll_max,
                      'roll_nom': roll_nom}
 
-        print(roll_intervals)
         return sorted(roll_intervals, key=lambda x: x['roll']), roll_info
 
     @staticmethod
@@ -339,7 +338,8 @@ class RollOptimizeMixin:
                          'drop_ids': set()}]
 
         for roll_interval in roll_intervals:
-            print(roll_interval)
+            if self.loud:
+                print(roll_interval)
             roll = roll_interval['roll']
             att_targ_rolled = Quat([att_targ.ra, att_targ.dec, roll])
             att_rolled = self._calc_aca_from_targ(att_targ_rolled, *self.target_offset)
@@ -363,7 +363,8 @@ class RollOptimizeMixin:
                                          count_9th=self.is_ER)
 
             improvement = calc_improve_metric(n_stars, P2, n_stars_rolled, P2_rolled)
-            print(roll, P2_rolled, n_stars_rolled, improvement)
+            if self.loud:
+                print(roll, P2_rolled, n_stars_rolled, improvement)
 
             if improvement > min_improvement:
                 acar = self.__class__(aca_rolled, obsid=self.obsid,
