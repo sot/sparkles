@@ -409,11 +409,31 @@ def test_get_roll_intervals():
                     assert interv[key] == exp_interv[key]
 
     # For the OR we expect this
-    or_exp_intervs = [{'add_ids': set(),
+    or_exp_intervs = [{'add_ids': {84943288},
+                       'drop_ids': {84937736},
+                       'roll': 281.53501733258395,
+                       'roll_max': 281.57597660655892,
+                       'roll_min': 281.53501733258395},
+                      {'add_ids': set(),
                        'drop_ids': set(),
-                       'roll': 284.42476093331379,
+                       'roll': 289.07597660655892,
                        'roll_max': 291.53501733258395,
-                       'roll_min': 281.53501733258395}]
+                       'roll_min': 283.82597660655892},
+                      {'add_ids': {84941648},
+                       'drop_ids': set(),
+                       'roll': 289.07597660655892,
+                       'roll_max': 290.32597660655892,
+                       'roll_min': 287.82597660655892},
+                      {'add_ids': {85328120, 84941648},
+                       'drop_ids': set(),
+                       'roll': 289.82597660655892,
+                       'roll_max': 290.32597660655892,
+                       'roll_min': 289.32597660655892},
+                      {'add_ids': {85328120},
+                       'drop_ids': set(),
+                       'roll': 291.53501733258395,
+                       'roll_max': 291.53501733258395,
+                       'roll_min': 289.32597660655892}]
     compare_intervs(or_roll_intervs, or_exp_intervs)
 
     # For the ER we expect these
