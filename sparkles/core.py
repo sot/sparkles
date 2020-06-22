@@ -213,7 +213,8 @@ def _run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=No
         if roll_level == 'all' or aca.messages >= roll_level:
             # Get roll selection algorithms to try
             max_roll_options = roll_args.pop('max_roll_options', 20)
-            methods = roll_args.pop('method', ('uniq_ids', 'uniform'))
+            methods = roll_args.pop(
+                'method', ('uniq_ids', 'uniform') if aca.is_OR else 'uniq_ids')
             if isinstance(methods, str):
                 methods = [methods]
 
