@@ -672,6 +672,7 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
         roll_context['roll_options_index'] = rolls_index.as_posix()
         for key in ('roll_min', 'roll_max', 'roll_nom'):
             roll_context[key] = f'{self.roll_info[key]:.2f}'
+        roll_context['roll_method'] = self.roll_info['method']
         self.context.update(roll_context)
 
         # Make a separate preview page for the roll options
