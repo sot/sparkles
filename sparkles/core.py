@@ -127,6 +127,13 @@ def run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=Non
       roll option, while 'uniform' is a brute-force search of the entire roll
       range at ``d_roll`` increments. If not provided, the default is to try
       *both* methods in order, stopping when an acceptable option is found.
+    - ``max_roll_options``: maximum number of roll options to return (default=10)
+
+    If roll options are returned then they are sorted by the following keys:
+
+    - Number of warnings at ``roll_level`` or worse (e.g. number of criticals)
+      in ascending order (fewer is better)
+    - Improvement in descending order (larger improvement is better)
 
     :param load_name: name of loads
     :param acars: list of ACAReviewTable objects (optional)
@@ -224,7 +231,7 @@ def _run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=No
                            for roll_option in aca.roll_options):
                         break
 
-                        aca.sort_and_limit_roll_options(roll_level, max_roll_options)
+                aca.sort_and_limit_roll_options(roll_level, max_roll_options)
 
             except Exception:  # as err:
                 err = traceback.format_exc()
