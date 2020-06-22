@@ -222,8 +222,9 @@ def _run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=No
                     # stop looking for roll options.
                     if any(not roll_option['acar'].messages >= roll_level
                            for roll_option in aca.roll_options):
-                        aca.sort_and_limit_roll_options(roll_level, max_roll_options)
                         break
+
+                        aca.sort_and_limit_roll_options(roll_level, max_roll_options)
 
             except Exception:  # as err:
                 err = traceback.format_exc()
