@@ -123,7 +123,7 @@ class RollOptimizeMixin:
         q_out = calc_aca_from_targ(q_att, y_off, z_off) if self.is_OR else q_att
         return q_out
 
-    def get_roll_intervals(self, cand_idxs, d_roll=0.25, roll_dev=None,
+    def get_roll_intervals(self, cand_idxs, d_roll=None, roll_dev=None,
                            method='uniq_ids', max_roll_dev=None):
         """Find a list of rolls that might substantially improve guide or acq catalogs.
         If ``roll_nom`` is not specified then an approximate value is computed
@@ -138,13 +138,17 @@ class RollOptimizeMixin:
         :param cand_idxs: index values for candidate better stars
         :param y_off: Y offset (deg, sign per OR-list convention)
         :param z_off: Z offset (deg, sign per OR-list convention)
-        :param d_roll: step size for examining roll range (deg, default=0.25)
+        :param d_roll: step size for examining roll range (deg, default=0.25 for
+                       uniq_ids and 0.5 for uniform)
 
         :returns: list of candidate rolls
 
         """
         if method not in ('uniq_ids', 'uniform'):
             raise ValueError('method arg must be "uniq_ids" or "uniform"')
+
+        if d_roll is None:
+            d_roll = {'uniq_ids': 0.25, 'uniform': 0.5}[method]
 
         cols = ['id', 'ra', 'dec']
         acqs = Table(self.acqs[cols])
@@ -291,7 +295,7 @@ class RollOptimizeMixin:
                 roll_intervals.append(roll_interval)
         return roll_intervals
 
-    def get_roll_options(self, min_improvement=0.3, d_roll=0.25, method='uniq_ids',
+    def get_roll_options(self, min_improvement=0.3, d_roll=None, method='uniq_ids',
                          max_roll_dev=None):
         """
         Get roll options for this catalog.
@@ -300,7 +304,8 @@ class RollOptimizeMixin:
         ``roll_info`` with a dict of info about roll.
 
         :param min_improvement: minimum value of improvement metric to accept option
-        :param d_roll: delta roll for sampling available roll range (deg)
+        :param d_roll: delta roll for sampling available roll range (deg, default=0.25 for uniq_ids
+                       and 0.5 for uniform method)
         :param method: method for determining roll intervals ('uniq_ids' | 'uniform')
         :param max_roll_dev: maximum roll deviation from nominal (default=max allowed by fish plot)
 

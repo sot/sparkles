@@ -120,7 +120,8 @@ def run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=Non
 
     - ``min_improvement``: min value of improvement metric to accept option
       (default=0.3)
-    - ``d_roll``: delta roll for sampling available roll range (deg, default=0.25)
+    - ``d_roll``: delta roll for sampling available roll range (deg, default=0.25
+        for uniq_ids method and 0.5 for uniform method)
     - ``max_roll_dev``: maximum roll deviation (deg, default=max allowed by pitch)
     - ``method``: method for determining roll intervals ('uniq_ids' | 'uniform').
       The 'uniq_ids' method is a faster method that frequently finds an acceptable
@@ -515,7 +516,8 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
 
         - ``min_improvement``: min value of improvement metric to accept option
           (default=0.3)
-        - ``d_roll``: delta roll for sampling available roll range (deg, default=0.25)
+        - ``d_roll``: delta roll for sampling available roll range (deg, default=0.25
+            for uniq_ids method and 0.5 for uniform method)
         - ``max_roll_dev``: maximum roll deviation (deg, default=max allowed by pitch)
         - ``method``: method for determining roll intervals ('uniq_ids' | 'uniform').
           The 'uniq_ids' method is a faster method that frequently finds an acceptable
