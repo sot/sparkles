@@ -871,6 +871,11 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
         guide_idxs = np.flatnonzero(ok)
         n_guide = len(guide_idxs)
 
+        if n_guide < 2:
+            msg = f'Cannot check geometry with fewer than 2 guide stars'
+            self.add_message('critical', msg)
+            return
+
         def dist2(g1, g2):
             out = (g1['yang'] - g2['yang']) ** 2 + (g1['zang'] - g2['zang']) ** 2
             return out
