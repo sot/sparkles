@@ -255,7 +255,7 @@ def test_roll_options_dec89_9():
     the roll will differ by around 10 deg.
     """
     dec = 89.9
-    date = '2019:006'
+    date = '2019:006:12:00:00'
     roll = Ska.Sun.nominal_roll(0, dec, time=date)
     att = Quat([0, dec, roll])
 
