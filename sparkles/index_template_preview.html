@@ -69,7 +69,7 @@ span.monospace {
     <script>
 
       function hideShow(num) {
-        var x = document.getElementById("callargs" + num);
+        var x = document.getElementById("callargs" + num.toFixed(2));
         if (x.classList.contains('hidden')) {
           x.classList.replace('hidden', 'shown');
         } else {
@@ -106,7 +106,7 @@ chandra_aca version: {{chandra_aca_version}}
   <tr>
     <td>
       <button onclick="hideShow({{aca.report_id}})">Show/hide call args</button>
-      <div id="callargs{{aca.report_id}}" class="callargs hidden">{{aca.context['call_args']}}
+      <div id="callargs{{'%1.2f' % aca.report_id}}" class="callargs hidden">{{aca.context['call_args']}}
       </div>
     </td>
   </tr>
