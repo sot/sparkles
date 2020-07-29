@@ -91,7 +91,9 @@ chandra_aca version: {{chandra_aca_version}}
 {% if roll_options_table %}
 <h3>Roll options (roll_min={{roll_min}}
         roll_nom={{roll_nom}}
-        roll_max={{roll_max}}</h3>
+        roll_max={{roll_max}}
+        method={{roll_method}}
+      </h3>)
         {{roll_options_table | safe}}
 {% endif %}
 
@@ -118,7 +120,8 @@ chandra_aca version: {{chandra_aca_version}}
         <h3><a href="{{aca.context['roll_options_index']}}">Roll options
         report</a> (roll_min={{aca.context['roll_min']}}
         roll_nom={{aca.context['roll_nom']}}
-        roll_max={{aca.context['roll_max']}})</h3>
+        roll_max={{aca.context['roll_max']}}
+        method={{aca.context['roll_method']}})</h3>
         {{aca.context['roll_options_table'] | safe}}
         <span>
       {% endif %}

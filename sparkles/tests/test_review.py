@@ -72,7 +72,7 @@ def test_review_catalog(tmpdir):
 
     # Run the review but without making the HTML and ensure review messages
     # are available on roll options.
-    acar.run_aca_review(roll_level='critical')
+    acar.run_aca_review(roll_level='critical', roll_args={'method': 'uniq_ids'})
     assert len(acar.roll_options) > 1
     assert acar.roll_options[0]['acar'].messages == acar.messages
     assert len(acar.roll_options[1]['acar'].messages) > 0
@@ -80,7 +80,7 @@ def test_review_catalog(tmpdir):
     # Check doing a full review for this obsid
     acar = aca.get_review_table()
     acar.run_aca_review(make_html=True, report_dir=tmpdir, report_level='critical',
-                        roll_level='critical')
+                        roll_level='critical', roll_args={'method': 'uniq_ids'})
 
     path = Path(str(tmpdir))
     assert (path / 'index.html').exists()
@@ -119,7 +119,7 @@ def test_review_roll_options():
     acar = aca.get_review_table()
     acar.run_aca_review(roll_level='critical')
 
-    assert len(acar.roll_options) == 2
+    assert len(acar.roll_options) == 3
 
     # First roll_option is at the same attitude (and roll) as original.  The check
     # code is run again independently but the outcome should be the same.
@@ -173,9 +173,48 @@ def test_roll_options_with_include_ids():
 
     aca = get_aca_catalog(**kwargs)
     acar = aca.get_review_table()
-    acar.run_aca_review(roll_level='all')
+    acar.run_aca_review(roll_level='all', roll_args={'method': 'uniq_ids'})
     # As of the 2020-02 acq model update there is just one roll option
     # assert len(acar.roll_options) > 1
+
+
+def test_uniform_roll_options():
+    """Use obsid 22508 as a test case for failing to find a roll option using
+    the 'uniq_ids' algorithm and falling through to a 'uniform' search.
+
+    See https://github.com/sot/sparkles/issues/138 for context.
+    """
+    kwargs = {'att': [-0.25019352, -0.90540872, -0.21768747, 0.26504794],
+              'date': '2020:045:18:19:50.234',
+              'detector': 'ACIS-S',
+              'dither': 8.0,
+              'focus_offset': 0,
+              'man_angle': 1.56,
+              'obsid': 22508,
+              'sim_offset': 0,
+              't_ccd_acq': -9.8,
+              't_ccd_guide': -9.8}
+
+    aca = get_aca_catalog(**kwargs)
+    acar = aca.get_review_table()
+    acar.run_aca_review(roll_level='critical', roll_args={'max_roll_dev': 2.5,
+                                                          'd_roll': 0.25})
+
+    # Fell through to uniform roll search
+    assert acar.roll_info['method'] == 'uniform'
+
+    # Found at least one roll option with no critical messages
+    assert any(len(roll_option['acar'].messages >= 'critical') == 0
+               for roll_option in acar.roll_options)
+
+    assert len(acar.roll_options) == 5
+
+    # Now limit the number of roll options
+    acar = aca.get_review_table()
+    acar.run_aca_review(roll_level='critical',
+                        roll_args={'max_roll_dev': 2.5, 'max_roll_options': 3,
+                                   'd_roll': 0.25})
+    assert len(acar.roll_options) == 3
 
 
 def test_catch_exception_from_function():
@@ -265,16 +304,18 @@ def test_roll_options_dec89_9():
     exp[48000] = [' roll   P2  n_stars improvement roll_min roll_max  add_ids   drop_ids',
                   '------ ---- ------- ----------- -------- -------- --------- ---------',
                   '287.25 3.61    0.55        0.00   287.25   287.25        --        --',
+                  '281.00 7.44    6.98        9.64   276.75   285.25 608567744        --',
+                  '287.50 7.25    5.43        7.68   268.50   306.00        --        --',
                   '268.50 6.82    4.98        6.93   268.50   273.25 610927224 606601776',
-                  '270.62 6.82    4.22        6.01   268.50   273.25 610927224        --',
-                  '281.00 7.44    6.98        9.64   276.75   285.25 608567744        --']
+                  '270.62 6.82    4.22        6.01   268.50   273.25 610927224        --']
 
     exp[18000] = [' roll   P2  n_stars improvement roll_min roll_max  add_ids   drop_ids',
                   '------ ---- ------- ----------- -------- -------- --------- ---------',
                   '276.94 3.61    7.54        0.00   276.94   276.94        --        --',
+                  '270.57 7.44    8.00        1.99   266.19   274.94 608567744        --',
+                  '277.07 7.25    8.00        1.89   258.19   295.69        --        --',
                   '258.19 6.82    8.00        1.68   258.19   262.69 610927224 606601776',
-                  '259.69 6.82    8.00        1.68   258.19   262.69 610927224        --',
-                  '270.57 7.44    8.00        1.99   266.19   274.94 608567744        --']
+                  '259.69 6.82    8.00        1.68   258.19   262.69 610927224        --']
 
     for obsid in (48000, 18000):
         kwargs = mod_std_info(att=att, n_guide=8, obsid=obsid, date=date)
@@ -285,7 +326,7 @@ def test_roll_options_dec89_9():
 
         aca = get_aca_catalog(**kwargs)
         acar = aca.get_review_table()
-        acar.run_aca_review(roll_level='all', make_html=False)
+        acar.run_aca_review(roll_level='all', roll_args={'method': 'uniq_ids'}, make_html=False)
         tbl = acar.get_roll_options_table()
         out = tbl.pformat(max_lines=-1, max_width=-1)
         assert out == exp[obsid]
@@ -320,7 +361,10 @@ def test_get_roll_intervals():
 
     # This uses the catalog at KWARGS_48464, but would really be better as a fully
     # synthetic test
-    obs_kwargs = KWARGS_48464
+    obs_kwargs = KWARGS_48464.copy()
+    # Use these values to override the get_roll_intervals ranges to get more interesting
+    # outputs.
+    obs_kwargs['target_offset'] = (20 / 60., 30 / 60)  # deg
     aca_er = get_aca_catalog(**obs_kwargs)
     acar_er = aca_er.get_review_table()
 
@@ -330,19 +374,15 @@ def test_get_roll_intervals():
     aca_or = get_aca_catalog(**kw_or)
     acar_or = aca_or.get_review_table()
 
-    # Use these values to override the get_roll_intervals ranges to get more interesting
-    # outputs.  y_off and z_off are really 0 everywhere for now from ORViewer though.
-    y_off = 20 / 60.
-    z_off = 30 / 60.
     roll_dev = 5
 
     er_roll_intervs, er_info = acar_er.get_roll_intervals(
         acar_er.get_candidate_better_stars(),
-        roll_dev=roll_dev, y_off=y_off, z_off=z_off)
+        roll_dev=roll_dev)
 
     or_roll_intervs, or_info = acar_or.get_roll_intervals(
         acar_or.get_candidate_better_stars(),
-        roll_dev=roll_dev, y_off=y_off, z_off=z_off)
+        roll_dev=roll_dev)
 
     assert acar_er.att.roll <= er_info['roll_max']
     assert acar_er.att.roll >= er_info['roll_min']
@@ -359,6 +399,7 @@ def test_get_roll_intervals():
     # Set a function to do some looping and isclose logic to compare
     # the actual vs expected intervals.
     def compare_intervs(intervs, exp_intervs):
+        assert len(intervs) == len(exp_intervs)
         for interv, exp_interv in zip(intervs, exp_intervs):
             assert interv.keys() == exp_interv.keys()
             for key in interv.keys():
@@ -368,27 +409,47 @@ def test_get_roll_intervals():
                     assert interv[key] == exp_interv[key]
 
     # For the OR we expect this
-    or_exp_intervs = [{'roll': 281.63739755173594,
-                       'roll_min': 281.63739755173594,
-                       'roll_max': 281.67838289905592,
-                       'add_ids': {84943288},
-                       'drop_ids': {84937736}},
-                      {'roll': 291.63739755173594,
-                       'roll_min': 289.42838289905592,
-                       'roll_max': 291.63739755173594,
-                       'add_ids': {85328120},
-                       'drop_ids': set()}]
+    or_exp_intervs = [{'add_ids': {84943288},
+                       'drop_ids': {84937736},
+                       'roll': 281.53501733258395,
+                       'roll_max': 281.57597660655892,
+                       'roll_min': 281.53501733258395},
+                      {'add_ids': set(),
+                       'drop_ids': set(),
+                       'roll': 289.07597660655892,
+                       'roll_max': 291.53501733258395,
+                       'roll_min': 283.82597660655892},
+                      {'add_ids': {84941648},
+                       'drop_ids': set(),
+                       'roll': 289.07597660655892,
+                       'roll_max': 290.32597660655892,
+                       'roll_min': 287.82597660655892},
+                      {'add_ids': {85328120, 84941648},
+                       'drop_ids': set(),
+                       'roll': 289.82597660655892,
+                       'roll_max': 290.32597660655892,
+                       'roll_min': 289.32597660655892},
+                      {'add_ids': {85328120},
+                       'drop_ids': set(),
+                       'roll': 291.53501733258395,
+                       'roll_max': 291.53501733258395,
+                       'roll_min': 289.32597660655892}]
     compare_intervs(or_roll_intervs, or_exp_intervs)
 
     # For the ER we expect these
-    er_exp_intervs = [{'roll': 291.63739755173594,
-                       'roll_min': 289.67838289905592,
+    er_exp_intervs = [{'add_ids': set(),
+                       'drop_ids': set(),
+                       'roll': 290.80338289905592,
                        'roll_max': 291.63739755173594,
-                       'add_ids': {84943288},
-                       'drop_ids': set()},
-                      {'roll': 291.63739755173594,
-                       'roll_min': 290.92838289905592,
+                       'roll_min': 285.17838289905592},
+                      {'add_ids': {84943288},
+                       'drop_ids': set(),
+                       'roll': 291.63739755173594,
                        'roll_max': 291.63739755173594,
-                       'add_ids': {85328120, 84943288},
-                       'drop_ids': set()}]
+                       'roll_min': 289.67838289905592},
+                      {'add_ids': {85328120, 84943288},
+                       'drop_ids': set(),
+                       'roll': 291.63739755173594,
+                       'roll_max': 291.63739755173594,
+                       'roll_min': 290.92838289905592}]
     compare_intervs(er_roll_intervs, er_exp_intervs)
