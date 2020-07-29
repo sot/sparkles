@@ -197,7 +197,8 @@ def test_uniform_roll_options():
 
     aca = get_aca_catalog(**kwargs)
     acar = aca.get_review_table()
-    acar.run_aca_review(roll_level='critical', roll_args={'max_roll_dev': 2.5})
+    acar.run_aca_review(roll_level='critical', roll_args={'max_roll_dev': 2.5,
+                                                          'd_roll': 0.25})
 
     # Fell through to uniform roll search
     assert acar.roll_info['method'] == 'uniform'
@@ -211,7 +212,8 @@ def test_uniform_roll_options():
     # Now limit the number of roll options
     acar = aca.get_review_table()
     acar.run_aca_review(roll_level='critical',
-                        roll_args={'max_roll_dev': 2.5, 'max_roll_options': 3})
+                        roll_args={'max_roll_dev': 2.5, 'max_roll_options': 3,
+                                   'd_roll': 0.25})
     assert len(acar.roll_options) == 3
 
 
@@ -302,18 +304,18 @@ def test_roll_options_dec89_9():
     exp[48000] = [' roll   P2  n_stars improvement roll_min roll_max  add_ids   drop_ids',
                   '------ ---- ------- ----------- -------- -------- --------- ---------',
                   '287.25 3.61    0.55        0.00   287.25   287.25        --        --',
-                  '268.50 6.82    4.98        6.93   268.50   273.25 610927224 606601776',
-                  '270.62 6.82    4.22        6.01   268.50   273.25 610927224        --',
                   '281.00 7.44    6.98        9.64   276.75   285.25 608567744        --',
-                  '287.50 7.25    5.43        7.68   268.50   306.00        --        --']
+                  '287.50 7.25    5.43        7.68   268.50   306.00        --        --',
+                  '268.50 6.82    4.98        6.93   268.50   273.25 610927224 606601776',
+                  '270.62 6.82    4.22        6.01   268.50   273.25 610927224        --']
 
     exp[18000] = [' roll   P2  n_stars improvement roll_min roll_max  add_ids   drop_ids',
                   '------ ---- ------- ----------- -------- -------- --------- ---------',
                   '276.94 3.61    7.54        0.00   276.94   276.94        --        --',
-                  '258.19 6.82    8.00        1.68   258.19   262.69 610927224 606601776',
-                  '259.69 6.82    8.00        1.68   258.19   262.69 610927224        --',
                   '270.57 7.44    8.00        1.99   266.19   274.94 608567744        --',
-                  '277.07 7.25    8.00        1.89   258.19   295.69        --        --']
+                  '277.07 7.25    8.00        1.89   258.19   295.69        --        --',
+                  '258.19 6.82    8.00        1.68   258.19   262.69 610927224 606601776',
+                  '259.69 6.82    8.00        1.68   258.19   262.69 610927224        --']
 
     for obsid in (48000, 18000):
         kwargs = mod_std_info(att=att, n_guide=8, obsid=obsid, date=date)
