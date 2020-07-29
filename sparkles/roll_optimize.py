@@ -313,7 +313,7 @@ class RollOptimizeMixin:
         """
 
         if self.loud:
-            print('  Exploring roll options')
+            print(f' Exploring roll options {method=}')
 
         if self.roll_options is not None:
             warnings.warn('roll_options already available, not re-computing')
@@ -344,7 +344,8 @@ class RollOptimizeMixin:
 
         for roll_interval in roll_intervals:
             if self.loud:
-                print(roll_interval)
+                print(('  roll={roll:.2f} roll_min={roll_min:.2f} roll_max={roll_max:.2f} '
+                       'add_ids={add_ids} drop_ids={drop_ids}').format(**roll_interval))
             roll = roll_interval['roll']
             att_targ_rolled = Quat([att_targ.ra, att_targ.dec, roll])
             att_rolled = self._calc_aca_from_targ(att_targ_rolled, *self.target_offset)
@@ -369,7 +370,7 @@ class RollOptimizeMixin:
 
             improvement = calc_improve_metric(n_stars, P2, n_stars_rolled, P2_rolled)
             if self.loud:
-                print(roll, P2_rolled, n_stars_rolled, improvement)
+                print(f'   {P2_rolled=:.2f} {n_stars_rolled=:.2f} {improvement=:.2f}')
 
             if improvement > min_improvement:
                 acar = self.__class__(aca_rolled, obsid=self.obsid,
