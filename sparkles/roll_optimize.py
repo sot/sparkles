@@ -85,8 +85,8 @@ class RollOptimizeMixin:
         # region (mentioned above) between an inner square and outer circle.
         rc_pad = 40
         stars = self.stars
-        in_fov = ((np.abs(stars['row']) < CCD['row_max'] - rc_pad) &
-                  (np.abs(stars['col']) < CCD['col_max'] - rc_pad))
+        in_fov = ((np.abs(stars['row']) < CCD['row_max'] - rc_pad)
+                  & (np.abs(stars['col']) < CCD['col_max'] - rc_pad))
         radius2 = stars['row'] ** 2 + stars['col'] ** 2
         sp_ok = ~in_fov & (radius2 < 2 * (512 + rc_pad) ** 2)
 

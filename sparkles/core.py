@@ -706,8 +706,8 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
         idxs = self.get_candidate_better_stars()
         stars = self.stars[idxs]
         for star in stars:
-            already_checked = ((star['id'] in self.acqs.cand_acqs['id']) and
-                               (star['id'] in self.guides.cand_guides['id']))
+            already_checked = ((star['id'] in self.acqs.cand_acqs['id'])
+                               and (star['id'] in self.guides.cand_guides['id']))
             selected = (star['id'] in set(self.acqs['id']) | set(self.guides['id']))
             if (not already_checked and not selected):
                 circle = Circle((star['row'], star['col']), radius=20,
