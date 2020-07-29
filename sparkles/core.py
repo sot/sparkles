@@ -128,7 +128,7 @@ def run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=Non
       roll option, while 'uniform' is a brute-force search of the entire roll
       range at ``d_roll`` increments. If not provided, the default is to try
       *both* methods in order, stopping when an acceptable option is found.
-    - ``max_roll_options``: maximum number of roll options to return (default=20)
+    - ``max_roll_options``: maximum number of roll options to return (default=10)
 
     If roll options are returned then they are sorted by the following keys:
 
@@ -212,7 +212,7 @@ def _run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=No
         # Find roll options if requested
         if roll_level == 'all' or aca.messages >= roll_level:
             # Get roll selection algorithms to try
-            max_roll_options = roll_args.pop('max_roll_options', 20)
+            max_roll_options = roll_args.pop('max_roll_options', 10)
             methods = roll_args.pop(
                 'method', ('uniq_ids', 'uniform') if aca.is_OR else 'uniq_ids')
             if isinstance(methods, str):
