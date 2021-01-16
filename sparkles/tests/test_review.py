@@ -6,6 +6,7 @@ import pytest
 from proseco import get_aca_catalog
 from proseco.characteristics import aca_t_ccd_penalty_limit
 
+import agasc
 from Quaternion import Quat
 import Ska.Sun
 from proseco.tests.test_common import mod_std_info
@@ -50,7 +51,8 @@ def test_t_ccd_effective_message():
 
 
 def test_review_catalog(tmpdir):
-    aca = get_aca_catalog(**KWARGS_48464)
+    with agasc.disable_supplement():
+        aca = get_aca_catalog(**KWARGS_48464)
     acar = aca.get_review_table()
     acar.run_aca_review()
     assert acar.messages == [
@@ -90,6 +92,7 @@ def test_review_catalog(tmpdir):
     assert (obspath / 'rolls' / 'index.html').exists()
 
 
+@agasc.disable_supplement()
 def test_review_roll_options():
     """
     Test that the 'acar' key in the roll_option dict is an ACAReviewTable
@@ -152,6 +155,7 @@ def test_probs_weak_reference():
     assert aca.acqs is not acar.acqs
 
 
+@agasc.disable_supplement()
 def test_roll_options_with_include_ids():
     """
     Test case from James that was breaking code due to a roll option that puts
@@ -178,6 +182,7 @@ def test_roll_options_with_include_ids():
     # assert len(acar.roll_options) > 1
 
 
+@agasc.disable_supplement()
 def test_uniform_roll_options():
     """Use obsid 22508 as a test case for failing to find a roll option using
     the 'uniq_ids' algorithm and falling through to a 'uniform' search.
@@ -236,7 +241,8 @@ def test_catch_exception_from_method():
 
 
 def test_run_aca_review_function(tmpdir):
-    aca = get_aca_catalog(**KWARGS_48464)
+    with agasc.disable_supplement():
+        aca = get_aca_catalog(**KWARGS_48464)
     acar = aca.get_review_table()
     acars = [acar]
 
@@ -258,6 +264,7 @@ def test_run_aca_review_function(tmpdir):
     assert 'TEST_LOAD sparkles review' in (path / 'index.html').read_text()
 
 
+@agasc.disable_supplement()
 def test_roll_outside_range():
     """
     Run a test on obsid 48334 from ~MAR1119 that is at a pitch that has 0 roll_dev
@@ -288,6 +295,7 @@ def test_roll_outside_range():
     assert Quat(kw['att']).roll >= acar.roll_info['roll_min']
 
 
+@agasc.disable_supplement()
 def test_roll_options_dec89_9():
     """Test getting roll options for an OR and ER at very high declination
     where the difference between the ACA and target frames is large.  Here
@@ -332,6 +340,7 @@ def test_roll_options_dec89_9():
         assert out == exp[obsid]
 
 
+@agasc.disable_supplement()
 def test_calc_targ_from_aca():
     """
     Confirm _calc_targ_from_aca seems to do the right thing based on obsid
@@ -353,6 +362,7 @@ def test_calc_targ_from_aca():
     assert np.isclose(acar.att.dq(q_targ).yaw * 3600, 69.59, atol=0.01, rtol=0)
 
 
+@agasc.disable_supplement()
 def test_get_roll_intervals():
     """
     Test that the behavior of get_roll_intervals is different for ORs and ERs with
