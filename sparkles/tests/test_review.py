@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import pickle
 from pathlib import Path
@@ -6,11 +7,15 @@ import pytest
 from proseco import get_aca_catalog
 from proseco.characteristics import aca_t_ccd_penalty_limit
 
+import agasc
 from Quaternion import Quat
 import Ska.Sun
 from proseco.tests.test_common import mod_std_info
 
 from .. import ACAReviewTable, run_aca_review
+
+# Do not use the AGASC supplement in testing by default since mags can change
+os.environ[agasc.SUPPLEMENT_ENABLED_ENV] = 'False'
 
 KWARGS_48464 = {'att': [-0.51759295, -0.30129397, 0.27093045, 0.75360213],
                 'date': '2019:031:13:25:30.000',
