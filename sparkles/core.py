@@ -94,7 +94,7 @@ def run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=Non
     - <load_name>.pkl
 
     Instead of reading from a pickle, one can directly provide the catalogs as
-    ``acas``.  In this case the ``load_name`` will only be used in the report
+    ``acars``.  In this case the ``load_name`` will only be used in the report
     HTML.
 
     When reading from a pickle, the ``obsids`` argument can be used to limit
