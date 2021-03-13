@@ -434,6 +434,12 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
         # Make a copy of input aca table along with a deepcopy of its meta.
         super().__init__(*args, **kwargs)
 
+        # If no data were provided then skip all the rest of the initialization.
+        # This happens during slicing. The result is not actually
+        # a functional ACAReviewTable, but it allows inspection of data.
+        if len(self.colnames) == 0:
+            return
+
         self.is_roll_option = is_roll_option
 
         # Add row and col columns from yag/zag, if not already there.
