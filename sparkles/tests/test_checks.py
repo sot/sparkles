@@ -12,6 +12,19 @@ from proseco.tests.test_common import DARK40, STD_INFO, mod_std_info
 from .. import ACAReviewTable
 
 
+def test_check_slice_index():
+    """Test slice and index"""
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=8, mag=10.25)
+    aca = get_aca_catalog(**STD_INFO, stars=stars, dark=DARK40)
+    acar = aca.get_review_table()
+    for item in (1, slice(5, 10)):
+        acar1 = acar[item]
+        assert acar1.colnames == acar.colnames
+        for name in acar1.colnames:
+            assert np.all(acar1[name] == acar[name][item])
+
+
 def test_check_P2():
     """Test the check of acq P2"""
     stars = StarsTable.empty()
