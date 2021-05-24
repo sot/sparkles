@@ -2,6 +2,7 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import numpy as np
 import agasc
+import pytest
 
 from chandra_aca.transform import mag_to_count_rate
 from proseco import get_aca_catalog
@@ -309,7 +310,8 @@ def test_guide_edge_check():
          'text': 'included guide ID(s): [101 102 103 104 105 106]'}]
 
 
-def test_imposters_on_guide():
+@pytest.mark.parametrize('exp_warn', [False, True])
+def test_imposters_on_guide(exp_warn):
     """Test the check for imposters by adding one imposter to a fake star"""
     stars = StarsTable.empty()
     # Add two stars because separate P2 tests seem to break with just one star
@@ -318,16 +320,23 @@ def test_imposters_on_guide():
     cnt = mag_to_count_rate(mag)
     stars.add_fake_star(id=110, row=100, col=-200, mag=mag)
     dark_with_badpix = DARK40.copy()
-    dark_with_badpix[100 + 512, -200 + 512] = cnt * 0.1
-    dark_with_badpix[100 + 512, -201 + 512] = cnt * 0.1
+    # Add an imposter that is just over the limit (2.62) for exp_warn=True, else
+    # add imposter that is exactly at the limit (2.52) which rounds to 2.5 => no
+    # warning.
+    scale = 0.105 if exp_warn else 0.1
+    dark_with_badpix[100 + 512, -200 + 512] = cnt * scale
+    dark_with_badpix[100 + 512, -201 + 512] = cnt * scale
     aca = get_aca_catalog(**mod_std_info(n_fid=0, n_guide=8), stars=stars, dark=dark_with_badpix,
                           raise_exc=True)
     aca = ACAReviewTable(aca)
     aca.check_imposters_guide(aca.guides.get_id(110))
-    assert len(aca.messages) == 1
-    msg = aca.messages[0]
-    assert msg['category'] == 'warning'
-    assert 'Guide star imposter offset' in msg['text']
+    if exp_warn:
+        assert len(aca.messages) == 1
+        msg = aca.messages[0]
+        assert msg['category'] == 'warning'
+        assert msg['text'] == 'Guide star imposter offset 2.6, limit 2.5 arcsec'
+    else:
+        assert len(aca.messages) == 0
 
 
 def test_bad_star_set():

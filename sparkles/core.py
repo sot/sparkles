@@ -939,6 +939,7 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
 
         for axis in ('row', 'col'):
             track_delta = abs(track_lims[axis]) - abs(entry[axis])
+            track_delta = np.round(track_delta, decimals=1)  # Official check is to 1 decimal
             for delta_lim, category in ((3.0, 'critical'),
                                         (5.0, 'info')):
                 if track_delta < delta_lim:
@@ -981,6 +982,7 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
 
         """
         P2 = -np.log10(self.acqs.calc_p_safe())
+        P2 = np.round(P2, decimals=2)  # Official check is to 2 decimals
         obs_type = 'OR' if self.is_OR else 'ER'
         P2_lim = 2.0 if self.is_OR else 3.0
         if P2 < P2_lim:
@@ -1015,16 +1017,17 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
 
         """
         obs_type = 'ER' if self.is_ER else 'OR'
-        if self.is_ER and self.guide_count_9th < 3.0:
+        count_9th_lim = 3.0
+        if self.is_ER and np.round(self.guide_count_9th, decimals=2) < count_9th_lim:
             # Determine the threshold 9th mag equivalent value at the effective guide t_ccd
             mag9 = snr_mag_for_t_ccd(self.guides.t_ccd, 9.0, -10.9)
             self.add_message(
                 'critical',
                 f'{obs_type} count of 9th ({mag9:.1f} for {self.guides.t_ccd:.1f}C) '
-                f'mag guide stars {self.guide_count_9th:.2f} < 3.0')
+                f'mag guide stars {self.guide_count_9th:.2f} < {count_9th_lim}')
 
         count_lim = 4.0 if self.is_OR else 6.0
-        if self.guide_count < count_lim:
+        if np.round(self.guide_count, decimals=2) < count_lim:
             self.add_message(
                 'critical',
                 f'{obs_type} count of guide stars {self.guide_count:.2f} < {count_lim}')
@@ -1061,7 +1064,7 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
         pos_err = star['POS_ERR'] * 0.001
         for limit, category in ((2.0, 'critical'),
                                 (1.25, 'warning')):
-            if pos_err > limit:
+            if np.round(pos_err, decimals=2) > limit:
                 self.add_message(
                     category,
                     f'Guide star {agasc_id} POS_ERR {pos_err:.2f}, limit {limit} arcsec',
@@ -1090,7 +1093,7 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
         offset = imposter_offset(star['mag'], star['imp_mag'])
         for limit, category in ((4.0, 'critical'),
                                 (2.5, 'warning')):
-            if offset > limit:
+            if np.round(offset, decimals=1) > limit:
                 self.add_message(
                     category,
                     f'Guide star imposter offset {offset:.1f}, limit {limit} arcsec',
