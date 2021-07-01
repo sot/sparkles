@@ -60,7 +60,7 @@ def test_review_catalog(tmpdir):
     acar.run_aca_review()
     assert acar.messages == [
         {'text': 'Guide star imposter offset 2.6, limit 2.5 arcsec', 'category': 'warning',
-         'idx': 2},
+         'idx': 4},
         {'text': 'P2: 3.33 less than 4.0 for ER', 'category': 'warning'},
         {'text': 'ER count of 9th (8.9 for -9.9C) mag guide stars 1.91 < 3.0',
          'category': 'critical'},
@@ -250,7 +250,7 @@ def test_run_aca_review_function(tmpdir):
     assert exc is None
     assert acar.messages == [
         {'text': 'Guide star imposter offset 2.6, limit 2.5 arcsec', 'category': 'warning',
-         'idx': 2},
+         'idx': 4},
         {'text': 'P2: 3.33 less than 4.0 for ER', 'category': 'warning'},
         {'text': 'ER count of 9th (8.9 for -9.9C) mag guide stars 1.91 < 3.0',
          'category': 'critical'},
