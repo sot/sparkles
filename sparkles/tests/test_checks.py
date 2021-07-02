@@ -278,18 +278,18 @@ def test_guide_edge_check():
     col_lim = -(CCD['col_max'] - CCD['col_pad'] - CCD['window_pad'] - dither / 5)
 
     # Set positions just below or above CCD['guide_extra_pad'] in row / col
-    stars.add_fake_star(id=101, mag=8, row=row_lim - 2.9, col=0)
-    stars.add_fake_star(id=102, mag=8, row=row_lim - 3.1, col=0)
-    stars.add_fake_star(id=103, mag=8, row=row_lim - 5.1, col=0)
-    stars.add_fake_star(id=104, mag=8, row=0, col=col_lim + 2.9)
-    stars.add_fake_star(id=105, mag=8, row=0, col=col_lim + 3.1)
-    stars.add_fake_star(id=106, mag=8, row=0, col=col_lim + 5.1)
+    stars.add_fake_star(id=1, mag=8, row=row_lim - 2.9, col=0)
+    stars.add_fake_star(id=2, mag=8, row=row_lim - 3.1, col=0)
+    stars.add_fake_star(id=3, mag=8, row=row_lim - 5.1, col=0)
+    stars.add_fake_star(id=4, mag=8, row=0, col=col_lim + 2.9)
+    stars.add_fake_star(id=5, mag=8, row=0, col=col_lim + 3.1)
+    stars.add_fake_star(id=6, mag=8, row=0, col=col_lim + 5.1)
 
     stars.add_fake_constellation(n_stars=6, mag=8.5)
 
     aca = get_aca_catalog(**mod_std_info(n_fid=0, n_guide=8), obsid=40000,
                           stars=stars, dark=DARK40, raise_exc=True,
-                          include_ids_guide=np.arange(101, 107))
+                          include_ids_guide=np.arange(1, 7))
     acar = ACAReviewTable(aca)
     acar.check_catalog()
 
@@ -307,7 +307,7 @@ def test_guide_edge_check():
          'idx': 8,
          'text': 'Less than 5.0 pix edge margin col lim -502.4 val -499.3 delta 3.1'},
         {'category': 'info',
-         'text': 'included guide ID(s): [101 102 103 104 105 106]'}]
+         'text': 'included guide ID(s): [1 2 3 4 5 6]'}]
 
 
 @pytest.mark.parametrize('exp_warn', [False, True])

@@ -60,7 +60,7 @@ def test_review_catalog(tmpdir):
     acar.run_aca_review()
     assert acar.messages == [
         {'text': 'Guide star imposter offset 2.6, limit 2.5 arcsec', 'category': 'warning',
-         'idx': 2},
+         'idx': 4},
         {'text': 'P2: 3.33 less than 4.0 for ER', 'category': 'warning'},
         {'text': 'ER count of 9th (8.9 for -9.9C) mag guide stars 1.91 < 3.0',
          'category': 'critical'},
@@ -192,6 +192,7 @@ def test_uniform_roll_options():
     kwargs = {'att': [-0.25019352, -0.90540872, -0.21768747, 0.26504794],
               'date': '2020:045:18:19:50.234',
               'detector': 'ACIS-S',
+              'n_fid': 3,
               'dither': 8.0,
               'focus_offset': 0,
               'man_angle': 1.56,
@@ -250,7 +251,7 @@ def test_run_aca_review_function(tmpdir):
     assert exc is None
     assert acar.messages == [
         {'text': 'Guide star imposter offset 2.6, limit 2.5 arcsec', 'category': 'warning',
-         'idx': 2},
+         'idx': 4},
         {'text': 'P2: 3.33 less than 4.0 for ER', 'category': 'warning'},
         {'text': 'ER count of 9th (8.9 for -9.9C) mag guide stars 1.91 < 3.0',
          'category': 'critical'},
@@ -305,11 +306,15 @@ def test_roll_options_dec89_9():
 
     # Expected roll options.  Note same basic outputs for add_ids and drop_ids but
     # difference roll values.
+
+    # NOTE ALSO: the P2 values are impacted by the bad region aroundrow=-318,
+    # col=-298. If handling of that bad region for acq changes then the P2
+    # values may change.
     exp = {}
     exp[48000] = [' roll   P2  n_stars improvement roll_min roll_max  add_ids   drop_ids',
                   '------ ---- ------- ----------- -------- -------- --------- ---------',
                   '287.25 3.61    0.55        0.00   287.25   287.25        --        --',
-                  '281.00 7.44    6.98        9.64   276.75   285.25 608567744        --',
+                  '281.00 7.24    6.98        9.53   276.75   285.25 608567744        --',
                   '287.50 7.25    5.43        7.68   268.50   306.00        --        --',
                   '268.50 6.82    4.98        6.93   268.50   273.25 610927224 606601776',
                   '270.62 6.82    4.22        6.01   268.50   273.25 610927224        --']
@@ -317,13 +322,13 @@ def test_roll_options_dec89_9():
     exp[18000] = [' roll   P2  n_stars improvement roll_min roll_max  add_ids   drop_ids',
                   '------ ---- ------- ----------- -------- -------- --------- ---------',
                   '276.94 3.61    7.54        0.00   276.94   276.94        --        --',
-                  '270.57 7.44    8.00        1.99   266.19   274.94 608567744        --',
                   '277.07 7.25    8.00        1.89   258.19   295.69        --        --',
+                  '270.57 7.16    8.00        1.84   266.19   274.94 608567744        --',
                   '258.19 6.82    8.00        1.68   258.19   262.69 610927224 606601776',
                   '259.69 6.82    8.00        1.68   258.19   262.69 610927224        --']
 
     for obsid in (48000, 18000):
-        kwargs = mod_std_info(att=att, n_guide=8, obsid=obsid, date=date)
+        kwargs = mod_std_info(att=att, n_guide=8, n_fid=0, obsid=obsid, date=date)
         # Exclude a bunch of good stars to make the initial catalog lousy
         exclude_ids = [606470536, 606601760, 606732552, 606732584, 610926712, 611058024]
         kwargs['exclude_ids_acq'] = exclude_ids
