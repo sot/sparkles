@@ -306,6 +306,10 @@ def test_roll_options_dec89_9():
 
     # Expected roll options.  Note same basic outputs for add_ids and drop_ids but
     # difference roll values.
+
+    # NOTE ALSO: the P2 values are impacted by the bad region aroundrow=-318,
+    # col=-298. If handling of that bad region for acq changes then the P2
+    # values may change.
     exp = {}
     exp[48000] = [' roll   P2  n_stars improvement roll_min roll_max  add_ids   drop_ids',
                   '------ ---- ------- ----------- -------- -------- --------- ---------',
