@@ -1048,10 +1048,8 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
 
         # Caution for any "unusual" guide star request
         typical_n_guide = 5 if self.is_OR else 8
-        if self.n_guide != typical_n_guide:
+        if self.n_guide + len(self.mons) != typical_n_guide:
             msg = f'{obs_type} with {n_guide} guides requested but {typical_n_guide} is typical'
-            if self.is_OR and n_guide == 4:
-                msg += f' (likely MON star, check OR list)'
             self.add_message('caution', msg)
 
     def check_pos_err_guide(self, star):
