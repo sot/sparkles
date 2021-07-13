@@ -2,15 +2,16 @@ import os
 import numpy as np
 import pickle
 from pathlib import Path
+from proseco.core import StarsTable
 
 import pytest
 from proseco import get_aca_catalog
-from proseco.characteristics import aca_t_ccd_penalty_limit
+from proseco.characteristics import aca_t_ccd_penalty_limit, MonFunc, MonCoord
 
 import agasc
 from Quaternion import Quat
 import Ska.Sun
-from proseco.tests.test_common import mod_std_info
+from proseco.tests.test_common import DARK40, mod_std_info
 
 from .. import ACAReviewTable, run_aca_review
 
@@ -463,3 +464,23 @@ def test_get_roll_intervals():
                        'roll_max': 291.63739755173594,
                        'roll_min': 290.92838289905592}]
     compare_intervs(er_roll_intervs, er_exp_intervs)
+
+
+def test_review_with_mon_star():
+    """Test that requesting n_guide=5 with a monitor window produces no review
+    messages (all OK), although this does result in aca.n_guide == 4."""
+
+    monitors = [[0, 0, MonCoord.YAGZAG, 7.5, MonFunc.MON_FIXED]]
+
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=8, mag=8.5)
+    aca = get_aca_catalog(**mod_std_info(n_fid=3, n_guide=5, obsid=5000),
+                          monitors=monitors,
+                          stars=stars, dark=DARK40,
+                          raise_exc=True)
+    acar = ACAReviewTable(aca)
+    acar.run_aca_review()
+
+    assert aca.n_guide == 4
+    assert len(aca.mons) == 1
+    assert acar.messages == []

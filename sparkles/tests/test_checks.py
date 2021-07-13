@@ -99,7 +99,7 @@ def test_n_guide_check_atypical_request():
     acar = ACAReviewTable(aca)
     acar.check_guide_count()
     assert acar.messages == [
-        {'text': 'OR with 4 guides requested but 5 is typical (likely MON star, check OR list)',
+        {'text': 'OR with 4 guides requested but 5 is typical',
          'category': 'caution'}]
 
 
