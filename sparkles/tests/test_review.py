@@ -184,6 +184,24 @@ def test_roll_options_with_include_ids():
     # assert len(acar.roll_options) > 1
 
 
+def test_roll_options_with_monitor_star():
+    """
+    Test case from JamesK using monitor star
+    """
+    kwargs = {'att': [0.32916333, -0.50759709,  0.07481427,  0.79271655],
+              'date': '2021:116:16:42:09.065', 'detector': 'ACIS-I',
+              'dither_acq': (7.9992, 7.9992), 'dither_guide': (7.9992, 7.9992),
+              'man_angle': 86.49934496445843, 'n_acq': 8, 'n_fid': 3, 'n_guide': 5,
+              'obsid': 23050.0, 'sim_offset': 0.0, 'focus_offset': 0.0,
+              't_ccd_acq': -9.067548914167258, 't_ccd_guide': -8.616156814261098,
+              't_ccd_penalty_limit': -6.8,
+              'monitors': [[335.516667, 58.675556, 0., 9.63, 0.]]}
+    aca = get_aca_catalog(**kwargs)
+    acar = aca.get_review_table()
+    acar.run_aca_review()
+    acar.get_roll_options()
+
+
 def test_uniform_roll_options():
     """Use obsid 22508 as a test case for failing to find a roll option using
     the 'uniq_ids' algorithm and falling through to a 'uniform' search.
