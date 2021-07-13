@@ -188,7 +188,7 @@ def test_roll_options_with_monitor_star():
     """
     Test case from JamesK using monitor star
     """
-    kwargs = {'att': [0.32916333, -0.50759709,  0.07481427,  0.79271655],
+    kwargs = {'att': [0.32916333, -0.50759709, 0.07481427, 0.79271655],
               'date': '2021:116:16:42:09.065', 'detector': 'ACIS-I',
               'dither_acq': (7.9992, 7.9992), 'dither_guide': (7.9992, 7.9992),
               'man_angle': 86.49934496445843, 'n_acq': 8, 'n_fid': 3, 'n_guide': 5,
