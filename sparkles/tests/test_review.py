@@ -186,7 +186,9 @@ def test_roll_options_with_include_ids():
 
 def test_roll_options_with_monitor_star():
     """
-    Test case from JamesK using monitor star
+    Test that roll optimization succeeds in the case where a monitor star is
+    specified in the catalog. This tests https://github.com/sot/proseco/issues/365
+    which fixes https://github.com/sot/proseco/issues/364.
     """
     kwargs = {'att': [0.32916333, -0.50759709, 0.07481427, 0.79271655],
               'date': '2021:116:16:42:09.065', 'detector': 'ACIS-I',
@@ -195,10 +197,13 @@ def test_roll_options_with_monitor_star():
               'obsid': 23050.0, 'sim_offset': 0.0, 'focus_offset': 0.0,
               't_ccd_acq': -9.067548914167258, 't_ccd_guide': -8.616156814261098,
               't_ccd_penalty_limit': -6.8,
-              'monitors': [[335.516667, 58.675556, 0., 9.63, 0.]]}
+              'monitors': [[335.516667, 58.675556, MonCoord.RADEC, 9.63, MonFunc.AUTO]]}
     aca = get_aca_catalog(**kwargs)
     acar = aca.get_review_table()
     acar.run_aca_review()
+    assert acar.messages == []
+
+    # get_roll_options throws BadMonitorError before proseco PR#365
     acar.get_roll_options()
 
 
