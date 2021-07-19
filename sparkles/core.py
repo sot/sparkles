@@ -1046,9 +1046,13 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
                 'caution',
                 f'{obs_type} with {n_guide} guides but {self.n_guide} were requested')
 
+        # For catalogs from pickles from proseco < 5.0 self.mons becomes initialized to a NoneType
+        # so handle that as 0 monitor windows.
+        n_mons = len(self.mons) if self.mons is not None else 0
+
         # Caution for any "unusual" guide star request
         typical_n_guide = 5 if self.is_OR else 8
-        if self.n_guide + len(self.mons) != typical_n_guide:
+        if self.n_guide + n_mons != typical_n_guide:
             msg = f'{obs_type} with {n_guide} guides requested but {typical_n_guide} is typical'
             self.add_message('caution', msg)
 
