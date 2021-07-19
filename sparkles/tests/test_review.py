@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import gzip
 import pickle
 from pathlib import Path
 from proseco.core import StarsTable
@@ -507,3 +508,19 @@ def test_review_with_mon_star():
     assert aca.n_guide == 4
     assert len(aca.mons) == 1
     assert acar.messages == []
+
+
+def test_review_from_pickle():
+    """
+    Test that run_aca_review works from a gzip pickle file.
+    """
+
+    # This is similar to the loading from core.get_acas_from_pickle
+    # but that method does not allow full path specification.
+    filename = Path(__file__).parent / Path('data') / 'obsid.pkl.gz'
+    with gzip.open(filename, 'rb') as fh:
+        acas_dict = pickle.load(fh)
+    acars = [ACAReviewTable(aca, obsid=obsid)
+             for obsid, aca in acas_dict.items()]
+    acars[0].run_aca_review()
+    assert acars[0].messages == []
