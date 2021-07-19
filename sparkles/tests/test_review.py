@@ -517,7 +517,7 @@ def test_review_from_pickle():
 
     # This is similar to the loading from core.get_acas_from_pickle
     # but that method does not allow full path specification.
-    filename = Path(__file__).parent / Path('data') / 'obsid.pkl.gz'
+    filename = Path(__file__).parent / 'data' / 'proseco_4.12.1_catalog.pkl.gz'
     with gzip.open(filename, 'rb') as fh:
         acas_dict = pickle.load(fh)
     acars = [ACAReviewTable(aca, obsid=obsid)
