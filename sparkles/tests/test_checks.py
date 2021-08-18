@@ -7,7 +7,7 @@ import pytest
 from chandra_aca.transform import mag_to_count_rate
 from proseco import get_aca_catalog
 from proseco.core import StarsTable
-from proseco.characteristics import CCD
+from proseco.characteristics import CCD, MonFunc, MonCoord
 from proseco.tests.test_common import DARK40, STD_INFO, mod_std_info
 
 from .. import ACAReviewTable
@@ -101,6 +101,44 @@ def test_n_guide_check_atypical_request():
     assert acar.messages == [
         {'text': 'OR with 4 guides requested but 5 is typical',
          'category': 'caution'}]
+
+
+def test_n_guide_mon_check_atypical_request():
+    """Test the check that number of guide stars selected is typical
+    in the case where are monitors"""
+
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=8, mag=8.5)
+    monitors = [[50, -50, MonCoord.YAGZAG, 7.5, MonFunc.MON_TRACK]]
+
+    aca = get_aca_catalog(**mod_std_info(n_fid=2, n_guide=6, obsid=5000, monitors=monitors),
+                          stars=stars, dark=DARK40,
+                          raise_exc=True)
+    acar = ACAReviewTable(aca)
+    acar.check_guide_count()
+    assert acar.messages == [
+        {'text': 'OR with 6 guides or mon slots requested but 5 is typical',
+         'category': 'caution'}]
+
+
+def test_n_guide_too_few_guide_or_mon():
+    """Test the check that the number of actual guide and mon stars is what
+    was requested"""
+
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=4, mag=8.5)
+    monitors = [[50, -50, MonCoord.YAGZAG, 7.5, MonFunc.MON_TRACK]]
+
+    aca = get_aca_catalog(**mod_std_info(n_fid=2, n_guide=6, obsid=5000, monitors=monitors),
+                          stars=stars, dark=DARK40,
+                          raise_exc=True)
+    acar = ACAReviewTable(aca)
+    acar.check_guide_count()
+    assert acar.messages == [
+        {'category': 'caution',
+         'text': 'OR with 4 guides and 1 monitor(s) but 6 guides or mon slots were requested'},
+        {'category': 'caution',
+         'text': 'OR with 6 guides or mon slots requested but 5 is typical'}]
 
 
 def test_guide_count_er1():
