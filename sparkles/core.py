@@ -1038,22 +1038,37 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
                 'caution',
                 f'{obs_type} with more than {bright_cnt_lim} stars brighter than 6.1.')
 
+        # Requested slots for guide stars and mon windows
+        n_guide_or_mon_request = self.call_args['n_guide']
+
+        # Actual guide stars
         n_guide = len(self.guides)
 
-        # Different number of guide stars than requested
-        if n_guide != self.n_guide:
-            self.add_message(
-                'caution',
-                f'{obs_type} with {n_guide} guides but {self.n_guide} were requested')
+        # Actual mon windows. For catalogs from pickles from proseco < 5.0
+        # self.mons might be initialized to a NoneType or not be an attribute so
+        # handle that as 0 monitor windows.
+        try:
+            n_mon = len(self.mons)
+        except (TypeError, AttributeError):
+            n_mon = 0
 
-        # For catalogs from pickles from proseco < 5.0 self.mons becomes initialized to a NoneType
-        # so handle that as 0 monitor windows.
-        n_mons = len(self.mons) if self.mons is not None else 0
+        # Different number of guide stars than requested
+        if n_guide + n_mon != n_guide_or_mon_request:
+            if n_mon == 0:
+                # Usual case
+                msg = (f'{obs_type} with {n_guide} guides '
+                       f'but {n_guide_or_mon_request} were requested')
+            else:
+                msg = (f'{obs_type} with {n_guide} guides and {n_mon} monitor(s) '
+                       f'but {n_guide_or_mon_request} guides or mon slots were requested')
+            self.add_message('caution', msg)
 
         # Caution for any "unusual" guide star request
         typical_n_guide = 5 if self.is_OR else 8
-        if self.n_guide + n_mons != typical_n_guide:
-            msg = f'{obs_type} with {n_guide} guides requested but {typical_n_guide} is typical'
+        if n_guide_or_mon_request != typical_n_guide:
+            or_mon_slots = ' or mon slots' if n_mon > 0 else ''
+            msg = (f'{obs_type} with {n_guide_or_mon_request} guides{or_mon_slots} requested '
+                   f'but {typical_n_guide} is typical')
             self.add_message('caution', msg)
 
     def check_pos_err_guide(self, star):
