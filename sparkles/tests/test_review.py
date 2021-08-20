@@ -217,6 +217,7 @@ def test_uniform_roll_options():
     kwargs = {'att': [-0.25019352, -0.90540872, -0.21768747, 0.26504794],
               'date': '2020:045:18:19:50.234',
               'detector': 'ACIS-S',
+              'n_guide': 5,
               'n_fid': 3,
               'dither': 8.0,
               'focus_offset': 0,
