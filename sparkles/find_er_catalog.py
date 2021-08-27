@@ -566,7 +566,7 @@ FIND_ER_CATALOG_FUNCS = {'pitch_bins': find_er_catalog_by_pitch_bins,
                          'input_order': find_er_catalog_by_input_order}
 
 
-def find_er_catalog(acar, atts, alg='pitch_bins', check_star_sets=True):
+def find_er_catalog(acar, atts, alg='input_order', check_star_sets=True):
     """Find an ER catalog for a list of nearby attitude options.
 
     Parameters
@@ -576,7 +576,7 @@ def find_er_catalog(acar, atts, alg='pitch_bins', check_star_sets=True):
     atts : list, Quat
         Attitudes to search for for ER catalog
     alg : str, optional
-        Algorithm to use to find the ER catalog ('pitch_bins' | 'count_all')
+        Algorithm to use to find the ER catalog ('input_order', 'pitch_bins', 'count_all')
     check_star_sets : bool, optional
         Check if star set at an attitude has been seen before and skip (i.e. change
         in attitude does not change the candidate guide/acq stars in the FOV)

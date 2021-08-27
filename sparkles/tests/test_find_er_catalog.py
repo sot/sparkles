@@ -9,11 +9,6 @@ import Ska.Sun
 from sparkles.find_er_catalog import (
     get_candidate_stars, find_er_catalog, filter_candidate_stars_on_ccd,
     get_guide_counts, init_quat_from_attitude)
-from sparkles.att_utils import (
-    get_sun_pitch_yaw, apply_sun_pitch_yaw,
-)
-
-# ## Case example: a poor candidate attitude
 
 
 # Known tough field: PKS 0023-26 pointing
@@ -57,34 +52,6 @@ def test_init_quat_from_attitude():
     q = init_quat_from_attitude([[0, 1, 2], [0, 1, 0, 0]])
     print('From heterogenous list of floats')
     print(q.equatorial)
-
-
-def test_apply_get_sun_pitch_yaw():
-    # Test apply and get sun_pitch_yaw with multiple components
-    att = apply_sun_pitch_yaw([0, 45, 0], pitch=[0, 10, 20], yaw=[0, 5, 10],
-                              sun_ra=0, sun_dec=90)
-    pitch, yaw = get_sun_pitch_yaw(att.ra, att.dec, sun_ra=0, sun_dec=90)
-    print(pitch)
-    print(yaw)
-
-
-def test_apply_sun_pitch_yaw():
-    # Basic test of apply_sun_pitch_yaw
-    att = Quat(equatorial=[0, 45, 0])
-    att2 = apply_sun_pitch_yaw(att, pitch=10, yaw=0, sun_ra=0, sun_dec=0)
-    print('pitch by 10:', att2.ra, att2.dec.round(1))
-
-    att2 = apply_sun_pitch_yaw(att, pitch=0, yaw=10, sun_ra=0, sun_dec=90)
-    print('yaw by 10:', att2.ra, att2.dec.round(1))
-
-
-def test_apply_sun_pitch_yaw_with_grid():
-    # Use np.ogrid to make a grid of RA/Dec values (via dpitches and dyaws)
-    # See also np.mgrid.
-    dpitches, dyaws = np.ogrid[0:-3:2j, -5:5:3j]
-    atts = apply_sun_pitch_yaw(att=[0, 45, 0], pitch=dpitches, yaw=dyaws, sun_ra=0, sun_dec=90)
-    print(f'{atts.shape=}')
-    assert atts.shape == (2, 3)
 
 
 def test_find_er_catalog_minus_2():
