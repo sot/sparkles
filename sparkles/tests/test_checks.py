@@ -395,17 +395,17 @@ def test_bad_star_set():
 
 
 def test_too_bright_guide_magerr():
-    """Test the check for too-bright guide stars within mult*mag_err of 5.8"""
+    """Test the check for too-bright guide stars within mult*mag_err of 5.2"""
     stars = StarsTable.empty()
     # Add two stars because separate P2 tests seem to break with just one star
-    stars.add_fake_star(id=100, yang=100, zang=-200, mag=6.0, mag_err=0.11, MAG_ACA_ERR=10)
+    stars.add_fake_star(id=100, yang=100, zang=-200, mag=5.4, mag_err=0.11, MAG_ACA_ERR=10)
     stars.add_fake_star(id=101, yang=0, zang=500, mag=8.0)
     aca = get_aca_catalog(**mod_std_info(n_fid=0), stars=stars, dark=DARK40, raise_exc=True)
     aca = ACAReviewTable(aca)
     aca.check_too_bright_guide(aca.guides.get_id(100))
     msg = aca.messages[0]
     assert msg['category'] == 'critical'
-    assert '2*mag_err of 5.8' in msg['text']
+    assert '2*mag_err of 5.2' in msg['text']
 
 
 def test_check_fid_spoiler_score():

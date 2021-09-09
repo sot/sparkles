@@ -1133,7 +1133,7 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
     def check_too_bright_guide(self, star):
         """Warn on guide stars that may be too bright.
 
-        - Critical if within 2 * mag_err of the hard 5.8 limit, caution within 3 * mag_err
+        - Critical if within 2 * mag_err of the hard 5.2 limit, caution within 3 * mag_err
 
         """
         agasc_id = star['id']
@@ -1141,10 +1141,10 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
         mag_err = star['mag_err']
         for mult, category in ((2, 'critical'),
                                (3, 'caution')):
-            if star['mag'] - (mult * mag_err) < 5.8:
+            if star['mag'] - (mult * mag_err) < 5.2:
                 self.add_message(
                     category,
-                    f'Guide star {agasc_id} within {mult}*mag_err of 5.8 '
+                    f'Guide star {agasc_id} within {mult}*mag_err of 5.2 '
                     f'(mag_err={mag_err:.2f})', idx=idx)
                 break
 
