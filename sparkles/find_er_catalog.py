@@ -205,9 +205,9 @@ def get_guide_counts(mags, t_ccd):
     ref_counts = [0.0, 1.2, 1.0, 0.5, 0.0]
     ref_mags1 = [5.3, 5.4]  # Not temperature dependent
     ref_mags2 = [9.0, 10.0, 10.3]  # Temperature dependent
-    ref_mags_t_ccd = (ref_mags1 +
-                      [snr_mag_for_t_ccd(t_ccd, ref_mag, ref_t_ccd)
-                       for ref_mag in ref_mags2])
+    ref_mags_t_ccd = (ref_mags1
+                      + [snr_mag_for_t_ccd(t_ccd, ref_mag, ref_t_ccd)
+                         for ref_mag in ref_mags2])
 
     # Do the interpolation, noting that np.interp will use the end ``counts``
     # values for any ``mag`` < ref_mags[0] or > ref_mags[-1].
