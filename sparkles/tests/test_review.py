@@ -126,7 +126,7 @@ def test_review_roll_options():
     acar = aca.get_review_table()
     acar.run_aca_review(roll_level='critical')
 
-    assert len(acar.roll_options) == 3
+    assert len(acar.roll_options) == 4
 
     # First roll_option is at the same attitude (and roll) as original.  The check
     # code is run again independently but the outcome should be the same.
