@@ -48,6 +48,16 @@ def main(sys_args=None):
     parser.add_argument('load_name',
                         type=str,
                         help='Load name (e.g. JAN2119A) or full file name')
+    parser.add_argument('--obsid',
+                        action='append',
+                        type=float,
+                        help="Process only this obsid (can specify multiple times, default=all")
+    parser.add_argument('--quiet',
+                        action='store_true',
+                        help='Run quietly')
+    parser.add_argument('--open-html',
+                        action='store_true',
+                        help="Open HTML in webbrowser")
     parser.add_argument('--report-dir',
                         type=str,
                         help='Report output directory (default=<load name>')
@@ -63,21 +73,46 @@ def main(sys_args=None):
                         help="Make alternate roll suggestions for messages at/above level "
                              "('all'|'none'|'info'|'caution'|'warning'|'critical') "
                              "(default='critical')")
-    parser.add_argument('--obsid',
-                        action='append',
+    parser.add_argument('--roll-min-improvement',
                         type=float,
-                        help="Process only this obsid (can specify multiple times, default=all")
-    parser.add_argument('--quiet',
-                        action='store_true',
-                        help='Run quietly')
-    parser.add_argument('--open-html',
-                        action='store_true',
-                        help="Open HTML in webbrowser")
+                        default=None,
+                        help="Min value of improvement metric to accept option (default=0.3)")
+    parser.add_argument('--roll-d-roll',
+                        type=float,
+                        default=None,
+                        help=("Delta roll for sampling available roll range "
+                              "(deg, default=0.25 for uniq_ids method and 0.5 for uniform method"))
+    parser.add_argument('--roll-max-roll-dev',
+                        type=float,
+                        default=None,
+                        help="maximum roll deviation (deg, default=max allowed by pitch)")
+    help = ("Method for determining roll intervals ('uniq_ids' | 'uniform'). "
+            "The 'uniq_ids' method is a faster method that frequently finds an acceptable "
+            "roll option, while 'uniform' is a brute-force search of the entire roll "
+            "range at ``d_roll`` increments. If not provided, the default is to try "
+            "*both* methods in order, stopping when an acceptable option is found.")
+    parser.add_argument('--roll-method',
+                        type=str,
+                        default=None,
+                        help=help)
+    parser.add_argument('--roll-max-roll-options',
+                        type=int,
+                        default=None,
+                        help="maximum number of roll options to return (default=10)")
     args = parser.parse_args(sys_args)
+
+    # Parse the roll_args from command line args, only handling non-None values
+    roll_args = {}
+    for name in ('d_roll', 'max_roll_dev', 'min_improvement', 'max_roll_options', 'method'):
+        roll_name = 'roll_' + name
+        if getattr(args, roll_name) is not None:
+            roll_args[name] = getattr(args, roll_name)
+    if not roll_args:
+        roll_args = None
 
     run_aca_review(args.load_name, report_dir=args.report_dir, report_level=args.report_level,
                    roll_level=args.roll_level, loud=(not args.quiet), obsids=args.obsid,
-                   open_html=args.open_html)
+                   open_html=args.open_html, roll_args=roll_args)
 
 
 def run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=None,
