@@ -15,7 +15,7 @@ os.environ[agasc.SUPPLEMENT_ENABLED_ENV] = 'False'
 
 from sparkles.find_er_catalog import (
     get_candidate_stars, find_er_catalog, filter_candidate_stars_on_ccd,
-    get_guide_counts, init_quat_from_attitude)
+    get_guide_counts)
 
 
 # Known tough field: PKS 0023-26 pointing
@@ -43,30 +43,6 @@ def test_get_candidate_and_filter_stars():
     assert np.isclose(count_9th, 1.00, atol=0.01)
     assert np.isclose(count_10th, 1.67, atol=0.01)
     assert np.isclose(count_all, 2.25, atol=0.01)
-
-
-def test_init_quat_from_attitude():
-    # Basic tests for init_quat_from_attitude
-    q = init_quat_from_attitude([Quat([0, 1, 2]),
-                                 Quat([3, 4, 5])])
-    # 1-d list of Quat
-    assert np.allclose(q.equatorial, [[0, 1, 2],
-                                      [3, 4, 5]])
-
-    # 2-d list of Quat
-    q = init_quat_from_attitude([[Quat([0, 1, 2]), Quat([3, 4, 5])]])
-    assert np.allclose(q.equatorial, [[[0, 1, 2],
-                                      [3, 4, 5]]])
-
-    # 1-d list of equatorial floats
-    q = init_quat_from_attitude([[0, 1, 2], [3, 4, 5]])
-    assert np.allclose(q.equatorial, [[[0, 1, 2],
-                                      [3, 4, 5]]])
-
-    # Heterogenous list of floats
-    q = init_quat_from_attitude([[0, 1, 2], [0, 1, 0, 0]])
-    assert np.allclose(q.equatorial, [[0, 1, 2],
-                                      [180, 0, 180]])
 
 
 TEST_COLS = ['dpitch', 'dyaw', 'count_9th', 'count_10th', 'count_all',

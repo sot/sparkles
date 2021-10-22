@@ -217,65 +217,6 @@ def get_guide_counts(mags, t_ccd):
     return count_9th, count_10th, count_all
 
 
-def init_quat_from_attitude(att):
-    """Initial Quat from attitude(s)
-
-    This allows initialization from several possibilities:
-    - Quat already (returns same)
-    - Input that works with Quat already
-    - Input that initializes a float ndarray which has shape[-1] == 3 or 4
-    - Input that initializes an object ndarray where each element inits Quat,
-      e.g. a list of Quat
-
-    Parameters
-    ----------
-    att : Quaternion-like
-        Attitude(s)
-
-    Returns
-    -------
-    Quat
-        Attitude(s) as a Quat
-    """
-    if isinstance(att, Quat):
-        return att
-
-    # Input that works with Quat already
-    try:
-        att = Quat(att)
-    except Exception:
-        pass
-    else:
-        return att
-
-    # Input that initializes a float ndarray which has shape[-1] == 3 or 4
-    try:
-        att_array = np.asarray(att, dtype=np.float64)
-    except Exception:
-        pass
-    else:
-        if att_array.shape[-1] == 4:
-            return Quat(q=att_array)
-        elif att_array.shape[-1] == 3:
-            return Quat(equatorial=att_array)
-        else:
-            raise ValueError("Float input must be a Nx3 or Nx4 array")
-
-    # Input that initializes an object ndarray where each element inits Quat,
-    # e.g. a list of Quat
-    try:
-        att_array = np.asarray(att, dtype=object)
-        qs = []
-        for val in att_array.ravel():
-            qs.append(val.q if isinstance(val, Quat) else Quat(val).q)
-        qs = np.array(qs, dtype=np.float64).reshape(att_array.shape + (4,))
-        return Quat(q=qs)
-    except Exception:
-        pass
-
-    raise ValueError(f"Unable to initialize Quat from {att}")
-
-
 def convert_atts_to_list_of_quats(atts):
     """Convert ``atts`` to a flat list of Quat objects
 
@@ -324,7 +265,7 @@ def get_att_opts_table(acar, atts):
     """
     # Make sure atts is a flat list of Quats
     atts_list = convert_atts_to_list_of_quats(atts)
-    atts_quat = init_quat_from_attitude(atts_list)
+    atts_quat = Quat.from_attitude(atts_list)
 
     # Get the attitude and date of the initial star catalog
     att0 = acar.att
