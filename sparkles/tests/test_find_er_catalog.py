@@ -1,4 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+import os
 
 import warnings
 from proseco import get_aca_catalog
@@ -6,6 +7,11 @@ from proseco.tests.test_common import mod_std_info
 import numpy as np
 from Quaternion import Quat
 import Ska.Sun
+import agasc
+
+# Do not use the AGASC supplement in testing since mags can change
+os.environ[agasc.SUPPLEMENT_ENABLED_ENV] = 'False'
+
 
 from sparkles.find_er_catalog import (
     get_candidate_stars, find_er_catalog, filter_candidate_stars_on_ccd,
