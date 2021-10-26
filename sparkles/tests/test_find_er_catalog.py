@@ -40,8 +40,8 @@ def test_get_candidate_and_filter_stars():
 
     count_9th, count_10th, count_all = get_guide_counts(
         stars['MAG_ACA'][stars['guide_mask']], t_ccd=T_CCD)
-    assert np.isclose(count_9th, 1.00, atol=0.01)
-    assert np.isclose(count_10th, 1.67, atol=0.01)
+    assert np.isclose(count_9th, 2.00, atol=0.01)
+    assert np.isclose(count_10th, 2.67, atol=0.01)
     assert np.isclose(count_all, 2.25, atol=0.01)
 
 
@@ -58,7 +58,7 @@ def test_find_er_catalog_minus_2_pitch_bins():
         'dpitch  dyaw count_9th count_10th count_all count_ok n_critical        att       ',
         '------ ----- --------- ---------- --------- -------- ---------- -----------------',
         ' -0.01 -3.10      4.18       6.00      5.65     True          2  7.67 -25.22 29.3',
-        ' -0.01 -0.05      1.00       1.67      2.25    False         --  6.47 -26.05 26.1',
+        ' -0.01 -0.05      2.00       2.67      2.25    False         --  6.47 -26.05 26.1',
         ' -0.01  3.00      2.62       7.92      5.26    False         --  5.21 -26.82 22.8',
         ' -1.17 -3.10      2.00       9.33      5.92    False         --  8.49 -26.12 29.7',
         ' -1.17 -0.05      0.00       1.23      0.78    False         --  7.23 -27.00 26.4',
@@ -79,7 +79,7 @@ def test_find_er_catalog_minus_2_count_all():
         'dpitch  dyaw count_9th count_10th count_all count_ok n_critical        att       ',
         '------ ----- --------- ---------- --------- -------- ---------- -----------------',
         ' -0.01 -3.10      4.18       6.00      5.65     True         --  7.67 -25.22 29.3',
-        ' -0.01 -0.05      1.00       1.67      2.25    False         --  6.47 -26.05 26.1',
+        ' -0.01 -0.05      2.00       2.67      2.25    False         --  6.47 -26.05 26.1',
         ' -0.01  3.00      2.62       7.92      5.26    False         --  5.21 -26.82 22.8',
         ' -1.17 -3.10      2.00       9.33      5.92    False         --  8.49 -26.12 29.7',
         ' -1.17 -0.05      0.00       1.23      0.78    False         --  7.23 -27.00 26.4',
@@ -100,7 +100,7 @@ def test_find_er_catalog_minus_2_input_order():
         'dpitch  dyaw count_9th count_10th count_all count_ok n_critical        att       ',
         '------ ----- --------- ---------- --------- -------- ---------- -----------------',
         ' -0.01 -3.10      4.18       6.00      5.65     True          2  7.67 -25.22 29.3',
-        ' -0.01 -0.05      1.00       1.67      2.25    False         --  6.47 -26.05 26.1',
+        ' -0.01 -0.05      2.00       2.67      2.25    False         --  6.47 -26.05 26.1',
         ' -0.01  3.00      2.62       7.92      5.26    False         --  5.21 -26.82 22.8',
         ' -1.17 -3.10      2.00       9.33      5.92    False         --  8.49 -26.12 29.7',
         ' -1.17 -0.05      0.00       1.23      0.78    False         --  7.23 -27.00 26.4',
