@@ -309,6 +309,22 @@ def test_pos_err_on_guide():
     assert 'Guide star 101 POS_ERR 1.26' in msg['text']
 
 
+def test_guide_overlap():
+    stars = StarsTable.empty()
+    stars.add_fake_star(id=1, mag=8, row=50, col=-50)
+    stars.add_fake_constellation(n_stars=7, mag=8.5)
+    stars.add_fake_star(id=2, mag=8, row=60, col=-50)
+    aca = get_aca_catalog(**mod_std_info(n_fid=0, n_guide=8), obsid=40000,
+                          stars=stars, dark=DARK40, raise_exc=True,
+                          include_ids_guide=[1, 2])
+    assert 2 in aca.guides['id']
+    assert 1 in aca.guides['id']
+    acar = aca.get_review_table()
+    acar.run_aca_review()
+    assert len(acar.messages) == 2
+    assert acar.messages[0]['text'] == 'Overlapping track index (within 12 pix) idx [1] and idx [8]'
+
+
 def test_guide_edge_check():
     stars = StarsTable.empty()
     dither = 8
