@@ -347,21 +347,34 @@ def test_guide_edge_check():
     acar = ACAReviewTable(aca)
     acar.check_catalog()
 
+    # For this constructed test we're interested in the edge marging warnings
+    # and don't care about the warnings about overlap.
     assert acar.messages == [
-        {'category': 'critical',
-         'idx': 5,
-         'text': 'Less than 3.0 pix edge margin row lim 495.4 val 492.5 delta 2.9'},
-        {'category': 'info',
-         'idx': 6,
-         'text': 'Less than 5.0 pix edge margin row lim 495.4 val 492.3 delta 3.1'},
-        {'category': 'critical',
-         'idx': 7,
-         'text': 'Less than 3.0 pix edge margin col lim -502.4 val -499.5 delta 2.9'},
-        {'category': 'info',
-         'idx': 8,
-         'text': 'Less than 5.0 pix edge margin col lim -502.4 val -499.3 delta 3.1'},
-        {'category': 'info',
-         'text': 'included guide ID(s): [1 2 3 4 5 6]'}]
+        {'text': 'Less than 3.0 pix edge margin row lim 495.4 val 492.5 delta 2.9',
+         'category': 'critical',
+         'idx': 5},
+        {'text': 'Less than 5.0 pix edge margin row lim 495.4 val 492.3 delta 3.1',
+         'category': 'info',
+         'idx': 6},
+        {'text': 'Less than 3.0 pix edge margin col lim -502.4 val -499.5 delta 2.9',
+         'category': 'critical',
+         'idx': 7},
+        {'text': 'Less than 5.0 pix edge margin col lim -502.4 val -499.3 delta 3.1',
+         'category': 'info',
+         'idx': 8},
+        {'text': 'Overlapping track index (within 12 pix) idx [1] and idx [5]',
+         'category': 'critical'},
+        {'text': 'Overlapping track index (within 12 pix) idx [1] and idx [6]',
+         'category': 'critical'},
+        {'text': 'Overlapping track index (within 12 pix) idx [2] and idx [7]',
+         'category': 'critical'},
+        {'text': 'Overlapping track index (within 12 pix) idx [2] and idx [8]',
+         'category': 'critical'},
+        {'text': 'Overlapping track index (within 12 pix) idx [5] and idx [6]',
+         'category': 'critical'},
+        {'text': 'Overlapping track index (within 12 pix) idx [7] and idx [8]',
+         'category': 'critical'},
+        {'text': 'included guide ID(s): [1 2 3 4 5 6]', 'category': 'info'}]
 
 
 @pytest.mark.parametrize('exp_warn', [False, True])
