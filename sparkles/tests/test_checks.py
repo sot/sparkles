@@ -333,11 +333,11 @@ def test_guide_edge_check():
 
     # Set positions just below or above CCD['guide_extra_pad'] in row / col
     stars.add_fake_star(id=1, mag=8, row=row_lim - 2.9, col=0)
-    stars.add_fake_star(id=2, mag=8, row=row_lim - 3.1, col=0)
-    stars.add_fake_star(id=3, mag=8, row=row_lim - 5.1, col=0)
+    stars.add_fake_star(id=2, mag=8, row=row_lim - 3.1, col=100)
+    stars.add_fake_star(id=3, mag=8, row=row_lim - 5.1, col=200)
     stars.add_fake_star(id=4, mag=8, row=0, col=col_lim + 2.9)
-    stars.add_fake_star(id=5, mag=8, row=0, col=col_lim + 3.1)
-    stars.add_fake_star(id=6, mag=8, row=0, col=col_lim + 5.1)
+    stars.add_fake_star(id=5, mag=8, row=100, col=col_lim + 3.1)
+    stars.add_fake_star(id=6, mag=8, row=200, col=col_lim + 5.1)
 
     stars.add_fake_constellation(n_stars=6, mag=8.5)
 
@@ -347,33 +347,19 @@ def test_guide_edge_check():
     acar = ACAReviewTable(aca)
     acar.check_catalog()
 
-    # For this constructed test we're interested in the edge marging warnings
-    # and don't care about the warnings about overlap.
     assert acar.messages == [
-        {'text': 'Less than 3.0 pix edge margin row lim 495.4 val 492.5 delta 2.9',
-         'category': 'critical',
-         'idx': 5},
         {'text': 'Less than 5.0 pix edge margin row lim 495.4 val 492.3 delta 3.1',
          'category': 'info',
-         'idx': 6},
-        {'text': 'Less than 3.0 pix edge margin col lim -502.4 val -499.5 delta 2.9',
-         'category': 'critical',
-         'idx': 7},
+         'idx': 5},
         {'text': 'Less than 5.0 pix edge margin col lim -502.4 val -499.3 delta 3.1',
          'category': 'info',
+         'idx': 6},
+        {'text': 'Less than 3.0 pix edge margin row lim 495.4 val 492.5 delta 2.9',
+         'category': 'critical',
+         'idx': 7},
+        {'text': 'Less than 3.0 pix edge margin col lim -502.4 val -499.5 delta 2.9',
+         'category': 'critical',
          'idx': 8},
-        {'text': 'Overlapping track index (within 12 pix) idx [1] and idx [5]',
-         'category': 'critical'},
-        {'text': 'Overlapping track index (within 12 pix) idx [1] and idx [6]',
-         'category': 'critical'},
-        {'text': 'Overlapping track index (within 12 pix) idx [2] and idx [7]',
-         'category': 'critical'},
-        {'text': 'Overlapping track index (within 12 pix) idx [2] and idx [8]',
-         'category': 'critical'},
-        {'text': 'Overlapping track index (within 12 pix) idx [5] and idx [6]',
-         'category': 'critical'},
-        {'text': 'Overlapping track index (within 12 pix) idx [7] and idx [8]',
-         'category': 'critical'},
         {'text': 'included guide ID(s): [1 2 3 4 5 6]', 'category': 'info'}]
 
 
