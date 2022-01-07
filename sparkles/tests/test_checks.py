@@ -332,6 +332,8 @@ def test_guide_edge_check():
     col_lim = -(CCD['col_max'] - CCD['col_pad'] - CCD['window_pad'] - dither / 5)
 
     # Set positions just below or above CCD['guide_extra_pad'] in row / col
+    # Note that the stars are offset from each other so they don't fail the test
+    # for overlapping tracked objects.
     stars.add_fake_star(id=1, mag=8, row=row_lim - 2.9, col=0)
     stars.add_fake_star(id=2, mag=8, row=row_lim - 3.1, col=100)
     stars.add_fake_star(id=3, mag=8, row=row_lim - 5.1, col=200)
