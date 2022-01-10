@@ -309,6 +309,22 @@ def test_pos_err_on_guide():
     assert 'Guide star 101 POS_ERR 1.26' in msg['text']
 
 
+def test_guide_overlap():
+    stars = StarsTable.empty()
+    stars.add_fake_star(id=1, mag=8, row=50, col=-50)
+    stars.add_fake_constellation(n_stars=7, mag=8.5)
+    stars.add_fake_star(id=2, mag=8, row=60, col=-50)
+    aca = get_aca_catalog(**mod_std_info(n_fid=0, n_guide=8), obsid=40000,
+                          stars=stars, dark=DARK40, raise_exc=True,
+                          include_ids_guide=[1, 2])
+    assert 2 in aca.guides['id']
+    assert 1 in aca.guides['id']
+    acar = aca.get_review_table()
+    acar.run_aca_review()
+    assert len(acar.messages) == 2
+    assert acar.messages[0]['text'] == 'Overlapping track index (within 12 pix) idx [1] and idx [8]'
+
+
 def test_guide_edge_check():
     stars = StarsTable.empty()
     dither = 8
@@ -316,12 +332,14 @@ def test_guide_edge_check():
     col_lim = -(CCD['col_max'] - CCD['col_pad'] - CCD['window_pad'] - dither / 5)
 
     # Set positions just below or above CCD['guide_extra_pad'] in row / col
+    # Note that the stars are offset from each other so they don't fail the test
+    # for overlapping tracked objects.
     stars.add_fake_star(id=1, mag=8, row=row_lim - 2.9, col=0)
-    stars.add_fake_star(id=2, mag=8, row=row_lim - 3.1, col=0)
-    stars.add_fake_star(id=3, mag=8, row=row_lim - 5.1, col=0)
+    stars.add_fake_star(id=2, mag=8, row=row_lim - 3.1, col=100)
+    stars.add_fake_star(id=3, mag=8, row=row_lim - 5.1, col=200)
     stars.add_fake_star(id=4, mag=8, row=0, col=col_lim + 2.9)
-    stars.add_fake_star(id=5, mag=8, row=0, col=col_lim + 3.1)
-    stars.add_fake_star(id=6, mag=8, row=0, col=col_lim + 5.1)
+    stars.add_fake_star(id=5, mag=8, row=100, col=col_lim + 3.1)
+    stars.add_fake_star(id=6, mag=8, row=200, col=col_lim + 5.1)
 
     stars.add_fake_constellation(n_stars=6, mag=8.5)
 
@@ -332,20 +350,19 @@ def test_guide_edge_check():
     acar.check_catalog()
 
     assert acar.messages == [
-        {'category': 'critical',
-         'idx': 5,
-         'text': 'Less than 3.0 pix edge margin row lim 495.4 val 492.5 delta 2.9'},
-        {'category': 'info',
-         'idx': 6,
-         'text': 'Less than 5.0 pix edge margin row lim 495.4 val 492.3 delta 3.1'},
-        {'category': 'critical',
-         'idx': 7,
-         'text': 'Less than 3.0 pix edge margin col lim -502.4 val -499.5 delta 2.9'},
-        {'category': 'info',
-         'idx': 8,
-         'text': 'Less than 5.0 pix edge margin col lim -502.4 val -499.3 delta 3.1'},
-        {'category': 'info',
-         'text': 'included guide ID(s): [1 2 3 4 5 6]'}]
+        {'text': 'Less than 5.0 pix edge margin row lim 495.4 val 492.3 delta 3.1',
+         'category': 'info',
+         'idx': 5},
+        {'text': 'Less than 5.0 pix edge margin col lim -502.4 val -499.3 delta 3.1',
+         'category': 'info',
+         'idx': 6},
+        {'text': 'Less than 3.0 pix edge margin row lim 495.4 val 492.5 delta 2.9',
+         'category': 'critical',
+         'idx': 7},
+        {'text': 'Less than 3.0 pix edge margin col lim -502.4 val -499.5 delta 2.9',
+         'category': 'critical',
+         'idx': 8},
+        {'text': 'included guide ID(s): [1 2 3 4 5 6]', 'category': 'info'}]
 
 
 @pytest.mark.parametrize('exp_warn', [False, True])

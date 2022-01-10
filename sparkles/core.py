@@ -889,11 +889,29 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
                 fid = self.fids.get_id(entry['id'])
                 self.check_fid_spoiler_score(entry['idx'], fid)
 
+        self.check_guide_overlap()
         self.check_guide_geometry()
         self.check_acq_p2()
         self.check_guide_count()
         self.check_fid_count()
         self.check_include_exclude()
+
+    def check_guide_overlap(self):
+        """
+        Check for overlapping tracked items.
+        Overlap is defined as within 12 pixels.
+        """
+        ok = np.in1d(self['type'], ('GUI', 'BOT', 'FID', 'MON'))
+        idxs = np.flatnonzero(ok)
+        for idx1, idx2 in combinations(idxs, 2):
+            entry1 = self[idx1]
+            entry2 = self[idx2]
+            drow = entry1['row'] - entry2['row']
+            dcol = entry1['col'] - entry2['col']
+            if np.abs(drow) <= 12 and np.abs(dcol) <= 12:
+                msg = ('Overlapping track index (within 12 pix) '
+                       f'idx [{entry1["idx"]}] and idx [{entry2["idx"]}]')
+                self.add_message('critical', msg)
 
     def check_guide_geometry(self):
         """Check for guide stars too tightly clustered.
