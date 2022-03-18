@@ -5,7 +5,6 @@
 Roll optimization during preliminary review of ACA catalogs.
 """
 from copy import deepcopy
-from pathlib import Path
 import numpy as np
 import warnings
 
@@ -18,21 +17,6 @@ import Ska.Sun
 
 from proseco.characteristics import CCD
 from proseco import get_aca_catalog
-
-
-ROLL_TABLE = Table.read(str(Path(__file__).parent / 'pitch_rolldev.csv'), format='ascii.basic',
-                        guess=False, delimiter=',')
-
-
-def allowed_rolldev(pitch):
-    """Get allowed roll deviation (off-nominal roll) for the given ``pitch``.
-    This uses the OFLS table and is an approximation to the true planning limit.
-    This is basically the same as https://github.com/sot/Ska.Sun/pull/5.
-    :param pitch: Sun pitch angle (deg)
-    :returns: Roll deviation (deg)
-    """
-    idx = np.searchsorted(ROLL_TABLE['pitch'], pitch, side='right')
-    return ROLL_TABLE['rolldev'][idx - 1]
 
 
 def logical_intervals(vals, x=None):
@@ -190,7 +174,7 @@ class RollOptimizeMixin:
         roll_nom = att_nom_targ.roll
 
         if roll_dev is None:
-            roll_dev = allowed_rolldev(pitch)
+            roll_dev = Ska.Sun.allowed_rolldev(pitch)
 
         if max_roll_dev is not None:
             roll_dev = min(roll_dev, max_roll_dev)
