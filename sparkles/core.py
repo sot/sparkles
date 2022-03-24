@@ -730,7 +730,8 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
         :param kwargs: other keyword args for plot_stars
         """
         fig = super().plot(ax, **kwargs)
-        ax = fig.gca()
+        if ax is None:
+            ax = fig.gca()
 
         # Increase plot bounds to allow seeing stars within a 750 pixel radius
         ax.set_xlim(-770, 770)  # pixels
