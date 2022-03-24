@@ -754,6 +754,8 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
                 circle = Circle((star['row'], star['col']), radius=20,
                                 facecolor='none', edgecolor='r', alpha=0.8, lw=1.5)
                 ax.add_patch(circle)
+                ax.text(star['row'] + 24, star['col'], f'{star["mag"]:.2f}',
+                        ha='left', va='center', fontsize='small', color='r')
 
     def make_starcat_plot(self):
         """Make star catalog plot for this observation.
