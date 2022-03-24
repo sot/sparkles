@@ -730,7 +730,8 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
         :param kwargs: other keyword args for plot_stars
         """
         fig = super().plot(ax, **kwargs)
-        ax = fig.gca()
+        if ax is None:
+            ax = fig.gca()
 
         # Increase plot bounds to allow seeing stars within a 750 pixel radius
         ax.set_xlim(-770, 770)  # pixels
@@ -754,6 +755,8 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
                 circle = Circle((star['row'], star['col']), radius=20,
                                 facecolor='none', edgecolor='r', alpha=0.8, lw=1.5)
                 ax.add_patch(circle)
+                ax.text(star['row'] + 24, star['col'], f'{star["mag"]:.2f}',
+                        ha='left', va='center', fontsize='small', color='r')
 
     def make_starcat_plot(self):
         """Make star catalog plot for this observation.
