@@ -26,6 +26,7 @@ from chandra_aca.transform import (yagzag_to_pixels, mag_to_count_rate,
                                    snr_mag_for_t_ccd)
 import chandra_aca
 from astropy.table import Column, Table
+from cxotime import CxoTime
 
 import proseco
 from proseco.catalog import ACATable
@@ -33,6 +34,8 @@ import proseco.characteristics as ACA
 from proseco.core import MetaAttribute
 
 from .roll_optimize import RollOptimizeMixin
+from .yoshi import (get_ocat_obsid_date, get_params_yoshi,
+                    get_aca_for_params)
 
 CACHE = {}
 FILEDIR = Path(__file__).parent
@@ -1300,3 +1303,17 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
         if self.n_fid != typical_n_fid:
             msg = f'{obs_type} requested {self.n_fid} fids but {typical_n_fid} is typical'
             self.add_message('caution', msg)
+
+    @classmethod
+    def from_ocat(cls, obsid, t_ccd=-5, man_angle=5, date=None, roll=None):
+        if date is None:
+            date = get_ocat_obsid_date(obsid)
+        if date is None:
+            date = CxoTime().now()
+        params = get_params_yoshi(obsid, obs_date=date)
+        if roll is not None:
+            params['roll_targ'] = roll
+        aca = get_aca_for_params(**params, obsid=obsid,
+                                 man_angle=man_angle, t_ccd=t_ccd)
+        acar = cls(aca)
+        return acar
