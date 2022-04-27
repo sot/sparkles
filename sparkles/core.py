@@ -47,7 +47,10 @@ def main(sys_args=None):
         description=f'Sparkles ACA review tool {__version__}')
     parser.add_argument('load_name',
                         type=str,
-                        help='Load name (e.g. JAN2119A) or full file name')
+                        help=('Load name (e.g. JAN2119A) or full file name or directory '
+                              r'on \\noodle\GRETA\mission or OCCweb containing a single pickle file, '
+                              r'or a Noodle path (beginning with \\noodle\GRETA\mission) '
+                              'or OCCweb path to a gzip pickle file'))
     parser.add_argument('--obsid',
                         action='append',
                         type=float,
@@ -205,9 +208,8 @@ def run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=Non
 def _run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=None,
                     report_level='none', roll_level='none', roll_args=None,
                     loud=False, obsids=None, open_html=False, context=None):
-
     if acars is None:
-        acars = get_acas_from_pickle(load_name, loud)
+        acars, load_name = get_acas_from_pickle(load_name, loud)
 
     if obsids:
         acars = [aca for aca in acars if aca.obsid in obsids]
@@ -351,20 +353,7 @@ def stylize(text, category):
     return out
 
 
-def get_acas_from_pickle(load_name, loud=False):
-    """Get dict of proseco ACATable pickles for ``load_name``
-
-    ``load_name`` can be a full file name (ending in .pkl or .pkl.gz) or any of the
-     following, which are tried in order:
-
-    - <load_name>_proseco.pkl.gz
-    - <load_name>.pkl.gz
-    - <load_name>_proseco.pkl
-    - <load_name>.pkl
-
-    :param load_name: load name
-    :param loud: print processing information
-    """
+def get_acas_dict_from_local_file(load_name, loud):
     filenames = [load_name,
                  f'{load_name}_proseco.pkl.gz', f'{load_name}.pkl.gz',
                  f'{load_name}_proseco.pkl', f'{load_name}.pkl']
@@ -381,10 +370,61 @@ def get_acas_from_pickle(load_name, loud=False):
             break
     else:
         raise FileNotFoundError(f'no matching pickle file {filenames}')
+    return acas_dict, pth.name
+
+
+def get_acas_dict_from_occweb(path):
+    """ Get pickle file from OCCweb"""
+    from kadi.occweb import get_occweb_dir, get_occweb_page
+    path = path.replace('//noodle/GRETA/mission/', 'FOT/mission_planning/')
+
+    if not path.endswith('.pkl.gz'):
+        occweb_files = get_occweb_dir(path)
+        pkl_files = [name for name in occweb_files['Name'] if name.endswith('.pkl.gz')]
+        if len(pkl_files) > 1:
+            raise ValueError(f'Found multiple pickle files in {path}')
+        elif len(pkl_files) == 0:
+            raise ValueError(f'No pickle files found in {path}')
+        path = path + '/' + pkl_files[0]
+
+    content = get_occweb_page(path, binary=True, cache=True)
+    acas_dict = pickle.loads(gzip.decompress(content))
+    return acas_dict, Path(path).name
+
+
+def get_acas_from_pickle(load_name, loud=False):
+    r"""Get dict of proseco ACATable pickles for ``load_name``
+
+    ``load_name`` can be a full file name (ending in .pkl or .pkl.gz) or any of the
+     following, which are tried in order:
+
+    - <load_name>_proseco.pkl.gz
+    - <load_name>.pkl.gz
+    - <load_name>_proseco.pkl
+    - <load_name>.pkl
+
+    ``load_name`` can also be a directory on Noodle or OCCweb containing a exactly
+    one pickle file, or a Noodle path or OCCweb path to a gzip pickle file:
+
+    - \\noodle\GRETA\mission\<path-to-pickle-file>\  (looks for one *.pkl.gz file)
+    - \\noodle\GRETA\mission\<path-to-pickle-file>\<load_name>_proseco.pkl.gz
+    - https://occweb.cfa.harvard.edu/occweb/<path-to-pickle-file>\  (looks for one *.pkl.gz file)
+    - https://occweb.cfa.harvard.edu/occweb/<path-to-pickle-file>\<load_name>_proseco.pkl.gz
+
+    :param load_name: load name
+    :param loud: print processing information
+    """
+    # Translate load name like `\\noodle\GRETA` to '//noodle/GRETA'
+    load_name = load_name.replace('\\', '/')
+
+    if load_name.startswith('//noodle') or load_name.startswith('https://occweb'):
+        acas_dict, path_name = get_acas_dict_from_occweb(load_name)
+    else:
+        acas_dict, path_name = get_acas_dict_from_local_file(load_name, loud)
 
     acas = [ACAReviewTable(aca, obsid=obsid, loud=loud)
             for obsid, aca in acas_dict.items()]
-    return acas
+    return acas, path_name
 
 
 def get_summary_text(acas):
