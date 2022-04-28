@@ -48,7 +48,8 @@ def main(sys_args=None):
     parser.add_argument('load_name',
                         type=str,
                         help=('Load name (e.g. JAN2119A) or full file name or directory '
-                              r'on \\noodle\GRETA\mission or OCCweb containing a single pickle file, '
+                              r'on \\noodle\GRETA\mission or OCCweb '
+                              r'containing a single pickle file, '
                               r'or a Noodle path (beginning with \\noodle\GRETA\mission) '
                               'or OCCweb path to a gzip pickle file'))
     parser.add_argument('--obsid',
@@ -376,7 +377,6 @@ def get_acas_dict_from_local_file(load_name, loud):
 def get_acas_dict_from_occweb(path):
     """ Get pickle file from OCCweb"""
     from kadi.occweb import get_occweb_dir, get_occweb_page
-    path = path.replace('//noodle/GRETA/mission/', 'FOT/mission_planning/')
 
     if not path.endswith('.pkl.gz'):
         occweb_files = get_occweb_dir(path)
@@ -414,10 +414,7 @@ def get_acas_from_pickle(load_name, loud=False):
     :param load_name: load name
     :param loud: print processing information
     """
-    # Translate load name like `\\noodle\GRETA` to '//noodle/GRETA'
-    load_name = load_name.replace('\\', '/')
-
-    if load_name.startswith('//noodle') or load_name.startswith('https://occweb'):
+    if load_name.startswith(r'\\noodle') or load_name.startswith('https://occweb'):
         acas_dict, path_name = get_acas_dict_from_occweb(load_name)
     else:
         acas_dict, path_name = get_acas_dict_from_local_file(load_name, loud)
