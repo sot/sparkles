@@ -382,7 +382,11 @@ def get_acas_dict_from_occweb(path):
         occweb_files = get_occweb_dir(path)
         pkl_files = [name for name in occweb_files['Name'] if name.endswith('.pkl.gz')]
         if len(pkl_files) > 1:
-            raise ValueError(f'Found multiple pickle files in {path}')
+            print(f'Found multiple pickle files for {path}:')
+            for i, pkl_file in enumerate(pkl_files):
+                print(f'  {i}: {pkl_file}')
+            choice = input('Enter choice: ')
+            pkl_files = [pkl_files[int(choice)]]
         elif len(pkl_files) == 0:
             raise ValueError(f'No pickle files found in {path}')
         path = path + '/' + pkl_files[0]
