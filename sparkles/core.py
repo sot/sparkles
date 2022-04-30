@@ -550,10 +550,19 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
         # Compute guide count once for the record
         # TODO make this a property
         if self.guides is not None:
-            self.guide_count = guide_count(self.guides['mag'], self.guides.t_ccd)
+            mags = self.guides['mag']
+            t_ccds = np.full_like(mags, self.guides.t_ccd)
+            if self.dyn_bgd_n_faint > 0:
+                # Apply the dynamic background t_ccd bonus to the
+                # dyn_bgd_n_faint faintest stars. See:
+                # https://nbviewer.org/urls/cxc.harvard.edu/mta/ASPECT/ipynb/misc/guide-count-dyn-bgd.ipynb
+                mags = np.sort(mags)
+                n_faint = min(self.dyn_bgd_n_faint, len(t_ccds))
+                t_ccds[-n_faint:] += self.dyn_bgd_dt_ccd
+
+            self.guide_count = guide_count(mags, t_ccds)
             if self.is_ER:
-                self.guide_count_9th = guide_count(self.guides['mag'], self.guides.t_ccd,
-                                                   self.is_ER)
+                self.guide_count_9th = guide_count(mags, t_ccds, count_9th=True)
 
         if 'mag_err' not in self.colnames and self.acqs is not None and self.guides is not None:
             # Add 'mag_err' column after 'mag' using 'mag_err' from guides and acqs
