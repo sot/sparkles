@@ -557,8 +557,7 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
                 # dyn_bgd_n_faint faintest stars. See:
                 # https://nbviewer.org/urls/cxc.harvard.edu/mta/ASPECT/ipynb/misc/guide-count-dyn-bgd.ipynb
                 mags = np.sort(mags)
-                n_faint = min(self.dyn_bgd_n_faint, len(t_ccds))
-                t_ccds[-n_faint:] += self.dyn_bgd_dt_ccd
+                t_ccds[-self.dyn_bgd_n_faint:] += self.dyn_bgd_dt_ccd
 
             self.guide_count = guide_count(mags, t_ccds)
             if self.is_ER:
