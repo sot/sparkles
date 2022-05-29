@@ -34,8 +34,7 @@ import proseco.characteristics as ACA
 from proseco.core import MetaAttribute
 
 from .roll_optimize import RollOptimizeMixin
-from .yoshi import (get_ocat_obsid_date, get_params_yoshi,
-                    get_aca_for_params)
+
 
 CACHE = {}
 FILEDIR = Path(__file__).parent
@@ -1305,15 +1304,28 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
             self.add_message('caution', msg)
 
     @classmethod
-    def from_ocat(cls, obsid, t_ccd=-5, man_angle=5, date=None, roll=None):
-        if date is None:
-            date = get_ocat_obsid_date(obsid)
-        if date is None:
-            date = CxoTime().now()
-        params = get_params_yoshi(obsid, obs_date=date)
+    def from_ocat(cls, obsid, t_ccd=-5, man_angle=5, date=None, roll=None, **kwargs):
+        """Return an AcaReviewTable object using OCAT to specify key information.
+
+        :param obsid: obsid
+        :param t_ccd: ACA CCD temperature (degrees C)
+        :param man_angle: maneuver angle (degrees)
+        :param date: observation date (for proper motion and ACA offset projection)
+        :param roll: roll angle (degrees)
+        :param **kwargs: additional keyword args to update or override params from
+            yoshi for call to get_aca_catalog()
+
+        :returns: AcaReviewTable object
+        """
+        from proseco import get_aca_catalog
+        from .yoshi import get_yoshi_params_from_ocat, convert_yoshi_to_proseco_params
+
+        params_yoshi = get_yoshi_params_from_ocat(obsid, obs_date=date)
         if roll is not None:
-            params['roll_targ'] = roll
-        aca = get_aca_for_params(**params, obsid=obsid,
-                                 man_angle=man_angle, t_ccd=t_ccd)
+            params_yoshi['roll_targ'] = roll
+        params_proseco = convert_yoshi_to_proseco_params(
+            **params_yoshi, obsid=obsid, man_angle=man_angle, t_ccd=t_ccd)
+        params_proseco.update(kwargs)
+        aca = get_aca_catalog(**params_proseco)
         acar = cls(aca)
         return acar

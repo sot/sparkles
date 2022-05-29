@@ -4,11 +4,10 @@ import numpy as np
 import agasc
 from sparkles.yoshi import run_one_yoshi
 
-os.environ[agasc.SUPPLEMENT_ENABLED_ENV] = 'False'
 
-
-def test_run_one_yoshi():
+def test_run_one_yoshi(monkeypatch):
     """Regression test a single run for a real obsid"""
+    monkeypatch.setenv(agasc.SUPPLEMENT_ENABLED_ENV, 'False')
     request = {
         'obsid': 20562,
         'chip_id': 3,
@@ -38,7 +37,7 @@ def test_run_one_yoshi():
                 'P2': 1.801521445484349,
                 'guide_count': 3.8577301426624357}
 
-    actual = run_one_yoshi(**request)
+    actual = run_one_yoshi(**request, dyn_bgd_n_faint=0)
 
     for key in expected:
         val = expected[key]

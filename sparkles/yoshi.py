@@ -20,14 +20,15 @@ def get_ocat_obsid_date(obsid, web_ocat=True):
         return CxoTime(ocat['start_date'])
 
 
-def get_params_yoshi(obsid, obs_date, web_ocat=True):
+def get_yoshi_params_from_ocat(obsid, obs_date=None, web_ocat=True):
     """
     For an obsid in the OCAT, fetch params from OCAT and define a few defaults
     for the standard info needed to get an ACA attitude and run
     yoshi / proseco / sparkles.
 
     :param obsid: obsid
-    :param obs_date: intended date
+    :param obs_date: intended date. If None, use the date from the OCAT if possible
+        else use current date.
     :param web_ocat: use the web version of the OCAT (uses get_ocat_local if False)
     """
 
@@ -35,6 +36,15 @@ def get_params_yoshi(obsid, obs_date, web_ocat=True):
         ocat = get_ocat_web(obsid=obsid)
     else:
         ocat = get_ocat_local(obsid=obsid)
+
+    if obs_date is None and ocat['start_date'] is not numpy.ma.masked:
+        # If obsid has a defined start_date then use that. Otherwise if obsid is
+        # not assigned an LTS bin then start_date will be masked and we fall
+        # through to CxoTime(None) which is NOW.
+        obs_date = CxoTime(ocat['start_date']).date
+    else:
+        obs_date = CxoTime(obs_date).date
+
     targ = {'obs_date': obs_date,
             'detector': ocat['instr'],
             'ra_targ': ocat['ra'],
@@ -80,12 +90,15 @@ def get_params_yoshi(obsid, obs_date, web_ocat=True):
     return targ
 
 
-def run_one_yoshi(*, obsid,
-                  detector, chipx, chipy, chip_id,
-                  ra_targ, dec_targ, roll_targ,
-                  offset_y, offset_z, sim_offset, focus_offset,
-                  dither_y, dither_z,
-                  obs_date, t_ccd, man_angle):
+def run_one_yoshi(
+    *, obsid,
+    detector, chipx, chipy, chip_id,
+    ra_targ, dec_targ, roll_targ,
+    offset_y, offset_z, sim_offset, focus_offset,
+    dither_y, dither_z,
+    obs_date, t_ccd, man_angle,
+    **kwargs
+):
     """
     Run proseco and sparkles for an observation request in a roll/temperature/man_angle
     scenario.
@@ -106,20 +119,31 @@ def run_one_yoshi(*, obsid,
     :param obs_date: observation date (for proper motion and ACA offset projection)
     :param t_ccd: ACA CCD temperature (degrees C)
     :param man_angle: maneuver angle (degrees)
+    :param **kwargs: additional keyword args to update or override params from
+        yoshi for call to get_aca_catalog()
     :returns: dictionary of (ra_aca, dec_aca, roll_aca,
                              n_critical, n_warning, n_caution, n_info,
                              P2, guide_count)
     """
+    from proseco import get_aca_catalog
 
-    aca = get_aca_for_params(obsid, detector,
-                             chipx, chipy, chip_id,
-                             ra_targ, dec_targ, roll_targ,
-                             offset_y, offset_z, sim_offset, focus_offset,
-                             dither_y, dither_z,
-                             obs_date, t_ccd, man_angle)
+    params = convert_yoshi_to_proseco_params(
+        obsid, detector,
+        chipx, chipy, chip_id,
+        ra_targ, dec_targ, roll_targ,
+        offset_y, offset_z, sim_offset, focus_offset,
+        dither_y, dither_z,
+        obs_date, t_ccd, man_angle
+    )
+
+    # Update or override params from yoshi for call to get_aca_catalog
+    params.update(kwargs)
+
+    aca = get_aca_catalog(**params)
     acar = aca.get_review_table()
     acar.run_aca_review()
     q_aca = aca.att
+
     # Get values for report
     report = {'ra_aca': q_aca.ra,
               'dec_aca': q_aca.dec,
@@ -130,17 +154,20 @@ def run_one_yoshi(*, obsid,
               'n_info': len(acar.messages == 'info'),
               'P2': -np.log10(acar.acqs.calc_p_safe()),
               'guide_count': acar.guide_count}
+
     return report
 
 
-def get_aca_for_params(obsid,
-                       detector, chipx, chipy, chip_id,
-                       ra_targ, dec_targ, roll_targ,
-                       offset_y, offset_z, sim_offset, focus_offset,
-                       dither_y, dither_z,
-                       obs_date, t_ccd, man_angle):
+def convert_yoshi_to_proseco_params(
+    obsid,
+    detector, chipx, chipy, chip_id,
+    ra_targ, dec_targ, roll_targ,
+    offset_y, offset_z, sim_offset, focus_offset,
+    dither_y, dither_z,
+    obs_date, t_ccd, man_angle
+):
     """
-    Run proseco in a roll/temperature/man_angle scenario.
+    Convert yoshi parameters to equivalent proseco arguments
 
     :param obsid: obsid (used only for labeling)
     :param detector: detector (ACIS-I|ACIS-S|HRC-I|HRC-S)
@@ -175,15 +202,19 @@ def get_aca_for_params(obsid,
                                (offset_z / 60.) + (aca_offset_z / 3600.))
 
     # Run proseco
-    aca = proseco.get_aca_catalog(obsid=obsid,
-                                  att=q_aca,
-                                  man_angle=man_angle,
-                                  date=obs_date,
-                                  t_ccd=t_ccd,
-                                  dither=(dither_y, dither_z),
-                                  detector=detector,
-                                  sim_offset=sim_offset,
-                                  focus_offset=focus_offset,
-                                  n_acq=8, n_guide=5, n_fid=3)
+    out = dict(
+        obsid=obsid,
+        att=q_aca,
+        man_angle=man_angle,
+        date=obs_date,
+        t_ccd=t_ccd,
+        dither=(dither_y, dither_z),
+        detector=detector,
+        sim_offset=sim_offset,
+        focus_offset=focus_offset,
+        n_acq=8,
+        n_guide=5,
+        n_fid=3
+    )
 
-    return aca
+    return out
