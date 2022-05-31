@@ -174,7 +174,7 @@ def convert_yoshi_to_proseco_params(
     :param obs_date: observation date (for proper motion and ACA offset projection)
     :param t_ccd: ACA CCD temperature (degrees C)
     :param man_angle: maneuver angle (degrees)
-    :returns: proseco ACATable
+    :returns: dictionary of keyword arguments for proseco
 
     """
 
@@ -189,7 +189,7 @@ def convert_yoshi_to_proseco_params(
                                (offset_y / 60.) + (aca_offset_y / 3600.),
                                (offset_z / 60.) + (aca_offset_z / 3600.))
 
-    # Run proseco
+    # Get keywords for proseco
     out = dict(
         obsid=obsid,
         att=q_aca,
