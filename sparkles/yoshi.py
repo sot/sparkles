@@ -18,6 +18,8 @@ def get_yoshi_params_from_ocat(obsid, obs_date=None, web_ocat=True):
     :param obs_date: intended date. If None, use the date from the OCAT if possible
         else use current date.
     :param web_ocat: use the web version of the OCAT (uses get_ocat_local if False)
+    :returns: dictionary of target parameters/keywords from OCAT.  Can be used with
+              convert_yoshi_to_proseco_params .
     """
 
     if web_ocat:
