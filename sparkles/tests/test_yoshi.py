@@ -3,6 +3,7 @@ import agasc
 import pytest
 from Quaternion import Quat
 from mica.archive.tests.test_cda import HAS_WEB_SERVICES
+from sparkles.core import ACAReviewTable
 
 from sparkles.yoshi import (
     get_yoshi_params_from_ocat,
@@ -11,10 +12,15 @@ from sparkles.yoshi import (
 )
 
 
-@pytest.mark.skipif(not HAS_WEB_SERVICES, reason="No web services available")
-def test_run_one_yoshi(monkeypatch):
-    """Regression test a single run for a real obsid"""
+@pytest.fixture(autouse=True)
+def do_not_use_agasc_supplement(monkeypatch):
+    """Do not use AGASC supplement in any test"""
     monkeypatch.setenv(agasc.SUPPLEMENT_ENABLED_ENV, "False")
+
+
+@pytest.mark.skipif(not HAS_WEB_SERVICES, reason="No web services available")
+def test_run_one_yoshi():
+    """Regression test a single run for a real obsid"""
     request = {
         "obsid": 20562,
         "chip_id": 3,
@@ -112,3 +118,29 @@ def assert_dict_equal(dict1, dict2):
             assert str(val) == str(val_exp)
         else:
             assert val == val_exp
+
+
+@pytest.mark.skipif(not HAS_WEB_SERVICES, reason="No web services available")
+def test_acar_from_ocat(monkeypatch):
+    """Get an AcaReviewTable with minimal information filling in rest from OCAT"""
+    monkeypatch.setenv(agasc.SUPPLEMENT_ENABLED_ENV, "False")
+
+    acar = ACAReviewTable.from_ocat(obsid=8008, date="2022:001", t_ccd=-10, n_acq=6)
+    assert acar.obsid == 8008
+    assert acar.date == "2022:001:00:00:00.000"
+    assert len(acar.acqs) == 6
+    exp = [
+        "idx slot    id    type  mag    yang    zang   row    col  ",
+        "--- ---- -------- ---- ----- ------- ------- ------ ------",
+        "  1    0        1  FID  7.00   919.8  -844.2 -178.7 -164.1",
+        "  2    1        5  FID  7.00 -1828.2  1053.8  374.1  216.2",
+        "  3    2        6  FID  7.00   385.8  1697.8  -70.8  346.0",
+        "  4    3 31983336  BOT  8.64   878.2 -1622.7 -171.0 -320.8",
+        "  5    4 31075368  BOT  9.13    50.8   737.3   -3.8  152.6",
+        "  6    5 32374896  BOT  9.17  2007.9 -2050.0 -400.2 -408.3",
+        "  7    6 31075128  BOT  9.35  -317.2  1185.7   70.1  242.6",
+        "  8    7 31463496  BOT  9.46  2028.6  1371.5 -402.1  281.9",
+        "  9    0 31076560  ACQ  9.70  -939.8  -368.7  194.3  -69.3",
+    ]
+    cols = ("idx", "slot", "id", "type", "mag", "yang", "zang")
+    assert acar[cols].pformat_all() == exp
