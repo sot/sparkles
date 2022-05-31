@@ -26,7 +26,6 @@ from chandra_aca.transform import (yagzag_to_pixels, mag_to_count_rate,
                                    snr_mag_for_t_ccd)
 import chandra_aca
 from astropy.table import Column, Table
-from cxotime import CxoTime
 
 import proseco
 from proseco.catalog import ACATable
