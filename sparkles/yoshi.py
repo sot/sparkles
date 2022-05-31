@@ -8,18 +8,6 @@ from Ska.Sun import nominal_roll
 from cxotime import CxoTime
 
 
-def get_ocat_obsid_date(obsid, web_ocat=True):
-    if web_ocat:
-        ocat = get_ocat_web(obsid=obsid)
-    else:
-        ocat = get_ocat_local(obsid=obsid)
-
-    if ocat['start_date'] is numpy.ma.masked:
-        return None
-    else:
-        return CxoTime(ocat['start_date'])
-
-
 def get_yoshi_params_from_ocat(obsid, obs_date=None, web_ocat=True):
     """
     For an obsid in the OCAT, fetch params from OCAT and define a few defaults
