@@ -178,6 +178,14 @@ def convert_yoshi_to_proseco_params(
     :returns: dictionary of keyword arguments for proseco
 
     """
+    if offset_y is np.ma.masked:
+        offset_y = 0.0
+    if offset_z is np.ma.masked:
+        offset_z = 0.0
+    if sim_offset is np.ma.masked:
+        sim_offset = 0.0
+    if focus_offset is np.ma.masked:
+        focus_offset = 0.0
 
     # Calculate dynamic offsets using the supplied temperature.
     aca_offset_y, aca_offset_z = get_aca_offsets(detector,
