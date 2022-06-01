@@ -41,6 +41,7 @@ def get_yoshi_params_from_ocat(obsid, obs_date=None, web_ocat=True):
         "dec_targ": ocat["dec"],
         "offset_y": ocat["y_off"],
         "offset_z": ocat["z_off"],
+        "target_name": ocat["target_name"],
     }
 
     # Leaving focus offset as not-implemented
@@ -101,7 +102,7 @@ def run_one_yoshi(
     obs_date,
     t_ccd,
     man_angle,
-    **kwargs
+    **kwargs,
 ):
     """
     Run proseco and sparkles for an observation request in a roll/temperature/man_angle
