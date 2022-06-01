@@ -125,11 +125,9 @@ class RollOptimizeMixin:
         :param roll_dev: roll deviation about nominal to sample (DEPRECATED,
                 use max_roll_dev instead)
         :param method: method for determining roll intervals ('uniq_ids' | 'uniform')
-            The 'uniq_ids' method is a faster method that frequently finds an
+            The default 'uniq_ids' method is a faster method that frequently finds an
             acceptable roll option, while 'uniform' is a brute-force search of
-            the entire roll range at ``d_roll`` increments. If not provided, the
-            default is to try *both* methods in order, stopping when an
-            acceptable option is found.
+            the entire roll range at ``d_roll`` increments.
         :param max_roll_dev: roll deviation about nominal to sample (deg,
             default=max allowed by pitch)
 
