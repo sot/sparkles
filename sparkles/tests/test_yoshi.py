@@ -39,6 +39,7 @@ def test_run_one_yoshi():
         "roll_targ": 197.12,
         "sim_offset": 0,
         "t_ccd": -9.1,
+        "target_name": "Target name",
     }
 
     expected = {
@@ -86,7 +87,8 @@ def test_get_params():
     assert_dict_equal(params, exp)
 
     params_proseco = convert_yoshi_to_proseco_params(
-        **params, obsid=8008, t_ccd=-10, man_angle=5.0
+        **params, obsid=8008, t_ccd=-10, man_angle=5.0, target_name="Target name",
+
     )
     exp_proseco = {
         "att": Quat([0.15017923, 0.49292814, 0.83025727, 0.21246392]),
@@ -101,6 +103,7 @@ def test_get_params():
         "obsid": 8008,
         "sim_offset": 0,
         "t_ccd": -10,
+        "target_name": "Target name",
     }
     assert_dict_equal(params_proseco, exp_proseco)
 
@@ -125,9 +128,11 @@ def test_acar_from_ocat(monkeypatch):
     """Get an AcaReviewTable with minimal information filling in rest from OCAT"""
     monkeypatch.setenv(agasc.SUPPLEMENT_ENABLED_ENV, "False")
 
-    acar = ACAReviewTable.from_ocat(obsid=8008, date="2022:001", t_ccd=-10, n_acq=6)
+    acar = ACAReviewTable.from_ocat(obsid=8008, date="2022:001", t_ccd=-10,
+                                    n_acq=6, target_name="Target name")
     assert acar.obsid == 8008
     assert acar.date == "2022:001:00:00:00.000"
+    assert acar.target_name == "Target name"
     assert len(acar.acqs) == 6
     exp = [
         "idx slot    id    type  mag    yang    zang   row    col  ",
