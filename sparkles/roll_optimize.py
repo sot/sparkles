@@ -120,10 +120,16 @@ class RollOptimizeMixin:
         - 'uniform': roll interval is uniform over allowed range with ``d_roll`` spacing
 
         :param cand_idxs: index values for candidate better stars
-        :param y_off: Y offset (deg, sign per OR-list convention)
-        :param z_off: Z offset (deg, sign per OR-list convention)
         :param d_roll: step size for examining roll range (deg, default=0.25 for
                        uniq_ids and 0.5 for uniform)
+        :param roll_dev: roll deviation about nominal to sample (DEPRECATED,
+                use max_roll_dev instead)
+        :param method: method for determining roll intervals ('uniq_ids' | 'uniform')
+            The default 'uniq_ids' method is a faster method that frequently finds an
+            acceptable roll option, while 'uniform' is a brute-force search of
+            the entire roll range at ``d_roll`` increments.
+        :param max_roll_dev: roll deviation about nominal to sample (deg,
+            default=max allowed by pitch)
 
         :returns: list of candidate rolls
 
@@ -173,11 +179,13 @@ class RollOptimizeMixin:
         att_nom_targ = self._calc_targ_from_aca(att_nom, *self.target_offset)
         roll_nom = att_nom_targ.roll
 
-        if roll_dev is None:
-            roll_dev = Ska.Sun.allowed_rolldev(pitch)
-
-        if max_roll_dev is not None:
-            roll_dev = min(roll_dev, max_roll_dev)
+        if roll_dev is not None:
+            warnings.warn(
+                'roll_dev will be removed in a future release, use max_roll_dev instead',
+                FutureWarning
+            )
+        else:
+            roll_dev = Ska.Sun.allowed_rolldev(pitch) if max_roll_dev is None else max_roll_dev
 
         # Ensure roll_nom in range 0 <= roll_nom < 360 to match att_targ.roll.
         # Also ensure that roll_min < roll < roll_max.  It can happen that the

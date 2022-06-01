@@ -410,15 +410,20 @@ def test_get_roll_intervals():
     aca_or = get_aca_catalog(**kw_or)
     acar_or = aca_or.get_review_table()
 
-    roll_dev = 5
+    max_roll_dev = 5
+
+    with pytest.warns(FutureWarning):
+        er_roll_intervs, er_info = acar_er.get_roll_intervals(
+            acar_er.get_candidate_better_stars(),
+            roll_dev=max_roll_dev)
 
     er_roll_intervs, er_info = acar_er.get_roll_intervals(
         acar_er.get_candidate_better_stars(),
-        roll_dev=roll_dev)
+        max_roll_dev=max_roll_dev)
 
     or_roll_intervs, or_info = acar_or.get_roll_intervals(
         acar_or.get_candidate_better_stars(),
-        roll_dev=roll_dev)
+        max_roll_dev=max_roll_dev)
 
     assert acar_er.att.roll <= er_info['roll_max']
     assert acar_er.att.roll >= er_info['roll_min']

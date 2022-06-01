@@ -100,7 +100,7 @@ chandra_aca version: {{chandra_aca_version}}
 {% for aca in acas %}
 
 <a name="id{{aca.report_id}}"></a>
-<h2> {{id_label}} {{aca.report_id}} at {{aca.date}}</h1>
+<h2> {{id_label}} {{aca.report_id}} ({{aca.target_name}}) at {{aca.date}}</h1>
 {% if aca.context['reports_dir'] %}
 <pre>Reports: <a href="{{aca.context['reports_dir']}}/acq/index.html">Acquisition</a> <a href="{{aca.context['reports_dir']}}/guide/index.html">Guide</a></pre>
 {% endif %}

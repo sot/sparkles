@@ -41,6 +41,7 @@ def get_yoshi_params_from_ocat(obsid, obs_date=None, web_ocat=True):
         "dec_targ": ocat["dec"],
         "offset_y": ocat["y_off"],
         "offset_z": ocat["z_off"],
+        "target_name": ocat["target_name"],
     }
 
     # Leaving focus offset as not-implemented
@@ -101,7 +102,7 @@ def run_one_yoshi(
     obs_date,
     t_ccd,
     man_angle,
-    **kwargs
+    **kwargs,
 ):
     """
     Run proseco and sparkles for an observation request in a roll/temperature/man_angle
@@ -149,10 +150,8 @@ def run_one_yoshi(
         obs_date,
         t_ccd,
         man_angle,
+        **kwargs,
     )
-
-    # Update or override params from yoshi for call to get_aca_catalog
-    params.update(kwargs)
 
     aca = get_aca_catalog(**params)
     acar = aca.get_review_table()
@@ -193,6 +192,7 @@ def convert_yoshi_to_proseco_params(
     obs_date,
     t_ccd,
     man_angle,
+    **kwargs,
 ):
     """
     Convert yoshi parameters to equivalent proseco arguments
@@ -214,6 +214,7 @@ def convert_yoshi_to_proseco_params(
     :param obs_date: observation date (for proper motion and ACA offset projection)
     :param t_ccd: ACA CCD temperature (degrees C)
     :param man_angle: maneuver angle (degrees)
+    :param **kwargs: extra keyword arguments which update the output proseco params
     :returns: dictionary of keyword arguments for proseco
 
     """
@@ -254,5 +255,7 @@ def convert_yoshi_to_proseco_params(
         n_guide=5,
         n_fid=3,
     )
+
+    out.update(kwargs)
 
     return out
