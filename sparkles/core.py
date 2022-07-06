@@ -38,6 +38,13 @@ from .roll_optimize import RollOptimizeMixin
 CACHE = {}
 FILEDIR = Path(__file__).parent
 
+# Minimum number of "anchor stars" that are always evaluated *without* the bonus
+# from dynamic background when dyn_bgd_n_faint > 0. This is mostly to avoid the
+# situation where 4 stars are selected and 2 are faint bonus stars. In this case
+# there would be only 2 anchor stars that ensure good tracking even without
+# dyn bgd.
+MIN_DYN_BGD_ANCHOR_STARS = 3
+
 
 def main(sys_args=None):
     """Command line interface to preview_load()"""
@@ -555,10 +562,13 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
             t_ccds = np.full_like(mags, self.guides.t_ccd)
             if self.dyn_bgd_n_faint > 0:
                 # Apply the dynamic background t_ccd bonus to the
-                # dyn_bgd_n_faint faintest stars. See:
+                # dyn_bgd_n_faint faintest stars, ensuring that at least
+                # MIN_DYN_BGD_ANCHOR_STARS are evaluated without the bonus. See:
                 # https://nbviewer.org/urls/cxc.harvard.edu/mta/ASPECT/ipynb/misc/guide-count-dyn-bgd.ipynb
                 mags = np.sort(mags)
-                t_ccds[-self.dyn_bgd_n_faint:] += self.dyn_bgd_dt_ccd
+                n_faint = min(self.dyn_bgd_n_faint, len(t_ccds))
+                idx_bonus = max(len(t_ccds) - n_faint, MIN_DYN_BGD_ANCHOR_STARS)
+                t_ccds[idx_bonus:] += self.dyn_bgd_dt_ccd
 
             self.guide_count = guide_count(mags, t_ccds)
             if self.is_ER:

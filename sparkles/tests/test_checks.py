@@ -121,25 +121,34 @@ def test_n_guide_mon_check_atypical_request():
          'category': 'caution'}]
 
 
-def test_guide_count_dyn_bgd_bonus():
+vals = [
+    (5, 4.07, 4.66),  # n_guide, legacy_guide_count, dyn_bdg_guide_count
+    (4, 3.25, 3.60),  # 4 stars, legacy and dyn bdg guide counts closer together
+    (3, 2.42, 2.42),  # 3 stars, legacy and dyn bdg equal (no bonus stars)
+]
+
+
+@pytest.mark.parametrize('vals', vals)
+def test_guide_count_dyn_bgd_bonus(vals):
+    n_guide, leg_guide_count, dyn_guide_count = vals
     stars = StarsTable.empty()
 
-    stars.add_fake_constellation(mag=np.linspace(10, 10.2, 5),
-                                 size=2000, n_stars=5)
+    stars.add_fake_constellation(mag=np.linspace(10, 10.2, n_guide),
+                                 size=2000, n_stars=n_guide)
 
     aca_leg = get_aca_catalog(**STD_INFO, dark=DARK40, stars=stars, dyn_bgd_n_faint=0)
     aca_dyn = get_aca_catalog(**STD_INFO, dark=DARK40, stars=stars, dyn_bgd_n_faint=2,
                               dyn_bgd_dt_ccd=-4.0)
     # Same catalog but with different attributes
-    assert len(aca_leg.guides) == 5
-    assert len(aca_dyn.guides) == 5
+    assert len(aca_leg.guides) == n_guide
+    assert len(aca_dyn.guides) == n_guide
     assert np.all(aca_leg.guides['mag'] == aca_dyn.guides['mag'])
 
     acar_leg = ACAReviewTable(aca_leg)
     acar_dyn = ACAReviewTable(aca_dyn)
-    # Computed guide counts are different and more with dyn_bgd_n_faint=2
-    assert np.isclose(acar_leg.guide_count, 4.07, rtol=0, atol=0.1)
-    assert np.isclose(acar_dyn.guide_count, 4.66, rtol=0, atol=0.1)
+    # Computed guide counts without / with dyn_bgd_n_faint=2
+    assert np.isclose(acar_leg.guide_count, leg_guide_count, rtol=0, atol=0.1)
+    assert np.isclose(acar_dyn.guide_count, dyn_guide_count, rtol=0, atol=0.1)
 
 
 def test_n_guide_too_few_guide_or_mon():
