@@ -255,9 +255,9 @@ def test_include_exclude():
 
 def test_guide_count_er5():
     # This configuration should warn with too many bright stars
-    # (has > 3.0 stars brighter than 6.1
+    # (has > 3.0 stars brighter than 5.5
     stars = StarsTable.empty()
-    stars.add_fake_constellation(n_stars=4, mag=6.0)
+    stars.add_fake_constellation(n_stars=4, mag=5.4)
     stars.add_fake_star(yang=1000, zang=1000, mag=8.0)
     stars.add_fake_star(yang=-1000, zang=1000, mag=8.0)
     aca = get_aca_catalog(**mod_std_info(obsid=50000, n_fid=0, n_guide=8), stars=stars, dark=DARK40,
@@ -265,7 +265,7 @@ def test_guide_count_er5():
     aca = ACAReviewTable(aca)
     aca.check_guide_count()
     assert aca.messages == [
-        {'text': 'ER with more than 3 stars brighter than 6.1.', 'category': 'caution'},
+        {'text': 'ER with more than 3 stars brighter than 5.5.', 'category': 'caution'},
         {'text': 'ER with 6 guides but 8 were requested', 'category': 'caution'}]
 
 
@@ -282,10 +282,10 @@ def test_guide_count_or():
         {'text': 'OR with 2 guides but 5 were requested', 'category': 'caution'}]
 
     # This configuration should not warn with too many really bright stars
-    # (allowed to have 1 stars brighter than 6.1)
+    # (allowed to have 1 stars brighter than 5.5)
     stars = StarsTable.empty()
     stars.add_fake_constellation(n_stars=3, mag=8.0)
-    stars.add_fake_star(yang=100, zang=100, mag=6.0)
+    stars.add_fake_star(yang=100, zang=100, mag=5.4)
     aca = get_aca_catalog(**mod_std_info(n_fid=3, n_guide=5, obsid=1), stars=stars, dark=DARK40,
                           raise_exc=True)
     aca = ACAReviewTable(aca)
@@ -294,11 +294,11 @@ def test_guide_count_or():
         {'text': 'OR with 4 guides but 5 were requested', 'category': 'caution'}]
 
     # This configuration should warn with too many bright stars
-    # (has > 1.0 stars brighter than 6.1
+    # (has > 1.0 stars brighter than 5.5
     stars = StarsTable.empty()
     stars.add_fake_constellation(n_stars=3, mag=8.0)
-    stars.add_fake_star(yang=1000, zang=1000, mag=6.0)
-    stars.add_fake_star(yang=-1000, zang=1000, mag=6.0)
+    stars.add_fake_star(yang=1000, zang=1000, mag=5.4)
+    stars.add_fake_star(yang=-1000, zang=1000, mag=5.4)
     aca = get_aca_catalog(**mod_std_info(n_fid=3, n_guide=5, obsid=1), stars=stars, dark=DARK40,
                           raise_exc=True)
     aca = ACAReviewTable(aca)
@@ -306,7 +306,7 @@ def test_guide_count_or():
     assert len(aca.messages) == 1
     msg = aca.messages[0]
     assert msg['category'] == 'caution'
-    assert 'OR with more than 1 stars brighter than 6.1.' in msg['text']
+    assert 'OR with more than 1 stars brighter than 5.5.' in msg['text']
 
 
 def test_pos_err_on_guide():

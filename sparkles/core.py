@@ -1149,10 +1149,10 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
                 f'{obs_type} count of guide stars {self.guide_count:.2f} < {count_lim}')
 
         bright_cnt_lim = 1 if self.is_OR else 3
-        if np.count_nonzero(self['mag'] < 6.1) > bright_cnt_lim:
+        if np.count_nonzero(self.guides['mag'] < 5.5) > bright_cnt_lim:
             self.add_message(
                 'caution',
-                f'{obs_type} with more than {bright_cnt_lim} stars brighter than 6.1.')
+                f'{obs_type} with more than {bright_cnt_lim} stars brighter than 5.5.')
 
         # Requested slots for guide stars and mon windows
         n_guide_or_mon_request = self.call_args['n_guide']
