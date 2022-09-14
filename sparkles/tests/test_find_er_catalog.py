@@ -121,6 +121,7 @@ def test_find_er_catalog_fails():
     with warnings.catch_warnings():
         # Ignore warning about grid_model clipping t_ccd
         warnings.filterwarnings("ignore", module=r'.*star_probs.*')
+        warnings.filterwarnings("ignore", message=r'.*interpolating MAXMAGs table.*')
         aca = get_aca_catalog(**kwargs)
         acar, att_opts = find_er_catalog(aca, ATTS, alg='input_order')
     assert acar is None
