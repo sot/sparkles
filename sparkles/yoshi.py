@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.ma
 from chandra_aca.transform import calc_aca_from_targ
-from chandra_aca.drift import get_aca_offsets
+from chandra_aca.drift import get_aca_offsets, get_target_aimpoint
 from mica.archive.cda import get_ocat_web, get_ocat_local
 from Ska.Sun import nominal_roll
 from cxotime import CxoTime
@@ -53,15 +53,15 @@ def get_yoshi_params_from_ocat(obsid, obs_date=None, web_ocat=True):
     if ocat["z_sim"] is not numpy.ma.masked:
         targ["sim_offset"] = ocat["z_sim"] * 397.7225924607
 
-    # Could use get_target_aimpoint but that needs icxc if not on HEAD
-    # and we don't need to care that much for future observations.
-    aimpoints = {
-        "ACIS-I": (970.0, 975.0, 3),
-        "ACIS-S": (210.0, 520.0, 7),
-        "HRC-S": (2195.0, 8915.0, 2),
-        "HRC-I": (7590.0, 7745.0, 0),
-    }
-    chip_x, chip_y, chip_id = aimpoints[ocat["instr"]]
+    # The zero offset aimpoint table starts at cycle 15.
+    # For ancient obsids, just use the earliest in the table.
+    cycle = np.max([15, int(ocat['prop_cycle'])])
+    chip_x, chip_y, chip_id = get_target_aimpoint(
+        date=obs_date,
+        cycle=cycle,
+        detector=ocat['instr'],
+        too=ocat['type'] in ['TOO', 'DDT'])
+
     targ.update({"chipx": chip_x, "chipy": chip_y, "chip_id": chip_id})
 
     # Nominal roll is not quite the same targ and aca but don't care.
