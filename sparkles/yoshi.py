@@ -7,7 +7,7 @@ from Ska.Sun import nominal_roll
 from cxotime import CxoTime
 
 
-def get_yoshi_params_from_ocat(obsid, obs_date=None, web_ocat=True):
+def get_yoshi_params_from_ocat(obsid, obs_date=None, web_ocat=True, cycle=None):
     """
     For an obsid in the OCAT, fetch params from OCAT and define a few defaults
     for the standard info needed to get an ACA attitude and run
@@ -17,6 +17,10 @@ def get_yoshi_params_from_ocat(obsid, obs_date=None, web_ocat=True):
     :param obs_date: intended date. If None, use the date from the OCAT if possible
         else use current date.
     :param web_ocat: use the web version of the OCAT (uses get_ocat_local if False)
+    :param cycle: cycle to apply for aimpoint selection.  Default is to use proposal
+                  cycle. For DDTs one may need to specify the cycle if the most
+                  current (but not in the future) aimpoint differs from
+                  the DDT proposal cycle.
     :returns: dictionary of target parameters/keywords from OCAT.  Can be used with
               convert_yoshi_to_proseco_params .
     """
@@ -53,9 +57,12 @@ def get_yoshi_params_from_ocat(obsid, obs_date=None, web_ocat=True):
     if ocat["z_sim"] is not numpy.ma.masked:
         targ["sim_offset"] = ocat["z_sim"] * 397.7225924607
 
-    # The zero offset aimpoint table starts at cycle 15.
-    # For ancient obsids, just use the earliest in the table.
-    cycle = np.max([15, int(ocat['prop_cycle'])])
+    if cycle is None:
+
+        # The zero offset aimpoint table starts at cycle 15.
+        # For ancient obsids, just use the earliest in the table.
+        cycle = np.max([15, int(ocat['prop_cycle'])])
+
     chip_x, chip_y, chip_id = get_target_aimpoint(
         date=obs_date,
         cycle=cycle,
