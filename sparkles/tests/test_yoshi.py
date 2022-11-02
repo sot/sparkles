@@ -124,6 +124,33 @@ def assert_dict_equal(dict1, dict2):
 
 
 @pytest.mark.skipif(not HAS_WEB_SERVICES, reason="No web services available")
+def test_get_params_use_cycle():
+    """
+    Test using the cycle kwarg to get historical obsid configuration but with a recent
+    (cycle 21) aimpoint.
+    """
+    params = get_yoshi_params_from_ocat(obsid=8008, obs_date="2022:001", cycle=21)
+    exp = {
+        "chip_id": 3,
+        "chipx": 970.0,
+        "chipy": 975.0,
+        "dec_targ": 2.3085194444444443,
+        "detector": "ACIS-I",
+        "dither_y": 7.9992,
+        "dither_z": 7.9992,
+        "focus_offset": 0,
+        "obs_date": "2022:001:00:00:00.000",
+        "offset_y": 0.0,
+        "offset_z": np.ma.masked,
+        "ra_targ": 149.91616666666664,
+        "roll_targ": 62.01050867568485,
+        "sim_offset": 0,
+        "target_name": "C-COSMOS",
+    }
+    assert_dict_equal(params, exp)
+
+
+@pytest.mark.skipif(not HAS_WEB_SERVICES, reason="No web services available")
 def test_acar_from_ocat(monkeypatch):
     """Get an AcaReviewTable with minimal information filling in rest from OCAT"""
     monkeypatch.setenv(agasc.SUPPLEMENT_ENABLED_ENV, "False")
