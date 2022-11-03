@@ -66,8 +66,7 @@ def get_yoshi_params_from_ocat(obsid, obs_date=None, web_ocat=True, cycle=None):
     chip_x, chip_y, chip_id = get_target_aimpoint(
         date=obs_date,
         cycle=cycle,
-        detector=ocat['instr'],
-        too=ocat['type'] in ['TOO', 'DDT'])
+        detector=ocat['instr'])
 
     targ.update({"chipx": chip_x, "chipy": chip_y, "chip_id": chip_id})
 
