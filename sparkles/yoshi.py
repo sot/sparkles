@@ -1,13 +1,13 @@
 import numpy as np
 import numpy.ma
 from chandra_aca.transform import calc_aca_from_targ
-from chandra_aca.drift import get_aca_offsets
+from chandra_aca.drift import get_aca_offsets, get_target_aimpoint
 from mica.archive.cda import get_ocat_web, get_ocat_local
 from Ska.Sun import nominal_roll
 from cxotime import CxoTime
 
 
-def get_yoshi_params_from_ocat(obsid, obs_date=None, web_ocat=True):
+def get_yoshi_params_from_ocat(obsid, obs_date=None, web_ocat=True, cycle=None):
     """
     For an obsid in the OCAT, fetch params from OCAT and define a few defaults
     for the standard info needed to get an ACA attitude and run
@@ -17,6 +17,10 @@ def get_yoshi_params_from_ocat(obsid, obs_date=None, web_ocat=True):
     :param obs_date: intended date. If None, use the date from the OCAT if possible
         else use current date.
     :param web_ocat: use the web version of the OCAT (uses get_ocat_local if False)
+    :param cycle: cycle to apply for aimpoint selection.  Default is to use proposal
+                  cycle. For DDTs one may need to specify the cycle if the most
+                  current (but not in the future) aimpoint differs from
+                  the DDT proposal cycle.
     :returns: dictionary of target parameters/keywords from OCAT.  Can be used with
               convert_yoshi_to_proseco_params .
     """
@@ -53,15 +57,17 @@ def get_yoshi_params_from_ocat(obsid, obs_date=None, web_ocat=True):
     if ocat["z_sim"] is not numpy.ma.masked:
         targ["sim_offset"] = ocat["z_sim"] * 397.7225924607
 
-    # Could use get_target_aimpoint but that needs icxc if not on HEAD
-    # and we don't need to care that much for future observations.
-    aimpoints = {
-        "ACIS-I": (970.0, 975.0, 3),
-        "ACIS-S": (210.0, 520.0, 7),
-        "HRC-S": (2195.0, 8915.0, 2),
-        "HRC-I": (7590.0, 7745.0, 0),
-    }
-    chip_x, chip_y, chip_id = aimpoints[ocat["instr"]]
+    if cycle is None:
+
+        # The zero offset aimpoint table starts at cycle 15.
+        # For ancient obsids, just use the earliest in the table.
+        cycle = np.max([15, int(ocat['prop_cycle'])])
+
+    chip_x, chip_y, chip_id = get_target_aimpoint(
+        date=obs_date,
+        cycle=cycle,
+        detector=ocat['instr'])
+
     targ.update({"chipx": chip_x, "chipy": chip_y, "chip_id": chip_id})
 
     # Nominal roll is not quite the same targ and aca but don't care.
