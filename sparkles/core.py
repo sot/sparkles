@@ -45,6 +45,8 @@ FILEDIR = Path(__file__).parent
 # dyn bgd.
 MIN_DYN_BGD_ANCHOR_STARS = 3
 
+CREEP_AWAY_THRESHOLD = 5.0
+
 
 def main(sys_args=None):
     """Command line interface to preview_load()"""
@@ -885,6 +887,7 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
 Dither acq: Y_amp= {self.dither_acq.y:.1f}  Z_amp={self.dither_acq.z:.1f}
 Dither gui: Y_amp= {self.dither_guide.y:.1f}  Z_amp={self.dither_guide.z:.1f}
 Maneuver Angle: {self.man_angle:.2f}
+Next Maneuver Angle: {self.man_angle_next:.2f}
 Date: {self.date}
 
 {catalog}
@@ -1015,7 +1018,13 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
                 # Every distance was too small, issue a warning.
                 cat_idxs = [idx + 1 for idx in idxs]
                 msg = f'Guide indexes {cat_idxs} clustered within {min_dist}" radius'
-                self.add_message('critical', msg)
+
+                if self.man_angle_next > CREEP_AWAY_THRESHOLD:
+                    msg += f' (man_angle_next > {CREEP_AWAY_THRESHOLD})'
+                    self.add_message('critical', msg)
+                else:
+                    msg += f' (man_angle_next <= {CREEP_AWAY_THRESHOLD})'
+                    self.add_message('warning', msg)
 
         # Check for all stars within 2500" of each other
         min_dist = 2500
@@ -1142,11 +1151,27 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
                 f'{obs_type} count of 9th ({mag9:.1f} for {self.guides.t_ccd:.1f}C) '
                 f'mag guide stars {self.guide_count_9th:.2f} < {count_9th_lim}')
 
-        count_lim = 4.0 if self.is_OR else 6.0
-        if np.round(self.guide_count, decimals=2) < count_lim:
+        # Rounded guide count
+        guide_count_round = np.round(self.guide_count, decimals=2)
+
+        # Set critical guide_count threshold
+        if self.is_OR and self.man_angle_next <= CREEP_AWAY_THRESHOLD:
+            count_lim = 3.5
+        elif self.is_OR and self.man_angle_next > CREEP_AWAY_THRESHOLD:
+            count_lim = 4.0
+        else:
+            count_lim = 6.0
+
+        if guide_count_round < count_lim:
             self.add_message(
                 'critical',
                 f'{obs_type} count of guide stars {self.guide_count:.2f} < {count_lim}')
+        else:
+            # If in the 3.5 to 4.0 range, this probably deserves a warning.
+            if count_lim == 3.5 and guide_count_round < 4.0:
+                self.add_message(
+                    'warning',
+                    f'{obs_type} count of guide stars {self.guide_count:.2f} < 4.0')
 
         bright_cnt_lim = 1 if self.is_OR else 3
         if np.count_nonzero(self.guides['mag'] < 5.5) > bright_cnt_lim:
