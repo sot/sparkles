@@ -308,6 +308,33 @@ def test_guide_count_or():
     assert msg['category'] == 'caution'
     assert 'OR with more than 1 stars brighter than 5.5.' in msg['text']
 
+    # Set a scenario with guide_count in the 3.5 to 4.0 range and confirm a
+    # critical warning.
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=5, mag=[7.0, 7.0, 7.0, 10.2, 10.3])
+    aca = get_aca_catalog(**mod_std_info(n_fid=3, n_guide=5, obsid=1),
+                          stars=stars, dark=DARK40,
+                          raise_exc=True)
+    aca = ACAReviewTable(aca)
+    aca.check_guide_count()
+    assert aca.messages == [
+        {'text': 'OR count of guide stars 3.65 < 4.0', 'category': 'critical'},
+        {'text': 'OR with 4 guides but 5 were requested', 'category': 'caution'}]
+
+    # Set a scenario with guide_count in the 3.5 to 4.0 range and *but* with
+    # a creep away (maneuver angle <= 5), and confirm that is just a warning
+    # (not critical).
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=5, mag=[7.0, 7.0, 7.0, 10.2, 10.3])
+    aca = get_aca_catalog(**mod_std_info(n_fid=3, n_guide=5, obsid=1, man_angle_next=5),
+                          stars=stars, dark=DARK40,
+                          raise_exc=True)
+    aca = ACAReviewTable(aca)
+    aca.check_guide_count()
+    assert aca.messages == [
+        {'text': 'OR count of guide stars 3.65 < 4.0', 'category': 'warning'},
+        {'text': 'OR with 4 guides but 5 were requested', 'category': 'caution'}]
+
 
 def test_pos_err_on_guide():
     """Test the check that no guide star has large POS_ERR"""
@@ -541,4 +568,23 @@ def test_check_guide_geometry():
     assert len(acar.messages) == 1
     msg = acar.messages[0]
     assert msg['category'] == 'critical'
+    assert 'Guide indexes [4, 5, 6] clustered within 500" radius' in msg['text']
+
+    # Test for cluster of 3 500" rad stars in a 5 star case, but downgrade
+    # the warning for the case when the maneuver angle away is <= 5
+    # (creep-away).
+    stars = StarsTable.empty()
+    size = 1200
+    yangs = np.array([1, 0.90, 1.10, 0, -1])
+    zangs = np.array([1, 0.90, 1.10, -1, 0])
+    for y, z in zip(yangs, zangs):
+        stars.add_fake_star(yang=y * size, zang=z * size, mag=7.0)
+
+    aca = get_aca_catalog(**STD_INFO, man_angle_next=5, stars=stars, dark=DARK40)
+    acar = aca.get_review_table()
+    acar.check_guide_geometry()
+
+    assert len(acar.messages) == 1
+    msg = acar.messages[0]
+    assert msg['category'] == 'warning'
     assert 'Guide indexes [4, 5, 6] clustered within 500" radius' in msg['text']
