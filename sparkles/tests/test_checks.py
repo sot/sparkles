@@ -344,6 +344,52 @@ def test_low_guide_count_creep_away():
         {'text': 'OR with 4 guides but 5 were requested', 'category': 'caution'}]
 
 
+def test_reduced_dither_low_guide_count():
+
+    # Set a scenario with guide_count in the 3.5 to 4.0 range
+    # dither == 4x4 to get no warnings
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=5, mag=[7.0, 7.0, 7.0, 10.2, 10.3])
+    aca = get_aca_catalog(**mod_std_info(n_fid=3, n_guide=5, obsid=1,
+                                         dyn_bgd_n_faint=0, dither=(4, 4)),
+                          stars=stars, dark=DARK40,
+                          raise_exc=True)
+    acar = ACAReviewTable(aca)
+    acar.check_dither()
+    assert len(acar.messages) == 0
+
+
+def test_not_reduced_dither_low_guide_count():
+    # Set a scenario with guide_count in the 3.5 to 4.0 range and
+    # implicit dyn_bgd_n_faint=0 and dither > 4x4 to get a critical warning
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=5, mag=[7.0, 7.0, 7.0, 10.2, 10.3])
+    aca = get_aca_catalog(**mod_std_info(n_fid=3, n_guide=5, obsid=1,
+                                         dyn_bgd_n_faint=0, dither=(8, 8)),
+                          stars=stars, dark=DARK40,
+                          raise_exc=True)
+    acar = ACAReviewTable(aca)
+    acar.check_dither()
+    assert acar.messages == [
+        {'text': 'guide_count 3.65 and dither > 4x4', 'category': 'critical'}]
+
+
+def test_not_reduced_dither_low_guide_count_dyn_bgd():
+    # Set a scenario with guide_count in the 3.5 to 4.0 range with dither
+    # 8x8 but dynamic background running (inferred from dyn_bgd_n_faint > 0)
+    # This has a fainter last star, as dyn_bgd_n_faint=1 changes the guide_count
+    # and the test is intended to get into the 3.5 to 4.0 guide count range.
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=5, mag=[7.0, 7.0, 7.0, 10.2, 10.8])
+    aca = get_aca_catalog(**mod_std_info(n_fid=3, n_guide=5, obsid=1,
+                                         dyn_bgd_n_faint=1, dither=(8, 8)),
+                          stars=stars, dark=DARK40,
+                          raise_exc=True)
+    acar = ACAReviewTable(aca)
+    acar.check_dither()
+    assert len(acar.messages) == 0
+
+
 def test_pos_err_on_guide():
     """Test the check that no guide star has large POS_ERR"""
     stars = StarsTable.empty()
