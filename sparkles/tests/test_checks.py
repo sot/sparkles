@@ -281,6 +281,8 @@ def test_guide_count_or():
         {'text': 'OR count of guide stars 2.00 < 4.0', 'category': 'critical'},
         {'text': 'OR with 2 guides but 5 were requested', 'category': 'caution'}]
 
+
+def test_ok_number_bright_guide_stars():
     # This configuration should not warn with too many really bright stars
     # (allowed to have 1 stars brighter than 5.5)
     stars = StarsTable.empty()
@@ -293,6 +295,8 @@ def test_guide_count_or():
     assert aca.messages == [
         {'text': 'OR with 4 guides but 5 were requested', 'category': 'caution'}]
 
+
+def test_too_many_bright_stars():
     # This configuration should warn with too many bright stars
     # (has > 1.0 stars brighter than 5.5
     stars = StarsTable.empty()
@@ -308,6 +312,8 @@ def test_guide_count_or():
     assert msg['category'] == 'caution'
     assert 'OR with more than 1 stars brighter than 5.5.' in msg['text']
 
+
+def test_low_guide_count():
     # Set a scenario with guide_count in the 3.5 to 4.0 range and confirm a
     # critical warning.
     stars = StarsTable.empty()
@@ -321,6 +327,8 @@ def test_guide_count_or():
         {'text': 'OR count of guide stars 3.65 < 4.0', 'category': 'critical'},
         {'text': 'OR with 4 guides but 5 were requested', 'category': 'caution'}]
 
+
+def test_low_guide_count_creep_away():
     # Set a scenario with guide_count in the 3.5 to 4.0 range but with
     # a creep away (maneuver angle <= 5), and confirm that is just a warning
     # (not critical).
