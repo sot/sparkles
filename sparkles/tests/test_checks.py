@@ -31,12 +31,12 @@ def test_check_P2():
     stars = StarsTable.empty()
     stars.add_fake_constellation(n_stars=3, mag=10.25)
     aca = get_aca_catalog(**STD_INFO, stars=stars, dark=DARK40)
-    aca = ACAReviewTable(aca)
+    acar = ACAReviewTable(aca)
 
     # Check P2 for an OR (default obsid=0)
-    aca.check_acq_p2()
-    assert len(aca.messages) == 1
-    msg = aca.messages[0]
+    acar.check_acq_p2()
+    assert len(acar.messages) == 1
+    msg = acar.messages[0]
     assert msg['category'] == 'critical'
     assert 'less than 2.0 for OR' in msg['text']
 
@@ -45,10 +45,10 @@ def test_check_P2():
     stars.add_fake_constellation(n_stars=5, mag=9.5)
     aca = get_aca_catalog(**mod_std_info(n_fid=0, n_guide=8, obsid=50000), stars=stars, dark=DARK40,
                           raise_exc=True)
-    aca = ACAReviewTable(aca)
-    aca.check_acq_p2()
-    assert len(aca.messages) == 1
-    msg = aca.messages[0]
+    acar = ACAReviewTable(aca)
+    acar.check_acq_p2()
+    assert len(acar.messages) == 1
+    msg = acar.messages[0]
     assert msg['category'] == 'critical'
     assert 'less than 3.0 for ER' in msg['text']
 
@@ -180,10 +180,10 @@ def test_guide_count_er1():
     aca = get_aca_catalog(**mod_std_info(n_fid=0, n_guide=8, obsid=50000),
                           stars=stars, dark=DARK40,
                           raise_exc=True)
-    aca = ACAReviewTable(aca)
-    aca.check_guide_count()
-    assert len(aca.messages) == 1
-    msg = aca.messages[0]
+    acar = ACAReviewTable(aca)
+    acar.check_guide_count()
+    assert len(acar.messages) == 1
+    msg = acar.messages[0]
     assert msg['category'] == 'critical'
     assert 'ER count of 9th' in msg['text']
 
@@ -195,9 +195,9 @@ def test_guide_count_er2():
     aca = get_aca_catalog(**mod_std_info(n_fid=0, n_guide=8, obsid=50000),
                           stars=stars, dark=DARK40,
                           raise_exc=True)
-    aca = ACAReviewTable(aca)
-    aca.check_guide_count()
-    assert aca.messages == [
+    acar = ACAReviewTable(aca)
+    acar.check_guide_count()
+    assert acar.messages == [
         {'text': 'ER count of guide stars 3.00 < 6.0', 'category': 'critical'},
         {'text': 'ER with 3 guides but 8 were requested', 'category': 'caution'}]
 
@@ -209,9 +209,9 @@ def test_guide_count_er3():
     stars.add_fake_constellation(n_stars=6, mag=[8.5, 8.5, 8.5, 9.9, 9.9, 9.9])
     aca = get_aca_catalog(**mod_std_info(obsid=50000, n_fid=0, n_guide=8), stars=stars, dark=DARK40,
                           raise_exc=True)
-    aca = ACAReviewTable(aca)
-    aca.check_guide_count()
-    assert aca.messages == [
+    acar = ACAReviewTable(aca)
+    acar.check_guide_count()
+    assert acar.messages == [
         {'text': 'ER with 6 guides but 8 were requested', 'category': 'caution'}]
 
 
@@ -225,9 +225,9 @@ def test_guide_count_er4():
     stars.add_fake_star(yang=-2000, zang=-2000, mag=6.0)
     aca = get_aca_catalog(**mod_std_info(obsid=50000, n_fid=0, n_guide=8), stars=stars, dark=DARK40,
                           raise_exc=True)
-    aca = ACAReviewTable(aca)
-    aca.check_guide_count()
-    assert aca.messages == [
+    acar = ACAReviewTable(aca)
+    acar.check_guide_count()
+    assert acar.messages == [
         {'text': 'ER with 6 guides but 8 were requested', 'category': 'caution'}]
 
 
@@ -262,9 +262,9 @@ def test_guide_count_er5():
     stars.add_fake_star(yang=-1000, zang=1000, mag=8.0)
     aca = get_aca_catalog(**mod_std_info(obsid=50000, n_fid=0, n_guide=8), stars=stars, dark=DARK40,
                           raise_exc=True)
-    aca = ACAReviewTable(aca)
-    aca.check_guide_count()
-    assert aca.messages == [
+    acar = ACAReviewTable(aca)
+    acar.check_guide_count()
+    assert acar.messages == [
         {'text': 'ER with more than 3 stars brighter than 5.5.', 'category': 'caution'},
         {'text': 'ER with 6 guides but 8 were requested', 'category': 'caution'}]
 
@@ -275,12 +275,14 @@ def test_guide_count_or():
     stars.add_fake_constellation(n_stars=5, mag=[7.0, 7.0, 10.3, 10.3, 10.3])
     aca = get_aca_catalog(**mod_std_info(n_fid=3, n_guide=5, obsid=1), stars=stars, dark=DARK40,
                           raise_exc=True)
-    aca = ACAReviewTable(aca)
-    aca.check_guide_count()
-    assert aca.messages == [
+    acar = ACAReviewTable(aca)
+    acar.check_guide_count()
+    assert acar.messages == [
         {'text': 'OR count of guide stars 2.00 < 4.0', 'category': 'critical'},
         {'text': 'OR with 2 guides but 5 were requested', 'category': 'caution'}]
 
+
+def test_ok_number_bright_guide_stars():
     # This configuration should not warn with too many really bright stars
     # (allowed to have 1 stars brighter than 5.5)
     stars = StarsTable.empty()
@@ -288,11 +290,13 @@ def test_guide_count_or():
     stars.add_fake_star(yang=100, zang=100, mag=5.4)
     aca = get_aca_catalog(**mod_std_info(n_fid=3, n_guide=5, obsid=1), stars=stars, dark=DARK40,
                           raise_exc=True)
-    aca = ACAReviewTable(aca)
-    aca.check_guide_count()
-    assert aca.messages == [
+    acar = ACAReviewTable(aca)
+    acar.check_guide_count()
+    assert acar.messages == [
         {'text': 'OR with 4 guides but 5 were requested', 'category': 'caution'}]
 
+
+def test_too_many_bright_stars():
     # This configuration should warn with too many bright stars
     # (has > 1.0 stars brighter than 5.5
     stars = StarsTable.empty()
@@ -301,12 +305,43 @@ def test_guide_count_or():
     stars.add_fake_star(yang=-1000, zang=1000, mag=5.4)
     aca = get_aca_catalog(**mod_std_info(n_fid=3, n_guide=5, obsid=1), stars=stars, dark=DARK40,
                           raise_exc=True)
-    aca = ACAReviewTable(aca)
-    aca.check_guide_count()
-    assert len(aca.messages) == 1
-    msg = aca.messages[0]
+    acar = ACAReviewTable(aca)
+    acar.check_guide_count()
+    assert len(acar.messages) == 1
+    msg = acar.messages[0]
     assert msg['category'] == 'caution'
     assert 'OR with more than 1 stars brighter than 5.5.' in msg['text']
+
+
+def test_low_guide_count():
+    # Set a scenario with guide_count in the 3.5 to 4.0 range and confirm a
+    # critical warning.
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=5, mag=[7.0, 7.0, 7.0, 10.2, 10.3])
+    aca = get_aca_catalog(**mod_std_info(n_fid=3, n_guide=5, obsid=1),
+                          stars=stars, dark=DARK40,
+                          raise_exc=True)
+    acar = ACAReviewTable(aca)
+    acar.check_guide_count()
+    assert acar.messages == [
+        {'text': 'OR count of guide stars 3.65 < 4.0', 'category': 'critical'},
+        {'text': 'OR with 4 guides but 5 were requested', 'category': 'caution'}]
+
+
+def test_low_guide_count_creep_away():
+    # Set a scenario with guide_count in the 3.5 to 4.0 range but with
+    # a creep away (maneuver angle <= 5), and confirm that is just a warning
+    # (not critical).
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=5, mag=[7.0, 7.0, 7.0, 10.2, 10.3])
+    aca = get_aca_catalog(**mod_std_info(n_fid=3, n_guide=5, obsid=1, man_angle_next=5.0),
+                          stars=stars, dark=DARK40,
+                          raise_exc=True)
+    acar = ACAReviewTable(aca)
+    acar.check_guide_count()
+    assert acar.messages == [
+        {'text': 'OR count of guide stars 3.65 < 4.0', 'category': 'warning'},
+        {'text': 'OR with 4 guides but 5 were requested', 'category': 'caution'}]
 
 
 def test_pos_err_on_guide():
@@ -320,21 +355,21 @@ def test_pos_err_on_guide():
     aca = get_aca_catalog(**mod_std_info(n_fid=0), stars=stars, dark=DARK40, raise_exc=True,
                           include_ids_guide=[100, 101])  # Must force 100, 101, pos_err too big
 
-    aca = ACAReviewTable(aca)
+    acar = ACAReviewTable(aca)
 
     # 103 not selected because pos_err > 1.25 arcsec
-    assert aca.guides['id'].tolist() == [100, 101, 102]
+    assert acar.guides['id'].tolist() == [100, 101, 102]
 
     # Run pos err checks
     for guide in aca.guides:
-        aca.check_pos_err_guide(guide)
+        acar.check_pos_err_guide(guide)
 
-    assert len(aca.messages) == 2
-    msg = aca.messages[0]
+    assert len(acar.messages) == 2
+    msg = acar.messages[0]
     assert msg['category'] == 'critical'
     assert 'Guide star 100 POS_ERR 2.01' in msg['text']
 
-    msg = aca.messages[1]
+    msg = acar.messages[1]
     assert msg['category'] == 'warning'
     assert 'Guide star 101 POS_ERR 1.26' in msg['text']
 
@@ -413,15 +448,15 @@ def test_imposters_on_guide(exp_warn):
     dark_with_badpix[100 + 512, -201 + 512] = cnt * scale
     aca = get_aca_catalog(**mod_std_info(n_fid=0, n_guide=8), stars=stars, dark=dark_with_badpix,
                           raise_exc=True)
-    aca = ACAReviewTable(aca)
-    aca.check_imposters_guide(aca.guides.get_id(110))
+    acar = ACAReviewTable(aca)
+    acar.check_imposters_guide(aca.guides.get_id(110))
     if exp_warn:
-        assert len(aca.messages) == 1
-        msg = aca.messages[0]
+        assert len(acar.messages) == 1
+        msg = acar.messages[0]
         assert msg['category'] == 'warning'
         assert msg['text'] == 'Guide star imposter offset 2.6, limit 2.5 arcsec'
     else:
-        assert len(aca.messages) == 0
+        assert len(acar.messages) == 0
 
 
 def test_bad_star_set():
@@ -448,9 +483,9 @@ def test_too_bright_guide_magerr():
     stars.add_fake_star(id=100, yang=100, zang=-200, mag=5.4, mag_err=0.11, MAG_ACA_ERR=10)
     stars.add_fake_star(id=101, yang=0, zang=500, mag=8.0)
     aca = get_aca_catalog(**mod_std_info(n_fid=0), stars=stars, dark=DARK40, raise_exc=True)
-    aca = ACAReviewTable(aca)
-    aca.check_too_bright_guide(aca.guides.get_id(100))
-    msg = aca.messages[0]
+    acar = ACAReviewTable(aca)
+    acar.check_too_bright_guide(aca.guides.get_id(100))
+    msg = acar.messages[0]
     assert msg['category'] == 'critical'
     assert '2*mag_err of 5.2' in msg['text']
 
@@ -541,4 +576,23 @@ def test_check_guide_geometry():
     assert len(acar.messages) == 1
     msg = acar.messages[0]
     assert msg['category'] == 'critical'
+    assert 'Guide indexes [4, 5, 6] clustered within 500" radius' in msg['text']
+
+    # Test for cluster of 3 500" rad stars in a 5 star case, but downgrade
+    # the warning for the case when the maneuver angle away is <= 5
+    # (creep-away).
+    stars = StarsTable.empty()
+    size = 1200
+    yangs = np.array([1, 0.90, 1.10, 0, -1])
+    zangs = np.array([1, 0.90, 1.10, -1, 0])
+    for y, z in zip(yangs, zangs):
+        stars.add_fake_star(yang=y * size, zang=z * size, mag=7.0)
+
+    aca = get_aca_catalog(**STD_INFO, man_angle_next=5.0, stars=stars, dark=DARK40)
+    acar = aca.get_review_table()
+    acar.check_guide_geometry()
+
+    assert len(acar.messages) == 1
+    msg = acar.messages[0]
+    assert msg['category'] == 'warning'
     assert 'Guide indexes [4, 5, 6] clustered within 500" radius' in msg['text']
