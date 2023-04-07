@@ -321,12 +321,12 @@ def test_guide_count_or():
         {'text': 'OR count of guide stars 3.65 < 4.0', 'category': 'critical'},
         {'text': 'OR with 4 guides but 5 were requested', 'category': 'caution'}]
 
-    # Set a scenario with guide_count in the 3.5 to 4.0 range and *but* with
+    # Set a scenario with guide_count in the 3.5 to 4.0 range but with
     # a creep away (maneuver angle <= 5), and confirm that is just a warning
     # (not critical).
     stars = StarsTable.empty()
     stars.add_fake_constellation(n_stars=5, mag=[7.0, 7.0, 7.0, 10.2, 10.3])
-    aca = get_aca_catalog(**mod_std_info(n_fid=3, n_guide=5, obsid=1, man_angle_next=5),
+    aca = get_aca_catalog(**mod_std_info(n_fid=3, n_guide=5, obsid=1, man_angle_next=5.0),
                           stars=stars, dark=DARK40,
                           raise_exc=True)
     aca = ACAReviewTable(aca)
@@ -580,7 +580,7 @@ def test_check_guide_geometry():
     for y, z in zip(yangs, zangs):
         stars.add_fake_star(yang=y * size, zang=z * size, mag=7.0)
 
-    aca = get_aca_catalog(**STD_INFO, man_angle_next=5, stars=stars, dark=DARK40)
+    aca = get_aca_catalog(**STD_INFO, man_angle_next=5.0, stars=stars, dark=DARK40)
     acar = aca.get_review_table()
     acar.check_guide_geometry()
 

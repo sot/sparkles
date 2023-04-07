@@ -45,6 +45,8 @@ FILEDIR = Path(__file__).parent
 # dyn bgd.
 MIN_DYN_BGD_ANCHOR_STARS = 3
 
+# Observations with man_angle_next less than or equal to CREEP_AWAY_THRESHOLD
+# are considered "creep away" observations. CREEP_AWAY_THRESHOLD is in units of degrees.
 CREEP_AWAY_THRESHOLD = 5.0
 
 
@@ -1155,10 +1157,11 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
         guide_count_round = np.round(self.guide_count, decimals=2)
 
         # Set critical guide_count threshold
-        if self.is_OR and self.man_angle_next <= CREEP_AWAY_THRESHOLD:
-            count_lim = 3.5
-        elif self.is_OR and self.man_angle_next > CREEP_AWAY_THRESHOLD:
-            count_lim = 4.0
+        # For observations with creep-away in place as a mitigation for end of observation
+        # roll error, we can accept a lower guide_count (3.5 instead of 4.0).
+        # See https://occweb.cfa.harvard.edu/twiki/bin/view/Aspect/StarWorkingGroupMeeting2023x03x15
+        if self.is_OR:
+            count_lim = 3.5 if (self.man_angle_next <= CREEP_AWAY_THRESHOLD) else 4.0
         else:
             count_lim = 6.0
 
@@ -1166,12 +1169,11 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
             self.add_message(
                 'critical',
                 f'{obs_type} count of guide stars {self.guide_count:.2f} < {count_lim}')
-        else:
-            # If in the 3.5 to 4.0 range, this probably deserves a warning.
-            if count_lim == 3.5 and guide_count_round < 4.0:
-                self.add_message(
-                    'warning',
-                    f'{obs_type} count of guide stars {self.guide_count:.2f} < 4.0')
+        # If in the 3.5 to 4.0 range, this probably deserves a warning.
+        elif count_lim == 3.5 and guide_count_round < 4.0:
+            self.add_message(
+                'warning',
+                f'{obs_type} count of guide stars {self.guide_count:.2f} < 4.0')
 
         bright_cnt_lim = 1 if self.is_OR else 3
         if np.count_nonzero(self.guides['mag'] < 5.5) > bright_cnt_lim:
