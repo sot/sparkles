@@ -1218,10 +1218,10 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
     # Add a check that for ORs with guide count between 3.5 and 4.0, the
     # dither is 4 arcsec if dynamic background not enabled.
     def check_dither(self):
-        """Check dither
         """
-        # The current dither check is just to confirm that the dither is 4x4 if
-        # dynamic background is not in use and the field has a low guide_count
+        Check dither.  This presently checks that dither is 4x4 arcsec if
+        dynamic background is not in use and the field has a low guide_count.
+        """
 
         # Skip check if guide_count is 4.0 or greater
         if self.guide_count >= 4.0:
@@ -1231,11 +1231,11 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
         if self.dyn_bgd_n_faint > 0:
             return
 
-        # Check that dither is <= 4x4
+        # Check that dither is <= 4x4 arcsec
         if self.dither_guide.y > 4.0 or self.dither_guide.z > 4.0:
             self.add_message(
                 'critical',
-                f'guide_count {self.guide_count:.2f} and dither > 4x4')
+                f'guide_count {self.guide_count:.2f} and dither > 4x4 arcsec')
 
     def check_pos_err_guide(self, star):
         """Warn on stars with larger POS_ERR (warning at 1" critical at 2")
