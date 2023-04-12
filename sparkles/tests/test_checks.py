@@ -314,6 +314,8 @@ def test_too_many_bright_stars():
 
 
 def test_low_guide_count():
+    """Test that a 3.5 to 4.0 guide_count observation gets a critical warning
+    on guide_count if man_angle_next > 5 (no creep-away)."""
     # Set a scenario with guide_count in the 3.5 to 4.0 range and confirm a
     # critical warning.
     stars = StarsTable.empty()
@@ -322,6 +324,9 @@ def test_low_guide_count():
                           stars=stars, dark=DARK40,
                           raise_exc=True)
     acar = ACAReviewTable(aca)
+    # Confirm the guide_count is in the range we want for the test to be valid
+    assert acar.guide_count <= 4.0 and acar.guide_count > 3.5
+    assert acar.man_angle_next > 5
     acar.check_guide_count()
     assert acar.messages == [
         {'text': 'OR count of guide stars 3.65 < 4.0', 'category': 'critical'},
@@ -329,6 +334,8 @@ def test_low_guide_count():
 
 
 def test_low_guide_count_creep_away():
+    """Test that a 3.5 to 4.0 guide_count observation does not get a critical warning
+    on guide_count if man_angle_next <= 5 (creep-away)."""
     # Set a scenario with guide_count in the 3.5 to 4.0 range but with
     # a creep away (maneuver angle <= 5), and confirm that is just a warning
     # (not critical).
@@ -338,10 +345,75 @@ def test_low_guide_count_creep_away():
                           stars=stars, dark=DARK40,
                           raise_exc=True)
     acar = ACAReviewTable(aca)
+    # Confirm the guide_count is in the range we want for the test to be valid
+    assert acar.guide_count <= 4.0 and acar.guide_count > 3.5
     acar.check_guide_count()
     assert acar.messages == [
         {'text': 'OR count of guide stars 3.65 < 4.0', 'category': 'warning'},
         {'text': 'OR with 4 guides but 5 were requested', 'category': 'caution'}]
+
+
+def test_reduced_dither_low_guide_count():
+    """Test that a 3.5 to 4.0 guide_count observation without dynamic background
+    in use (dyn_bgd_n_faint == 0) does not get a dither critical warning for 4x4 arcsec dither."""
+    # Set a scenario with guide_count in the 3.5 to 4.0 range
+    # dither == 4x4 to get no warnings
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=5, mag=[7.0, 7.0, 7.0, 10.2, 10.3])
+    aca = get_aca_catalog(**mod_std_info(n_fid=3, n_guide=5, obsid=1,
+                                         dyn_bgd_n_faint=0, dither=(4, 4)),
+                          stars=stars, dark=DARK40,
+                          raise_exc=True)
+    acar = ACAReviewTable(aca)
+
+    # Confirm the guide_count is in the range we want for the test to be valid
+    assert acar.guide_count <= 4.0 and acar.guide_count > 3.5
+
+    # Run the dither check
+    acar.check_dither()
+    assert len(acar.messages) == 0
+
+
+def test_not_reduced_dither_low_guide_count():
+    """Test that a 3.5 to 4.0 guide_count observation without dynamic background
+    in use (dyn_bgd_n_faint == 0) gets a dither critical warning for 8x8 arcsec dither."""
+    # Set a scenario with guide_count in the 3.5 to 4.0 range and
+    # implicit dyn_bgd_n_faint=0 and dither > 4x4 to get a critical warning
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=5, mag=[7.0, 7.0, 7.0, 10.2, 10.3])
+    aca = get_aca_catalog(**mod_std_info(n_fid=3, n_guide=5, obsid=1,
+                                         dyn_bgd_n_faint=0, dither=(8, 8)),
+                          stars=stars, dark=DARK40,
+                          raise_exc=True)
+    acar = ACAReviewTable(aca)
+
+    # Confirm the guide_count is in the range we want for the test to be valid
+    assert acar.guide_count <= 4.0 and acar.guide_count > 3.5
+
+    # Run the dither check
+    acar.check_dither()
+    assert acar.messages == [
+        {'text': 'guide_count 3.65 and dither > 4x4 arcsec', 'category': 'critical'}]
+
+
+def test_not_reduced_dither_low_guide_count_dyn_bgd():
+    """Test that a 3.5 to 4.0 guide_count observation with dynamic background
+    in use (dyn_bgd_n_faint > 0) does not get a dither critical warning for 8x8 arcsec dither."""
+    # Set a scenario with guide_count in the 3.5 to 4.0 range with dither
+    # 8x8 but dynamic background running (inferred from dyn_bgd_n_faint > 0)
+    # This has a fainter last star, as dyn_bgd_n_faint=1 changes the guide_count
+    # and the test is intended to get into the 3.5 to 4.0 guide count range.
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=5, mag=[7.0, 7.0, 7.0, 10.2, 10.8])
+    aca = get_aca_catalog(**mod_std_info(n_fid=3, n_guide=5, obsid=1,
+                                         dyn_bgd_n_faint=1, dither=(8, 8)),
+                          stars=stars, dark=DARK40,
+                          raise_exc=True)
+    acar = ACAReviewTable(aca)
+    # Confirm the guide_count is in the range we want for the test to be valid
+    assert acar.guide_count <= 4.0 and acar.guide_count > 3.5
+    acar.check_dither()
+    assert len(acar.messages) == 0
 
 
 def test_pos_err_on_guide():
