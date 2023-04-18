@@ -185,7 +185,9 @@ class RollOptimizeMixin:
                 FutureWarning
             )
         else:
-            roll_dev = ska_sun.allowed_rolldev(pitch) if max_roll_dev is None else max_roll_dev
+            # allowed_rolldev returns -1.0 for not-allowed pitch.
+            # Just clip to 0 in that case in the context of this function.
+            roll_dev = ska_sun.allowed_rolldev(pitch).clip(0) if max_roll_dev is None else max_roll_dev
 
 
         # Ensure roll_nom in range 0 <= roll_nom < 360 to match att_targ.roll.
