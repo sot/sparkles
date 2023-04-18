@@ -185,9 +185,7 @@ class RollOptimizeMixin:
                 FutureWarning
             )
         else:
-            # allowed_rolldev returns -1.0 for not-allowed pitch.
-            # Just clip to 0 in that case in the context of this function.
-            roll_dev = (ska_sun.allowed_rolldev(pitch).clip(0) if max_roll_dev is None
+            roll_dev = (ska_sun.allowed_rolldev(pitch) if max_roll_dev is None
                         else max_roll_dev)
 
         # Ensure roll_nom in range 0 <= roll_nom < 360 to match att_targ.roll.
@@ -198,6 +196,16 @@ class RollOptimizeMixin:
         roll_nom = roll_nom % 360.0
         roll_min = min(roll_nom - roll_dev, roll_targ - 0.1)
         roll_max = max(roll_nom + roll_dev, roll_targ + 0.1)
+
+        roll_info = {'roll_min': roll_min,
+                     'roll_max': roll_max,
+                     'roll_nom': roll_nom}
+
+        # For a pitch which is outside the allowed range in the pitch/off-nominal roll
+        # table the returned roll_dev will be negative. In this case there are no valid
+        # roll intervals to check so return an empty list.
+        if roll_dev < 0:
+            return [], roll_info
 
         # Get roll offsets spanning roll_min:roll_max with padding.  Padding
         # ensures that if a candidate is best at or beyond the extreme of
@@ -216,10 +224,6 @@ class RollOptimizeMixin:
         get_roll_intervals_func = getattr(self, f'_get_roll_intervals_{method}')
         roll_intervals = get_roll_intervals_func(ids0, ids_list, roll_targ, roll_min,
                                                  roll_max, roll_offsets, d_roll)
-
-        roll_info = {'roll_min': roll_min,
-                     'roll_max': roll_max,
-                     'roll_nom': roll_nom}
 
         return sorted(roll_intervals, key=lambda x: x['roll']), roll_info
 
