@@ -13,7 +13,7 @@ from chandra_aca.star_probs import acq_success_prob, guide_count
 from chandra_aca.transform import (radec_to_yagzag, yagzag_to_pixels,
                                    calc_aca_from_targ, calc_targ_from_aca)
 from Quaternion import Quat
-import Ska.Sun
+import ska_sun
 
 from proseco.characteristics import CCD
 from proseco import get_aca_catalog
@@ -111,7 +111,7 @@ class RollOptimizeMixin:
                            method='uniq_ids', max_roll_dev=None):
         """Find a list of rolls that might substantially improve guide or acq catalogs.
         If ``roll_nom`` is not specified then an approximate value is computed
-        via Ska.Sun for the catalog ``date``.  if ``roll_dev`` (max allowed
+        via ska_sun for the catalog ``date``.  if ``roll_dev`` (max allowed
         off-nominal roll) is not specified it is computed using the OFLS table.
         These will not precisely match ORviewer results.
 
@@ -173,8 +173,8 @@ class RollOptimizeMixin:
         # Compute roll_nom and roll_dev from Sun position.  Here we use the ACA attitude to get
         # pitch since that is the official "spacecraft" attitude.
         att = self.att
-        pitch = Ska.Sun.pitch(att.ra, att.dec, self.date)
-        roll_nom = Ska.Sun.nominal_roll(att.ra, att.dec, self.date)
+        pitch = ska_sun.pitch(att.ra, att.dec, self.date)
+        roll_nom = ska_sun.nominal_roll(att.ra, att.dec, self.date)
         att_nom = Quat([att.ra, att.dec, roll_nom])
         att_nom_targ = self._calc_targ_from_aca(att_nom, *self.target_offset)
         roll_nom = att_nom_targ.roll
@@ -185,7 +185,8 @@ class RollOptimizeMixin:
                 FutureWarning
             )
         else:
-            roll_dev = Ska.Sun.allowed_rolldev(pitch) if max_roll_dev is None else max_roll_dev
+            roll_dev = ska_sun.allowed_rolldev(pitch) if max_roll_dev is None else max_roll_dev
+
 
         # Ensure roll_nom in range 0 <= roll_nom < 360 to match att_targ.roll.
         # Also ensure that roll_min < roll < roll_max.  It can happen that the
