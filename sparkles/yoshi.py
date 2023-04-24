@@ -3,7 +3,7 @@ import numpy.ma
 from chandra_aca.transform import calc_aca_from_targ
 from chandra_aca.drift import get_aca_offsets, get_target_aimpoint
 from mica.archive.cda import get_ocat_web, get_ocat_local
-from Ska.Sun import nominal_roll
+from ska_sun import nominal_roll
 from cxotime import CxoTime
 
 

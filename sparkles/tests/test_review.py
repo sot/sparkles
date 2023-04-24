@@ -11,7 +11,9 @@ from proseco.characteristics import aca_t_ccd_penalty_limit, MonFunc, MonCoord
 
 import agasc
 from Quaternion import Quat
-import Ska.Sun
+import ska_sun
+from ska_sun import apply_sun_pitch_yaw, pitch, nominal_roll
+
 from proseco.tests.test_common import DARK40, mod_std_info
 
 from .. import ACAReviewTable, run_aca_review
@@ -327,7 +329,7 @@ def test_roll_options_dec89_9():
     """
     dec = 89.9
     date = '2019:006:12:00:00'
-    roll = Ska.Sun.nominal_roll(0, dec, time=date)
+    roll = ska_sun.nominal_roll(0, dec, time=date)
     att = Quat([0, dec, roll])
 
     # Expected roll options.  Note same basic outputs for add_ids and drop_ids but
