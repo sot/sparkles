@@ -12,7 +12,7 @@ from proseco.characteristics import aca_t_ccd_penalty_limit, MonFunc, MonCoord
 import agasc
 from Quaternion import Quat
 import ska_sun
-from ska_sun import apply_sun_pitch_yaw, pitch, nominal_roll
+from ska_sun import apply_sun_pitch_yaw, nominal_roll
 
 from proseco.tests.test_common import DARK40, mod_std_info
 
@@ -492,6 +492,25 @@ def test_get_roll_intervals():
                        'roll_max': 291.63739755173594,
                        'roll_min': 290.92838289905592}]
     compare_intervs(er_roll_intervs, er_exp_intervs)
+
+
+def test_roll_options_for_not_allowed_pitch():
+    """
+    Confirm that roll option determination works without error
+    for a pitch that is not allowed (no options returned).
+    """
+    ra = dec = 0.0
+    date = '2023:001'
+    roll = nominal_roll(ra, dec, date)
+    att0 = Quat([ra, dec, roll])
+
+    att = apply_sun_pitch_yaw(att0, pitch=40)
+    aca = get_aca_catalog(**mod_std_info(att=att, date=date))
+    acar = aca.get_review_table()
+    acar.get_roll_options()
+    assert len(acar.roll_options) == 1
+    tbl = acar.get_roll_options_table()
+    assert len(tbl) == 1
 
 
 def test_review_with_mon_star():
