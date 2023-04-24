@@ -72,9 +72,9 @@ from proseco import get_aca_catalog
 import agasc
 from Quaternion import Quat
 from chandra_aca.star_probs import guide_count
-import Ska.Sun
+import ska_sun
 
-from Ska.Sun import get_sun_pitch_yaw
+from ska_sun import get_sun_pitch_yaw
 
 
 def get_candidate_stars(att0, t_ccd, date=None, atts=None):
@@ -272,7 +272,7 @@ def get_att_opts_table(acar, atts):
     date = acar.date
 
     # Get pitch and yaw of the initial attitude and the attitudes to try
-    sun_ra, sun_dec = Ska.Sun.position(date)
+    sun_ra, sun_dec = ska_sun.position(date)
     pitch0, yaw0 = get_sun_pitch_yaw(att0.ra, att0.dec, sun_ra=sun_ra, sun_dec=sun_dec)
     pitches, yaws = get_sun_pitch_yaw(atts_quat.ra, atts_quat.dec,
                                       sun_ra=sun_ra, sun_dec=sun_dec)
@@ -282,9 +282,9 @@ def get_att_opts_table(acar, atts):
     dpitches = (pitches - pitch0).ravel()
     dyaws = (yaws - yaw0).ravel()
 
-    off_rolls = [att.roll - Ska.Sun.nominal_roll(att.ra, att.dec, sun_ra=sun_ra, sun_dec=sun_dec)
+    off_rolls = [att.roll - ska_sun.nominal_roll(att.ra, att.dec, sun_ra=sun_ra, sun_dec=sun_dec)
                  for att in atts_list]
-    off_roll0 = att0.roll - Ska.Sun.nominal_roll(att0.ra, att0.dec, sun_ra=sun_ra, sun_dec=sun_dec)
+    off_roll0 = att0.roll - ska_sun.nominal_roll(att0.ra, att0.dec, sun_ra=sun_ra, sun_dec=sun_dec)
     drolls = Quat._get_zero(off_rolls) - Quat._get_zero(off_roll0)
 
     # Organize the attitudes in groups by dpitch. Within each pitch group, sort

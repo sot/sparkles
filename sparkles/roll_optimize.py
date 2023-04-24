@@ -13,7 +13,7 @@ from chandra_aca.star_probs import acq_success_prob, guide_count
 from chandra_aca.transform import (radec_to_yagzag, yagzag_to_pixels,
                                    calc_aca_from_targ, calc_targ_from_aca)
 from Quaternion import Quat
-import Ska.Sun
+import ska_sun
 
 from proseco.characteristics import CCD
 from proseco import get_aca_catalog
@@ -111,7 +111,7 @@ class RollOptimizeMixin:
                            method='uniq_ids', max_roll_dev=None):
         """Find a list of rolls that might substantially improve guide or acq catalogs.
         If ``roll_nom`` is not specified then an approximate value is computed
-        via Ska.Sun for the catalog ``date``.  if ``roll_dev`` (max allowed
+        via ska_sun for the catalog ``date``.  if ``roll_dev`` (max allowed
         off-nominal roll) is not specified it is computed using the OFLS table.
         These will not precisely match ORviewer results.
 
@@ -173,8 +173,8 @@ class RollOptimizeMixin:
         # Compute roll_nom and roll_dev from Sun position.  Here we use the ACA attitude to get
         # pitch since that is the official "spacecraft" attitude.
         att = self.att
-        pitch = Ska.Sun.pitch(att.ra, att.dec, self.date)
-        roll_nom = Ska.Sun.nominal_roll(att.ra, att.dec, self.date)
+        pitch = ska_sun.pitch(att.ra, att.dec, self.date)
+        roll_nom = ska_sun.nominal_roll(att.ra, att.dec, self.date)
         att_nom = Quat([att.ra, att.dec, roll_nom])
         att_nom_targ = self._calc_targ_from_aca(att_nom, *self.target_offset)
         roll_nom = att_nom_targ.roll
@@ -185,7 +185,8 @@ class RollOptimizeMixin:
                 FutureWarning
             )
         else:
-            roll_dev = Ska.Sun.allowed_rolldev(pitch) if max_roll_dev is None else max_roll_dev
+            roll_dev = (ska_sun.allowed_rolldev(pitch) if max_roll_dev is None
+                        else max_roll_dev)
 
         # Ensure roll_nom in range 0 <= roll_nom < 360 to match att_targ.roll.
         # Also ensure that roll_min < roll < roll_max.  It can happen that the
@@ -195,6 +196,16 @@ class RollOptimizeMixin:
         roll_nom = roll_nom % 360.0
         roll_min = min(roll_nom - roll_dev, roll_targ - 0.1)
         roll_max = max(roll_nom + roll_dev, roll_targ + 0.1)
+
+        roll_info = {'roll_min': roll_min,
+                     'roll_max': roll_max,
+                     'roll_nom': roll_nom}
+
+        # For a pitch which is outside the allowed range in the pitch/off-nominal roll
+        # table the returned roll_dev will be negative. In this case there are no valid
+        # roll intervals to check so return an empty list.
+        if roll_dev < 0:
+            return [], roll_info
 
         # Get roll offsets spanning roll_min:roll_max with padding.  Padding
         # ensures that if a candidate is best at or beyond the extreme of
@@ -213,10 +224,6 @@ class RollOptimizeMixin:
         get_roll_intervals_func = getattr(self, f'_get_roll_intervals_{method}')
         roll_intervals = get_roll_intervals_func(ids0, ids_list, roll_targ, roll_min,
                                                  roll_max, roll_offsets, d_roll)
-
-        roll_info = {'roll_min': roll_min,
-                     'roll_max': roll_max,
-                     'roll_nom': roll_nom}
 
         return sorted(roll_intervals, key=lambda x: x['roll']), roll_info
 

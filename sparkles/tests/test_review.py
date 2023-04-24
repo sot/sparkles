@@ -11,7 +11,9 @@ from proseco.characteristics import aca_t_ccd_penalty_limit, MonFunc, MonCoord
 
 import agasc
 from Quaternion import Quat
-import Ska.Sun
+import ska_sun
+from ska_sun import apply_sun_pitch_yaw, nominal_roll
+
 from proseco.tests.test_common import DARK40, mod_std_info
 
 from .. import ACAReviewTable, run_aca_review
@@ -327,7 +329,7 @@ def test_roll_options_dec89_9():
     """
     dec = 89.9
     date = '2019:006:12:00:00'
-    roll = Ska.Sun.nominal_roll(0, dec, time=date)
+    roll = ska_sun.nominal_roll(0, dec, time=date)
     att = Quat([0, dec, roll])
 
     # Expected roll options.  Note same basic outputs for add_ids and drop_ids but
@@ -337,21 +339,17 @@ def test_roll_options_dec89_9():
     # col=-298. If handling of that bad region for acq changes then the P2
     # values may change.
     exp = {}
-    exp[48000] = [' roll   P2  n_stars improvement roll_min roll_max  add_ids   drop_ids',
-                  '------ ---- ------- ----------- -------- -------- --------- ---------',
-                  '287.25 3.61    0.55        0.00   287.25   287.25        --        --',
-                  '281.00 7.24    6.98        9.53   276.75   285.25 608567744        --',
-                  '287.50 7.25    5.43        7.68   268.50   306.00        --        --',
-                  '268.50 6.82    4.98        6.93   268.50   273.25 610927224 606601776',
-                  '270.62 6.82    4.22        6.01   268.50   273.25 610927224        --']
+    exp[48000] = [' roll   P2  n_stars improvement roll_min roll_max  add_ids  drop_ids',
+                  '------ ---- ------- ----------- -------- -------- --------- --------',
+                  '287.25 3.61    0.55        0.00   287.25   287.25        --       --',
+                  '281.00 7.24    6.98        9.53   276.75   285.25 608567744       --',
+                  '287.50 7.25    5.43        7.68   276.42   298.08        --       --']
 
-    exp[18000] = [' roll   P2  n_stars improvement roll_min roll_max  add_ids   drop_ids',
-                  '------ ---- ------- ----------- -------- -------- --------- ---------',
-                  '276.94 3.61    7.54        0.00   276.94   276.94        --        --',
-                  '277.07 7.25    8.00        1.89   258.19   295.69        --        --',
-                  '270.57 7.16    8.00        1.84   266.19   274.94 608567744        --',
-                  '258.19 6.82    8.00        1.68   258.19   262.69 610927224 606601776',
-                  '259.69 6.82    8.00        1.68   258.19   262.69 610927224        --']
+    exp[18000] = [' roll   P2  n_stars improvement roll_min roll_max  add_ids  drop_ids',
+                  '------ ---- ------- ----------- -------- -------- --------- --------',
+                  '276.94 3.61    7.54        0.00   276.94   276.94        --       --',
+                  '277.07 7.25    8.00        1.89   266.11   287.77        --       --',
+                  '270.57 7.16    8.00        1.84   266.19   274.94 608567744       --']
 
     for obsid in (48000, 18000):
         kwargs = mod_std_info(att=att, n_guide=8, n_fid=0, obsid=obsid, date=date)
@@ -494,6 +492,25 @@ def test_get_roll_intervals():
                        'roll_max': 291.63739755173594,
                        'roll_min': 290.92838289905592}]
     compare_intervs(er_roll_intervs, er_exp_intervs)
+
+
+def test_roll_options_for_not_allowed_pitch():
+    """
+    Confirm that roll option determination works without error
+    for a pitch that is not allowed (no options returned).
+    """
+    ra = dec = 0.0
+    date = '2023:001'
+    roll = nominal_roll(ra, dec, date)
+    att0 = Quat([ra, dec, roll])
+
+    att = apply_sun_pitch_yaw(att0, pitch=40)
+    aca = get_aca_catalog(**mod_std_info(att=att, date=date))
+    acar = aca.get_review_table()
+    acar.get_roll_options()
+    assert len(acar.roll_options) == 1
+    tbl = acar.get_roll_options_table()
+    assert len(tbl) == 1
 
 
 def test_review_with_mon_star():
