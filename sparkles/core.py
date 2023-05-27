@@ -528,27 +528,29 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
         if len(self.colnames) == 0:
             return
 
+        # Init roll option attrs. Note that an instance might be initialized from
+        # another acar instance that already has these attrs set, so we need to
+        # explicitly set them here.
         self.is_roll_option = is_roll_option
+        self.roll_options = None
+        self.roll_info = None
 
         # Add row and col columns from yag/zag, if not already there.
         self.add_row_col()
 
-        self.context = {}  # Jinja2 context for output HTML review
         self.messages = MessagesList()  # Warning messages
+
+        # Instance attributes that won't survive pickling
+        self.context = {}  # Jinja2 context for output HTML review
         self.loud = loud
-        self.roll_options = None
-        self.roll_info = None
         self.preview_dir = None
         self.obsid_dir = None
         self.roll_options_table = None
-        self.acq_count = None
-        self._is_OR = None
 
         # Input obsid could be a string repr of a number that might have have
         # up to 2 decimal points.  This is the case when obsid is taken from the
         # ORviewer dict of ACATable pickles from prelim review.  Tidy things up
         # in these cases.
-        # TODO: make base obsid MetaAttribute in proseco handle this munging.
         if obsid is not None:
             f_obsid = round(float(obsid), 2)
             i_obsid = int(f_obsid)
@@ -558,25 +560,6 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
             self.acqs.obsid = num_obsid
             self.guides.obsid = num_obsid
             self.fids.obsid = num_obsid
-
-        # Compute guide count once for the record
-        # TODO make this a property
-        if self.guides is not None:
-            mags = self.guides['mag']
-            t_ccds = np.full_like(mags, self.guides.t_ccd)
-            if self.dyn_bgd_n_faint > 0:
-                # Apply the dynamic background t_ccd bonus to the
-                # dyn_bgd_n_faint faintest stars, ensuring that at least
-                # MIN_DYN_BGD_ANCHOR_STARS are evaluated without the bonus. See:
-                # https://nbviewer.org/urls/cxc.harvard.edu/mta/ASPECT/ipynb/misc/guide-count-dyn-bgd.ipynb
-                mags = np.sort(mags)
-                n_faint = min(self.dyn_bgd_n_faint, len(t_ccds))
-                idx_bonus = max(len(t_ccds) - n_faint, MIN_DYN_BGD_ANCHOR_STARS)
-                t_ccds[idx_bonus:] += self.dyn_bgd_dt_ccd
-
-            self.guide_count = guide_count(mags, t_ccds)
-            if self.is_ER:
-                self.guide_count_9th = guide_count(mags, t_ccds, count_9th=True)
 
         if 'mag_err' not in self.colnames and self.acqs is not None and self.guides is not None:
             # Add 'mag_err' column after 'mag' using 'mag_err' from guides and acqs
@@ -600,6 +583,45 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
             self.add_column(Column(self['idx'], name='idx_temp'), index=0)
             del self['idx']
             self.rename_column('idx_temp', 'idx')
+
+    @property
+    def t_ccds_bonus(self):
+        """Effective T_ccd for each guide star, including dynamic background bonus."""
+        if not hasattr(self, '_t_ccds_bonus'):
+            # Compute guide count once for the record
+            mags = self.guides['mag']
+            t_ccds = np.full_like(mags, self.guides.t_ccd)
+            if self.dyn_bgd_n_faint > 0:
+                # Apply the dynamic background t_ccd bonus to the
+                # dyn_bgd_n_faint faintest stars, ensuring that at least
+                # MIN_DYN_BGD_ANCHOR_STARS are evaluated without the bonus. See:
+                # https://nbviewer.org/urls/cxc.harvard.edu/mta/ASPECT/ipynb/misc/guide-count-dyn-bgd.ipynb
+                mags = np.sort(mags)
+                n_faint = min(self.dyn_bgd_n_faint, len(t_ccds))
+                idx_bonus = max(len(t_ccds) - n_faint, MIN_DYN_BGD_ANCHOR_STARS)
+                t_ccds[idx_bonus:] += self.dyn_bgd_dt_ccd
+            self._t_ccds_bonus = t_ccds
+        return self._t_ccds_bonus
+
+    @property
+    def guide_count(self):
+        if not hasattr(self, '_guide_count'):
+            mags = self.guides['mag']
+            self._guide_count = guide_count(mags, self.t_ccds_bonus)
+        return self._guide_count
+
+    @property
+    def guide_count_9th(self):
+        if not hasattr(self, '_guide_count_9th'):
+            mags = self.guides['mag']
+            self._guide_count_9th = guide_count(mags, self.t_ccds_bonus, count_9th=True)
+        return self._guide_count_9th
+
+    @property
+    def acq_count(self):
+        if not hasattr(self, '_acq_count'):
+            self._acq_count = np.sum(self.acqs['p_acq'])
+        return self._acq_count
 
     def run_aca_review(self, *, make_html=False, report_dir='.', report_level='none',
                        roll_level='none', roll_args=None, raise_exc=True):
@@ -682,7 +704,7 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
     @property
     def is_OR(self):
         """Return ``True`` if obsid corresponds to an OR."""
-        if self._is_OR is None:
+        if not hasattr(self, '_is_OR'):
             self._is_OR = self.obsid < 38000
         return self._is_OR
 
@@ -859,7 +881,6 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
         att_targ = self.att_targ
         self._base_repr_()  # Hack to set default ``format`` for cols as needed
         catalog = '\n'.join(self.pformat(max_width=-1, max_lines=-1))
-        self.acq_count = np.sum(self.acqs['p_acq'])
 
         att_string = f'ACA RA, Dec, Roll (deg): {att.ra:.5f} {att.dec:.5f} {att.roll:.5f}'
         if self.is_OR:

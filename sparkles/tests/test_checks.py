@@ -1,14 +1,17 @@
 # coding: utf-8
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-import numpy as np
-import agasc
-import pytest
+import copy
+import pickle
 
+import agasc
+import numpy as np
+import pytest
 from chandra_aca.transform import mag_to_count_rate
 from proseco import get_aca_catalog
+from proseco.characteristics import CCD, MonCoord, MonFunc
 from proseco.core import StarsTable
-from proseco.characteristics import CCD, MonFunc, MonCoord
 from proseco.tests.test_common import DARK40, STD_INFO, mod_std_info
+from Quaternion import Quat
 
 from .. import ACAReviewTable
 
@@ -668,3 +671,96 @@ def test_check_guide_geometry():
     msg = acar.messages[0]
     assert msg['category'] == 'warning'
     assert 'Guide indexes [4, 5, 6] clustered within 500" radius' in msg['text']
+
+
+def test_pickle():
+    """Test that ACA, guide, acq, and fid catalogs round-trip through pickling.
+
+    Known attributes that do NOT round-trip are below.  None of these are
+    required for post-facto catalog evaluation and currently the reporting code
+    handles ``stars`` and ``dark``.
+
+    - stars
+    - dark
+    - aca.fids.acqs
+
+    """
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(mag=10.0, n_stars=5)
+    aca = get_aca_catalog(stars=stars, dark=DARK40, raise_exc=True, **STD_INFO)
+    acar = aca.get_review_table()
+
+    acar2 = pickle.loads(pickle.dumps(acar))
+
+    assert repr(acar) == repr(acar2)
+    assert repr(acar.acqs.cand_acqs) == repr(acar2.acqs.cand_acqs)
+
+    for cat in None, "acqs", "guides", "fids":
+        if cat:
+            obj = getattr(acar, cat)
+            obj2 = getattr(acar2, cat)
+            for event, event2 in zip(obj.log_info["events"], obj2.log_info["events"]):
+                assert event == event2
+        else:
+            obj = acar
+            obj2 = acar2
+
+        for attr in ["att", "date", "t_ccd", "man_angle", "dither"]:
+            val = getattr(obj, attr)
+            val2 = getattr(obj2, attr)
+            if isinstance(val, float):
+                assert np.isclose(val, val2)
+            elif isinstance(val, Quat):
+                assert np.allclose(val.q, val2.q)
+            else:
+                assert val == val2
+
+    # Test that calc_p_safe() gives the same answer, which implicitly tests
+    # that the AcqTable.__setstate__ unpickling code has the right (weak)
+    # reference to acqs within each AcqProbs object.  This also tests
+    # that acqs.p_man_err and acqs.fid_set are the same.
+    assert np.isclose(
+        acar.acqs.calc_p_safe(), acar2.acqs.calc_p_safe(), atol=0, rtol=1e-6
+    )
+    assert np.isclose(acar.guide_count, acar2.guide_count, atol=1e-6, rtol=0)
+    assert np.isclose(acar.guide_count_9th, acar2.guide_count_9th, atol=1e-6, rtol=0)
+    assert np.isclose(acar.acq_count, acar2.acq_count, atol=1e-6, rtol=0)
+    assert acar.acqs.fid_set == acar2.acqs.fid_set
+
+
+def test_copy_deepcopy_pickle():
+    """
+    Test that copy, deepcopy and pickle all return the expected object which
+    is independent of the original (where expected).
+
+    :return:
+    """
+    aca = get_aca_catalog(**STD_INFO)
+    acar = aca.get_review_table()
+
+    def f1(x):
+        return pickle.loads(pickle.dumps(x))
+
+    f2 = copy.deepcopy
+    f3 = copy.copy
+
+    def f4(x):
+        return x.__class__(x)
+
+    for func in (f1, f2, f3, f4):
+        acar2 = func(acar)
+
+        # Functional test for #303, mostly just for pickle.
+        assert acar2.dark_date == "2017:272"
+
+        for attr in ("acqs", "guides", "fids"):
+            val = getattr(acar, attr)
+            val2 = getattr(acar2, attr)
+            # New table appears the same but is not the same object
+            assert repr(val) == repr(val2)
+            assert val is not val2
+
+            # Now do the copy func on the lower level table directly
+            val2 = func(val)
+            assert repr(val) == repr(val2)
+            assert val is not val2
