@@ -132,13 +132,5 @@ ignore = [
 ]
 
 exclude = [
-  "doc/sphinxext/*.py",
-  "doc/build/*.py",
-  "doc/temp/*.py",
-  ".eggs/*.py",
-  # vendored files
-  "pandas/util/version/*",
-  "versioneer.py",
-  # exclude asv benchmark environments from linting
-  "env",
+  "docs/",
 ]
