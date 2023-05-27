@@ -40,8 +40,8 @@ def test_check_P2():
     acar.check_acq_p2()
     assert len(acar.messages) == 1
     msg = acar.messages[0]
-    assert msg['category'] == 'critical'
-    assert 'less than 2.0 for OR' in msg['text']
+    assert msg["category"] == "critical"
+    assert "less than 2.0 for OR" in msg["text"]
 
     # Check P2 constructed for an ER with stars intended to have P2 > 2 and < 3
     stars = StarsTable.empty()
@@ -56,8 +56,8 @@ def test_check_P2():
     acar.check_acq_p2()
     assert len(acar.messages) == 1
     msg = acar.messages[0]
-    assert msg['category'] == 'critical'
-    assert 'less than 3.0 for ER' in msg['text']
+    assert msg["category"] == "critical"
+    assert "less than 3.0 for ER" in msg["text"]
 
 
 def test_n_guide_check_not_enough_stars():
@@ -74,7 +74,7 @@ def test_n_guide_check_not_enough_stars():
     acar = ACAReviewTable(aca)
     acar.check_guide_count()
     assert acar.messages == [
-        {'text': 'OR with 4 guides but 5 were requested', 'category': 'caution'}
+        {"text": "OR with 4 guides but 5 were requested", "category": "caution"}
     ]
 
 
@@ -97,11 +97,11 @@ def test_guide_is_candidate():
     acar.check_catalog()
     assert acar.messages == [
         {
-            'text': 'Guide star 100 does not meet guide candidate criteria',
-            'category': 'critical',
-            'idx': 8,
+            "text": "Guide star 100 does not meet guide candidate criteria",
+            "category": "critical",
+            "idx": 8,
         },
-        {'text': 'included guide ID(s): [100]', 'category': 'info'},
+        {"text": "included guide ID(s): [100]", "category": "info"},
     ]
 
 
@@ -119,7 +119,7 @@ def test_n_guide_check_atypical_request():
     acar = ACAReviewTable(aca)
     acar.check_guide_count()
     assert acar.messages == [
-        {'text': 'OR with 4 guides requested but 5 is typical', 'category': 'caution'}
+        {"text": "OR with 4 guides requested but 5 is typical", "category": "caution"}
     ]
 
 
@@ -141,8 +141,8 @@ def test_n_guide_mon_check_atypical_request():
     acar.check_guide_count()
     assert acar.messages == [
         {
-            'text': 'OR with 6 guides or mon slots requested but 5 is typical',
-            'category': 'caution',
+            "text": "OR with 6 guides or mon slots requested but 5 is typical",
+            "category": "caution",
         }
     ]
 
@@ -154,7 +154,7 @@ vals = [
 ]
 
 
-@pytest.mark.parametrize('vals', vals)
+@pytest.mark.parametrize("vals", vals)
 def test_guide_count_dyn_bgd_bonus(vals):
     n_guide, leg_guide_count, dyn_guide_count = vals
     stars = StarsTable.empty()
@@ -170,7 +170,7 @@ def test_guide_count_dyn_bgd_bonus(vals):
     # Same catalog but with different attributes
     assert len(aca_leg.guides) == n_guide
     assert len(aca_dyn.guides) == n_guide
-    assert np.all(aca_leg.guides['mag'] == aca_dyn.guides['mag'])
+    assert np.all(aca_leg.guides["mag"] == aca_dyn.guides["mag"])
 
     acar_leg = ACAReviewTable(aca_leg)
     acar_dyn = ACAReviewTable(aca_dyn)
@@ -197,15 +197,15 @@ def test_n_guide_too_few_guide_or_mon():
     acar.check_guide_count()
     assert acar.messages == [
         {
-            'category': 'caution',
-            'text': (
-                'OR with 4 guides and 1 monitor(s) but 6 guides or mon slots were'
-                ' requested'
+            "category": "caution",
+            "text": (
+                "OR with 4 guides and 1 monitor(s) but 6 guides or mon slots were"
+                " requested"
             ),
         },
         {
-            'category': 'caution',
-            'text': 'OR with 6 guides or mon slots requested but 5 is typical',
+            "category": "caution",
+            "text": "OR with 6 guides or mon slots requested but 5 is typical",
         },
     ]
 
@@ -226,8 +226,8 @@ def test_guide_count_er1():
     acar.check_guide_count()
     assert len(acar.messages) == 1
     msg = acar.messages[0]
-    assert msg['category'] == 'critical'
-    assert 'ER count of 9th' in msg['text']
+    assert msg["category"] == "critical"
+    assert "ER count of 9th" in msg["text"]
 
 
 def test_guide_count_er2():
@@ -243,8 +243,8 @@ def test_guide_count_er2():
     acar = ACAReviewTable(aca)
     acar.check_guide_count()
     assert acar.messages == [
-        {'text': 'ER count of guide stars 3.00 < 6.0', 'category': 'critical'},
-        {'text': 'ER with 3 guides but 8 were requested', 'category': 'caution'},
+        {"text": "ER count of guide stars 3.00 < 6.0", "category": "critical"},
+        {"text": "ER with 3 guides but 8 were requested", "category": "caution"},
     ]
 
 
@@ -262,7 +262,7 @@ def test_guide_count_er3():
     acar = ACAReviewTable(aca)
     acar.check_guide_count()
     assert acar.messages == [
-        {'text': 'ER with 6 guides but 8 were requested', 'category': 'caution'}
+        {"text": "ER with 6 guides but 8 were requested", "category": "caution"}
     ]
 
 
@@ -283,7 +283,7 @@ def test_guide_count_er4():
     acar = ACAReviewTable(aca)
     acar.check_guide_count()
     assert acar.messages == [
-        {'text': 'ER with 6 guides but 8 were requested', 'category': 'caution'}
+        {"text": "ER with 6 guides but 8 were requested", "category": "caution"}
     ]
 
 
@@ -306,12 +306,12 @@ def test_include_exclude():
     acar.check_include_exclude()
     assert acar.messages == [
         {
-            'category': 'info',
-            'text': 'included acq ID(s): [106, 107] halfwidths(s): [140, 120]',
+            "category": "info",
+            "text": "included acq ID(s): [106, 107] halfwidths(s): [140, 120]",
         },
-        {'category': 'info', 'text': 'excluded acq ID(s): 100'},
-        {'category': 'info', 'text': 'included guide ID(s): 107'},
-        {'category': 'info', 'text': 'excluded guide ID(s): [100, 101]'},
+        {"category": "info", "text": "excluded acq ID(s): 100"},
+        {"category": "info", "text": "included guide ID(s): 107"},
+        {"category": "info", "text": "excluded guide ID(s): [100, 101]"},
     ]
 
 
@@ -331,8 +331,8 @@ def test_guide_count_er5():
     acar = ACAReviewTable(aca)
     acar.check_guide_count()
     assert acar.messages == [
-        {'text': 'ER with more than 3 stars brighter than 5.5.', 'category': 'caution'},
-        {'text': 'ER with 6 guides but 8 were requested', 'category': 'caution'},
+        {"text": "ER with more than 3 stars brighter than 5.5.", "category": "caution"},
+        {"text": "ER with 6 guides but 8 were requested", "category": "caution"},
     ]
 
 
@@ -349,8 +349,8 @@ def test_guide_count_or():
     acar = ACAReviewTable(aca)
     acar.check_guide_count()
     assert acar.messages == [
-        {'text': 'OR count of guide stars 2.00 < 4.0', 'category': 'critical'},
-        {'text': 'OR with 2 guides but 5 were requested', 'category': 'caution'},
+        {"text": "OR count of guide stars 2.00 < 4.0", "category": "critical"},
+        {"text": "OR with 2 guides but 5 were requested", "category": "caution"},
     ]
 
 
@@ -369,7 +369,7 @@ def test_ok_number_bright_guide_stars():
     acar = ACAReviewTable(aca)
     acar.check_guide_count()
     assert acar.messages == [
-        {'text': 'OR with 4 guides but 5 were requested', 'category': 'caution'}
+        {"text": "OR with 4 guides but 5 were requested", "category": "caution"}
     ]
 
 
@@ -390,8 +390,8 @@ def test_too_many_bright_stars():
     acar.check_guide_count()
     assert len(acar.messages) == 1
     msg = acar.messages[0]
-    assert msg['category'] == 'caution'
-    assert 'OR with more than 1 stars brighter than 5.5.' in msg['text']
+    assert msg["category"] == "caution"
+    assert "OR with more than 1 stars brighter than 5.5." in msg["text"]
 
 
 def test_low_guide_count():
@@ -413,8 +413,8 @@ def test_low_guide_count():
     assert acar.man_angle_next > 5
     acar.check_guide_count()
     assert acar.messages == [
-        {'text': 'OR count of guide stars 3.65 < 4.0', 'category': 'critical'},
-        {'text': 'OR with 4 guides but 5 were requested', 'category': 'caution'},
+        {"text": "OR count of guide stars 3.65 < 4.0", "category": "critical"},
+        {"text": "OR with 4 guides but 5 were requested", "category": "caution"},
     ]
 
 
@@ -437,8 +437,8 @@ def test_low_guide_count_creep_away():
     assert acar.guide_count <= 4.0 and acar.guide_count > 3.5
     acar.check_guide_count()
     assert acar.messages == [
-        {'text': 'OR count of guide stars 3.65 < 4.0', 'category': 'warning'},
-        {'text': 'OR with 4 guides but 5 were requested', 'category': 'caution'},
+        {"text": "OR count of guide stars 3.65 < 4.0", "category": "warning"},
+        {"text": "OR with 4 guides but 5 were requested", "category": "caution"},
     ]
 
 
@@ -488,7 +488,7 @@ def test_not_reduced_dither_low_guide_count():
     # Run the dither check
     acar.check_dither()
     assert acar.messages == [
-        {'text': 'guide_count 3.65 and dither > 4x4 arcsec', 'category': 'critical'}
+        {"text": "guide_count 3.65 and dither > 4x4 arcsec", "category": "critical"}
     ]
 
 
@@ -540,7 +540,7 @@ def test_pos_err_on_guide():
     acar = ACAReviewTable(aca)
 
     # 103 not selected because pos_err > 1.25 arcsec
-    assert acar.guides['id'].tolist() == [100, 101, 102]
+    assert acar.guides["id"].tolist() == [100, 101, 102]
 
     # Run pos err checks
     for guide in aca.guides:
@@ -548,12 +548,12 @@ def test_pos_err_on_guide():
 
     assert len(acar.messages) == 2
     msg = acar.messages[0]
-    assert msg['category'] == 'critical'
-    assert 'Guide star 100 POS_ERR 2.01' in msg['text']
+    assert msg["category"] == "critical"
+    assert "Guide star 100 POS_ERR 2.01" in msg["text"]
 
     msg = acar.messages[1]
-    assert msg['category'] == 'warning'
-    assert 'Guide star 101 POS_ERR 1.26' in msg['text']
+    assert msg["category"] == "warning"
+    assert "Guide star 101 POS_ERR 1.26" in msg["text"]
 
 
 def test_guide_overlap():
@@ -569,22 +569,22 @@ def test_guide_overlap():
         raise_exc=True,
         include_ids_guide=[1, 2]
     )
-    assert 2 in aca.guides['id']
-    assert 1 in aca.guides['id']
+    assert 2 in aca.guides["id"]
+    assert 1 in aca.guides["id"]
     acar = aca.get_review_table()
     acar.run_aca_review()
     assert len(acar.messages) == 2
     assert (
-        acar.messages[0]['text']
-        == 'Overlapping track index (within 12 pix) idx [1] and idx [8]'
+        acar.messages[0]["text"]
+        == "Overlapping track index (within 12 pix) idx [1] and idx [8]"
     )
 
 
 def test_guide_edge_check():
     stars = StarsTable.empty()
     dither = 8
-    row_lim = CCD['row_max'] - CCD['row_pad'] - CCD['window_pad'] - dither / 5
-    col_lim = -(CCD['col_max'] - CCD['col_pad'] - CCD['window_pad'] - dither / 5)
+    row_lim = CCD["row_max"] - CCD["row_pad"] - CCD["window_pad"] - dither / 5
+    col_lim = -(CCD["col_max"] - CCD["col_pad"] - CCD["window_pad"] - dither / 5)
 
     # Set positions just below or above CCD['guide_extra_pad'] in row / col
     # Note that the stars are offset from each other so they don't fail the test
@@ -611,30 +611,30 @@ def test_guide_edge_check():
 
     assert acar.messages == [
         {
-            'text': 'Less than 5.0 pix edge margin row lim 495.4 val 492.3 delta 3.1',
-            'category': 'info',
-            'idx': 5,
+            "text": "Less than 5.0 pix edge margin row lim 495.4 val 492.3 delta 3.1",
+            "category": "info",
+            "idx": 5,
         },
         {
-            'text': 'Less than 5.0 pix edge margin col lim -502.4 val -499.3 delta 3.1',
-            'category': 'info',
-            'idx': 6,
+            "text": "Less than 5.0 pix edge margin col lim -502.4 val -499.3 delta 3.1",
+            "category": "info",
+            "idx": 6,
         },
         {
-            'text': 'Less than 3.0 pix edge margin row lim 495.4 val 492.5 delta 2.9',
-            'category': 'critical',
-            'idx': 7,
+            "text": "Less than 3.0 pix edge margin row lim 495.4 val 492.5 delta 2.9",
+            "category": "critical",
+            "idx": 7,
         },
         {
-            'text': 'Less than 3.0 pix edge margin col lim -502.4 val -499.5 delta 2.9',
-            'category': 'critical',
-            'idx': 8,
+            "text": "Less than 3.0 pix edge margin col lim -502.4 val -499.5 delta 2.9",
+            "category": "critical",
+            "idx": 8,
         },
-        {'text': 'included guide ID(s): [1 2 3 4 5 6]', 'category': 'info'},
+        {"text": "included guide ID(s): [1 2 3 4 5 6]", "category": "info"},
     ]
 
 
-@pytest.mark.parametrize('exp_warn', [False, True])
+@pytest.mark.parametrize("exp_warn", [False, True])
 def test_imposters_on_guide(exp_warn):
     """Test the check for imposters by adding one imposter to a fake star"""
     stars = StarsTable.empty()
@@ -661,8 +661,8 @@ def test_imposters_on_guide(exp_warn):
     if exp_warn:
         assert len(acar.messages) == 1
         msg = acar.messages[0]
-        assert msg['category'] == 'warning'
-        assert msg['text'] == 'Guide star imposter offset 2.6, limit 2.5 arcsec'
+        assert msg["category"] == "warning"
+        assert msg["text"] == "Guide star imposter offset 2.6, limit 2.5 arcsec"
     else:
         assert len(acar.messages) == 0
 
@@ -670,8 +670,8 @@ def test_imposters_on_guide(exp_warn):
 def test_bad_star_set():
     bad_id = 1248994952
     star = agasc.get_star(bad_id)
-    ra = star['RA']
-    dec = star['DEC']
+    ra = star["RA"]
+    dec = star["DEC"]
     aca = get_aca_catalog(
         **mod_std_info(n_fid=0, att=(ra, dec, 0)),
         dark=DARK40,
@@ -681,17 +681,17 @@ def test_bad_star_set():
     acar.check_catalog()
     assert acar.messages == [
         {
-            'text': 'Guide star 1248994952 does not meet guide candidate criteria',
-            'category': 'critical',
-            'idx': 5,
+            "text": "Guide star 1248994952 does not meet guide candidate criteria",
+            "category": "critical",
+            "idx": 5,
         },
         {
-            'text': 'Star 1248994952 is in proseco bad star set',
-            'category': 'critical',
-            'idx': 5,
+            "text": "Star 1248994952 is in proseco bad star set",
+            "category": "critical",
+            "idx": 5,
         },
-        {'text': 'OR requested 0 fids but 3 is typical', 'category': 'caution'},
-        {'category': 'info', 'text': 'included guide ID(s): [1248994952]'},
+        {"text": "OR requested 0 fids but 3 is typical", "category": "caution"},
+        {"category": "info", "text": "included guide ID(s): [1248994952]"},
     ]
 
 
@@ -709,8 +709,8 @@ def test_too_bright_guide_magerr():
     acar = ACAReviewTable(aca)
     acar.check_too_bright_guide(aca.guides.get_id(100))
     msg = acar.messages[0]
-    assert msg['category'] == 'critical'
-    assert '2*mag_err of 5.2' in msg['text']
+    assert msg["category"] == "critical"
+    assert "2*mag_err of 5.2" in msg["text"]
 
 
 def test_check_fid_spoiler_score():
@@ -726,20 +726,20 @@ def test_check_fid_spoiler_score():
 
     aca = get_aca_catalog(stars=stars, **STD_INFO)
 
-    assert np.all(aca.fids.cand_fids['spoiler_score'] == [4, 4, 4, 4, 1, 0])
+    assert np.all(aca.fids.cand_fids["spoiler_score"] == [4, 4, 4, 4, 1, 0])
 
     acar = ACAReviewTable(aca)
     acar.check_catalog()
     assert acar.messages == [
         {
-            'text': 'Fid 1 has red spoiler: star 108 with mag 9.00',
-            'category': 'critical',
-            'idx': 1,
+            "text": "Fid 1 has red spoiler: star 108 with mag 9.00",
+            "category": "critical",
+            "idx": 1,
         },
         {
-            'text': 'Fid 5 has yellow spoiler: star 112 with mag 11.50',
-            'category': 'warning',
-            'idx': 2,
+            "text": "Fid 5 has yellow spoiler: star 112 with mag 11.50",
+            "category": "warning",
+            "idx": 2,
         },
     ]
 
@@ -750,13 +750,13 @@ def test_check_fid_count1():
     stars.add_fake_constellation(n_stars=8)
 
     aca = get_aca_catalog(
-        stars=stars, **mod_std_info(detector='HRC-S', sim_offset=40000)
+        stars=stars, **mod_std_info(detector="HRC-S", sim_offset=40000)
     )
     acar = ACAReviewTable(aca)
     acar.check_catalog()
 
     assert acar.messages == [
-        {'text': 'OR has 2 fids but 3 were requested', 'category': 'critical'}
+        {"text": "OR has 2 fids but 3 were requested", "category": "critical"}
     ]
 
 
@@ -765,12 +765,12 @@ def test_check_fid_count2():
     stars = StarsTable.empty()
     stars.add_fake_constellation(n_stars=8)
 
-    aca = get_aca_catalog(stars=stars, **mod_std_info(detector='HRC-S', n_fid=2))
+    aca = get_aca_catalog(stars=stars, **mod_std_info(detector="HRC-S", n_fid=2))
     acar = ACAReviewTable(aca)
     acar.check_catalog()
 
     assert acar.messages == [
-        {'text': 'OR requested 2 fids but 3 is typical', 'category': 'caution'}
+        {"text": "OR requested 2 fids but 3 is typical", "category": "caution"}
     ]
 
 
@@ -793,8 +793,8 @@ def test_check_guide_geometry():
         if fail:
             assert len(acar.messages) == 1
             msg = acar.messages[0]
-            assert msg['category'] == 'warning'
-            assert 'Guide stars all clustered' in msg['text']
+            assert msg["category"] == "warning"
+            assert "Guide stars all clustered" in msg["text"]
         else:
             assert len(acar.messages) == 0
 
@@ -811,8 +811,8 @@ def test_check_guide_geometry():
 
     assert len(acar.messages) == 1
     msg = acar.messages[0]
-    assert msg['category'] == 'critical'
-    assert 'Guide indexes [4, 5, 6] clustered within 500" radius' in msg['text']
+    assert msg["category"] == "critical"
+    assert 'Guide indexes [4, 5, 6] clustered within 500" radius' in msg["text"]
 
     # Test for cluster of 3 500" rad stars in a 5 star case, but downgrade
     # the warning for the case when the maneuver angle away is <= 5
@@ -830,8 +830,8 @@ def test_check_guide_geometry():
 
     assert len(acar.messages) == 1
     msg = acar.messages[0]
-    assert msg['category'] == 'warning'
-    assert 'Guide indexes [4, 5, 6] clustered within 500" radius' in msg['text']
+    assert msg["category"] == "warning"
+    assert 'Guide indexes [4, 5, 6] clustered within 500" radius' in msg["text"]
 
 
 def test_pickle():
