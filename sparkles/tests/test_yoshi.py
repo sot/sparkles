@@ -1,14 +1,14 @@
-import numpy as np
 import agasc
+import numpy as np
 import pytest
-from Quaternion import Quat
 from mica.archive.tests.test_cda import HAS_WEB_SERVICES
-from sparkles.core import ACAReviewTable
+from Quaternion import Quat
 
+from sparkles.core import ACAReviewTable
 from sparkles.yoshi import (
+    convert_yoshi_to_proseco_params,
     get_yoshi_params_from_ocat,
     run_one_yoshi,
-    convert_yoshi_to_proseco_params,
 )
 
 

@@ -4,23 +4,22 @@
 """
 Roll optimization during preliminary review of ACA catalogs.
 """
-from copy import deepcopy
-import numpy as np
 import warnings
+from copy import deepcopy
 
+import numpy as np
+import ska_sun
 from astropy.table import Table, vstack
 from chandra_aca.star_probs import acq_success_prob, guide_count
 from chandra_aca.transform import (
-    radec_to_yagzag,
-    yagzag_to_pixels,
     calc_aca_from_targ,
     calc_targ_from_aca,
+    radec_to_yagzag,
+    yagzag_to_pixels,
 )
-from Quaternion import Quat
-import ska_sun
-
-from proseco.characteristics import CCD
 from proseco import get_aca_catalog
+from proseco.characteristics import CCD
+from Quaternion import Quat
 
 
 def logical_intervals(vals, x=None):

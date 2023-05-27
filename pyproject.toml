@@ -24,6 +24,8 @@ target-version = "py310"
 unfixable = []
 
 select = [
+  # isort
+  "I",
   # pyflakes
   "F",
   # pycodestyle
@@ -87,6 +89,8 @@ ignore = [
   "B020",
   # Function definition does not bind loop variable
   "B023",
+  # No explicit `stacklevel` keyword argument found
+  "B028",
   # Functions defined inside a loop must not use variables redefined in the loop
   # "B301",  # not yet implemented
   # Only works with python >=3.10

@@ -1,22 +1,20 @@
-import os
-import numpy as np
 import gzip
+import os
 import pickle
 from pathlib import Path
-from proseco.core import StarsTable
-
-import pytest
-from proseco import get_aca_catalog
-from proseco.characteristics import aca_t_ccd_penalty_limit, MonFunc, MonCoord
 
 import agasc
-from Quaternion import Quat
+import numpy as np
+import pytest
 import ska_sun
+from proseco import get_aca_catalog
+from proseco.characteristics import MonCoord, MonFunc, aca_t_ccd_penalty_limit
+from proseco.core import StarsTable
+from proseco.tests.test_common import DARK40, mod_std_info
+from Quaternion import Quat
 from ska_sun import apply_sun_pitch_yaw, nominal_roll
 
-from proseco.tests.test_common import DARK40, mod_std_info
-
-from .. import ACAReviewTable, run_aca_review
+from sparkles import ACAReviewTable, run_aca_review
 
 # Do not use the AGASC supplement in testing by default since mags can change
 os.environ[agasc.SUPPLEMENT_ENABLED_ENV] = "False"
