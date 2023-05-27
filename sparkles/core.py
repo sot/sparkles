@@ -86,17 +86,21 @@ def main(sys_args=None):
         '--report-level',
         type=str,
         default='none',
-        help="Make reports for messages at/above level "
-        "('all'|'none'|'info'|'caution'|'warning'|'critical') "
-        "(default='warning')",
+        help=(
+            "Make reports for messages at/above level "
+            "('all'|'none'|'info'|'caution'|'warning'|'critical') "
+            "(default='warning')"
+        ),
     )
     parser.add_argument(
         '--roll-level',
         type=str,
         default='none',
-        help="Make alternate roll suggestions for messages at/above level "
-        "('all'|'none'|'info'|'caution'|'warning'|'critical') "
-        "(default='critical')",
+        help=(
+            "Make alternate roll suggestions for messages at/above level "
+            "('all'|'none'|'info'|'caution'|'warning'|'critical') "
+            "(default='critical')"
+        ),
     )
     parser.add_argument(
         '--roll-min-improvement',
@@ -1321,8 +1325,10 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
             mag9 = snr_mag_for_t_ccd(self.guides.t_ccd, 9.0, -10.9)
             self.add_message(
                 'critical',
-                f'{obs_type} count of 9th ({mag9:.1f} for {self.guides.t_ccd:.1f}C) '
-                f'mag guide stars {self.guide_count_9th:.2f} < {count_9th_lim}',
+                (
+                    f'{obs_type} count of 9th ({mag9:.1f} for {self.guides.t_ccd:.1f}C)'
+                    f' mag guide stars {self.guide_count_9th:.2f} < {count_9th_lim}'
+                ),
             )
 
         # Rounded guide count
@@ -1390,8 +1396,9 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
         if n_guide_or_mon_request != typical_n_guide:
             or_mon_slots = ' or mon slots' if n_mon > 0 else ''
             msg = (
-                f'{obs_type} with {n_guide_or_mon_request} guides{or_mon_slots} requested '
-                f'but {typical_n_guide} is typical'
+                f'{obs_type} with'
+                f' {n_guide_or_mon_request} guides{or_mon_slots} requested but'
+                f' {typical_n_guide} is typical'
             )
             self.add_message('caution', msg)
 
@@ -1428,7 +1435,10 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
             if np.round(pos_err, decimals=2) > limit:
                 self.add_message(
                     category,
-                    f'Guide star {agasc_id} POS_ERR {pos_err:.2f}, limit {limit} arcsec',
+                    (
+                        f'Guide star {agasc_id} POS_ERR {pos_err:.2f}, limit'
+                        f' {limit} arcsec'
+                    ),
                     idx=idx,
                 )
                 break
@@ -1488,8 +1498,10 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
             if star['mag'] - (mult * mag_err) < 5.2:
                 self.add_message(
                     category,
-                    f'Guide star {agasc_id} within {mult}*mag_err of 5.2 '
-                    f'(mag_err={mag_err:.2f})',
+                    (
+                        f'Guide star {agasc_id} within {mult}*mag_err of 5.2 '
+                        f'(mag_err={mag_err:.2f})'
+                    ),
                     idx=idx,
                 )
                 break
@@ -1520,8 +1532,8 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
 
         for spoiler in fid['spoilers']:
             msg = (
-                f'Fid {fid_id} has {spoiler["warn"]} spoiler: star {spoiler["id"]} with mag '
-                f'{spoiler["mag"]:.2f}'
+                f'Fid {fid_id} has {spoiler["warn"]} spoiler: star {spoiler["id"]} with'
+                f' mag {spoiler["mag"]:.2f}'
             )
             self.add_message(category_map[spoiler['warn']], msg, idx=idx)
 

@@ -201,7 +201,10 @@ class RollOptimizeMixin:
 
         if roll_dev is not None:
             warnings.warn(
-                'roll_dev will be removed in a future release, use max_roll_dev instead',
+                (
+                    'roll_dev will be removed in a future release, use max_roll_dev'
+                    ' instead'
+                ),
                 FutureWarning,
             )
         else:
@@ -375,8 +378,8 @@ class RollOptimizeMixin:
             if self.loud:
                 print(
                     (
-                        '  roll={roll:.2f} roll_min={roll_min:.2f} roll_max={roll_max:.2f} '
-                        'add_ids={add_ids} drop_ids={drop_ids}'
+                        '  roll={roll:.2f} roll_min={roll_min:.2f}'
+                        ' roll_max={roll_max:.2f} add_ids={add_ids} drop_ids={drop_ids}'
                     ).format(**roll_interval)
                 )
             roll = roll_interval['roll']

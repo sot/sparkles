@@ -198,7 +198,10 @@ def test_n_guide_too_few_guide_or_mon():
     assert acar.messages == [
         {
             'category': 'caution',
-            'text': 'OR with 4 guides and 1 monitor(s) but 6 guides or mon slots were requested',
+            'text': (
+                'OR with 4 guides and 1 monitor(s) but 6 guides or mon slots were'
+                ' requested'
+            ),
         },
         {
             'category': 'caution',

@@ -59,11 +59,13 @@ def test_t_ccd_effective_message():
     assert (
         f'Predicted Guide CCD temperature (max): {kwargs["t_ccd_guide"]:.1f} '
         f'<span class="caution">(Effective : {eff_guide:.1f})</span>'
-    ) in text
+        in text
+    )
     assert (
         f'Predicted Acq CCD temperature (init) : {kwargs["t_ccd_acq"]:.1f} '
         f'<span class="caution">(Effective : {eff_acq:.1f})</span>'
-    ) in text
+        in text
+    )
 
 
 def test_review_catalog(tmpdir):
