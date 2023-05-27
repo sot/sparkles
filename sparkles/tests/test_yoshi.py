@@ -88,7 +88,10 @@ def test_get_params():
     assert_dict_equal(params, exp)
 
     params_proseco = convert_yoshi_to_proseco_params(
-        **params, obsid=8008, t_ccd=-10, man_angle=5.0,
+        **params,
+        obsid=8008,
+        t_ccd=-10,
+        man_angle=5.0,
     )
     exp_proseco = {
         "att": Quat([0.15014290, 0.49293780, 0.83025915, 0.21245982]),
@@ -173,7 +176,8 @@ def test_acar_from_ocat(monkeypatch):
         '  6    5 32374896  BOT  9.17  2014.3 -2035.8 -401.4 -405.4',
         '  7    6 31075128  BOT  9.35  -310.8  1200.0   68.9  245.4',
         '  8    7 31463496  BOT  9.46  2035.0  1385.8 -403.5  284.7',
-        '  9    0 31076560  ACQ  9.70  -933.4  -354.4  193.0  -66.4']
+        '  9    0 31076560  ACQ  9.70  -933.4  -354.4  193.0  -66.4',
+    ]
 
     cols = ("idx", "slot", "id", "type", "mag", "yang", "zang")
     assert acar[cols].pformat_all() == exp

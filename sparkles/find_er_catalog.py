@@ -102,9 +102,9 @@ def get_candidate_stars(att0, t_ccd, date=None, atts=None):
         att0 = Quat(att0)
 
     # Set faint mag limit based on the faintest allowed guide star at t_ccd.
-    faint_mag_limit = snr_mag_for_t_ccd(t_ccd,
-                                        ref_mag=GUIDE.ref_faint_mag,
-                                        ref_t_ccd=GUIDE.ref_faint_mag_t_ccd)
+    faint_mag_limit = snr_mag_for_t_ccd(
+        t_ccd, ref_mag=GUIDE.ref_faint_mag, ref_t_ccd=GUIDE.ref_faint_mag_t_ccd
+    )
     faint_mag_limit = min(faint_mag_limit, GUIDE.ref_faint_mag)
 
     # If multiple attitudes are provided then find radius on the sky that
@@ -126,7 +126,9 @@ def get_candidate_stars(att0, t_ccd, date=None, atts=None):
         & (stars['MAG_ACA'] < faint_mag_limit)
         & (~np.isclose(stars['COLOR1'], 0.7))
         & (stars['MAG_ACA_ERR'] < 100)  # Mag err < 1.0 mag
-        & (stars['ASPQ1'] < 40)  # Less than 2 arcsec centroid offset due to nearby spoiler
+        & (
+            stars['ASPQ1'] < 40
+        )  # Less than 2 arcsec centroid offset due to nearby spoiler
         & (stars['ASPQ2'] == 0)  # Proper motion less than 0.5 arcsec/yr
         & (stars['POS_ERR'] < 3000)  # Position error < 3.0 arcsec
         & ((stars['VAR'] == -9999) | (stars['VAR'] == 5))  # Not known to vary > 0.2 mag
@@ -168,7 +170,9 @@ def filter_candidate_stars_on_ccd(att, stars):
     """
     yags, zags = radec_to_yagzag(stars['RA_PMCORR'], stars['DEC_PMCORR'], att)
     rows, cols = yagzag_to_pixels(yags, zags, allow_bad=True)
-    ok = (np.abs(rows) < 507) & (np.abs(cols) < 507)  # FIXME: Hardcoded, get from characteristics?
+    ok = (np.abs(rows) < 507) & (
+        np.abs(cols) < 507
+    )  # FIXME: Hardcoded, get from characteristics?
     return stars[ok]
 
 
@@ -205,9 +209,9 @@ def get_guide_counts(mags, t_ccd):
     ref_counts = [0.0, 1.2, 1.0, 0.5, 0.0]
     ref_mags1 = [5.3, 5.4]  # Not temperature dependent
     ref_mags2 = [9.0, 10.0, 10.3]  # Temperature dependent
-    ref_mags_t_ccd = (ref_mags1
-                      + [snr_mag_for_t_ccd(t_ccd, ref_mag, ref_t_ccd)
-                         for ref_mag in ref_mags2])
+    ref_mags_t_ccd = ref_mags1 + [
+        snr_mag_for_t_ccd(t_ccd, ref_mag, ref_t_ccd) for ref_mag in ref_mags2
+    ]
 
     # Do the interpolation, noting that np.interp will use the end ``counts``
     # values for any ``mag`` < ref_mags[0] or > ref_mags[-1].
@@ -274,36 +278,43 @@ def get_att_opts_table(acar, atts):
     # Get pitch and yaw of the initial attitude and the attitudes to try
     sun_ra, sun_dec = ska_sun.position(date)
     pitch0, yaw0 = get_sun_pitch_yaw(att0.ra, att0.dec, sun_ra=sun_ra, sun_dec=sun_dec)
-    pitches, yaws = get_sun_pitch_yaw(atts_quat.ra, atts_quat.dec,
-                                      sun_ra=sun_ra, sun_dec=sun_dec)
+    pitches, yaws = get_sun_pitch_yaw(
+        atts_quat.ra, atts_quat.dec, sun_ra=sun_ra, sun_dec=sun_dec
+    )
 
     # Delta pitch, yaw, off-nominal roll from the initial attitude. These are the absolute
     # value of the offsets, so we prioritize being closer to the initial.
     dpitches = (pitches - pitch0).ravel()
     dyaws = (yaws - yaw0).ravel()
 
-    off_rolls = [att.roll - ska_sun.nominal_roll(att.ra, att.dec, sun_ra=sun_ra, sun_dec=sun_dec)
-                 for att in atts_list]
-    off_roll0 = att0.roll - ska_sun.nominal_roll(att0.ra, att0.dec, sun_ra=sun_ra, sun_dec=sun_dec)
+    off_rolls = [
+        att.roll - ska_sun.nominal_roll(att.ra, att.dec, sun_ra=sun_ra, sun_dec=sun_dec)
+        for att in atts_list
+    ]
+    off_roll0 = att0.roll - ska_sun.nominal_roll(
+        att0.ra, att0.dec, sun_ra=sun_ra, sun_dec=sun_dec
+    )
     drolls = Quat._get_zero(off_rolls) - Quat._get_zero(off_roll0)
 
     # Organize the attitudes in groups by dpitch. Within each pitch group, sort
     # by dyaw.
     n_atts = len(atts_list)
-    t = Table({'dpitch': dpitches,
-               'dyaw': dyaws,
-               'droll': drolls,
-               'count_9th': np.zeros(n_atts, dtype=float),
-               'count_10th': np.zeros(n_atts, dtype=float),
-               'count_all': np.zeros(n_atts, dtype=float),
-               'count_ok': np.zeros(n_atts, dtype=bool),
-               'n_critical': MaskedColumn(np.zeros(n_atts, dtype=int), mask=True),
-               'status': np.array([None] * n_atts, dtype=object),
-               'att': np.array(atts_list, dtype=object),
-               'acar': np.empty(n_atts, dtype=object),
-               'stars': np.array([None] * n_atts, dtype=object),
-               }
-              )
+    t = Table(
+        {
+            'dpitch': dpitches,
+            'dyaw': dyaws,
+            'droll': drolls,
+            'count_9th': np.zeros(n_atts, dtype=float),
+            'count_10th': np.zeros(n_atts, dtype=float),
+            'count_all': np.zeros(n_atts, dtype=float),
+            'count_ok': np.zeros(n_atts, dtype=bool),
+            'n_critical': MaskedColumn(np.zeros(n_atts, dtype=int), mask=True),
+            'status': np.array([None] * n_atts, dtype=object),
+            'att': np.array(atts_list, dtype=object),
+            'acar': np.empty(n_atts, dtype=object),
+            'stars': np.array([None] * n_atts, dtype=object),
+        }
+    )
     # Creating a numpy object array of empty lists requires this workaround
     for ii in range(n_atts):
         t['status'][ii] = list()
@@ -318,7 +329,9 @@ def get_att_opts_table(acar, atts):
 
     # Get all the stars covering the input attitudes
     atts_list = t['att'].tolist()
-    stars = get_candidate_stars(acar.att, t_ccd=acar.t_ccd, date=acar.date, atts=atts_list)
+    stars = get_candidate_stars(
+        acar.att, t_ccd=acar.t_ccd, date=acar.date, atts=atts_list
+    )
 
     # Get count of 9th, 10th and mag-weighted counts
     for row in t:
@@ -502,9 +515,11 @@ def find_er_catalog_by_input_order(acar, att_opts, star_sets=None):
 
 
 # Registry of catalog finders by algorithm name
-FIND_ER_CATALOG_FUNCS = {'pitch_bins': find_er_catalog_by_pitch_bins,
-                         'count_all': find_er_catalog_by_count_all,
-                         'input_order': find_er_catalog_by_input_order}
+FIND_ER_CATALOG_FUNCS = {
+    'pitch_bins': find_er_catalog_by_pitch_bins,
+    'count_all': find_er_catalog_by_count_all,
+    'input_order': find_er_catalog_by_input_order,
+}
 
 
 def find_er_catalog(acar, atts, alg='input_order', check_star_sets=True):

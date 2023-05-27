@@ -22,8 +22,7 @@ from matplotlib.patches import Circle
 import numpy as np
 from jinja2 import Template
 from chandra_aca.star_probs import guide_count
-from chandra_aca.transform import (yagzag_to_pixels, mag_to_count_rate,
-                                   snr_mag_for_t_ccd)
+from chandra_aca.transform import yagzag_to_pixels, mag_to_count_rate, snr_mag_for_t_ccd
 import chandra_aca
 from astropy.table import Column, Table
 
@@ -55,85 +54,129 @@ def main(sys_args=None):
     from . import __version__
 
     import argparse
+
     parser = argparse.ArgumentParser(
-        description=f'Sparkles ACA review tool {__version__}')
-    parser.add_argument('load_name',
-                        type=str,
-                        help=('Load name (e.g. JAN2119A) or full file name or directory '
-                              r'on \\noodle\GRETA\mission or OCCweb '
-                              r'containing a single pickle file, '
-                              r'or a Noodle path (beginning with \\noodle\GRETA\mission) '
-                              'or OCCweb path to a gzip pickle file'))
-    parser.add_argument('--obsid',
-                        action='append',
-                        type=float,
-                        help="Process only this obsid (can specify multiple times, default=all")
-    parser.add_argument('--quiet',
-                        action='store_true',
-                        help='Run quietly')
-    parser.add_argument('--open-html',
-                        action='store_true',
-                        help="Open HTML in webbrowser")
-    parser.add_argument('--report-dir',
-                        type=str,
-                        help='Report output directory (default=<load name>')
-    parser.add_argument('--report-level',
-                        type=str,
-                        default='none',
-                        help="Make reports for messages at/above level "
-                             "('all'|'none'|'info'|'caution'|'warning'|'critical') "
-                             "(default='warning')")
-    parser.add_argument('--roll-level',
-                        type=str,
-                        default='none',
-                        help="Make alternate roll suggestions for messages at/above level "
-                             "('all'|'none'|'info'|'caution'|'warning'|'critical') "
-                             "(default='critical')")
-    parser.add_argument('--roll-min-improvement',
-                        type=float,
-                        default=None,
-                        help="Min value of improvement metric to accept option (default=0.3)")
-    parser.add_argument('--roll-d-roll',
-                        type=float,
-                        default=None,
-                        help=("Delta roll for sampling available roll range "
-                              "(deg, default=0.25 for uniq_ids method and 0.5 for uniform method"))
-    parser.add_argument('--roll-max-roll-dev',
-                        type=float,
-                        default=None,
-                        help="maximum roll deviation (deg, default=max allowed by pitch)")
-    help = ("Method for determining roll intervals ('uniq_ids' | 'uniform'). "
-            "The 'uniq_ids' method is a faster method that frequently finds an acceptable "
-            "roll option, while 'uniform' is a brute-force search of the entire roll "
-            "range at ``d_roll`` increments. If not provided, the default is to try "
-            "*both* methods in order, stopping when an acceptable option is found.")
-    parser.add_argument('--roll-method',
-                        type=str,
-                        default=None,
-                        help=help)
-    parser.add_argument('--roll-max-roll-options',
-                        type=int,
-                        default=None,
-                        help="maximum number of roll options to return (default=10)")
+        description=f'Sparkles ACA review tool {__version__}'
+    )
+    parser.add_argument(
+        'load_name',
+        type=str,
+        help=(
+            'Load name (e.g. JAN2119A) or full file name or directory '
+            r'on \\noodle\GRETA\mission or OCCweb '
+            r'containing a single pickle file, '
+            r'or a Noodle path (beginning with \\noodle\GRETA\mission) '
+            'or OCCweb path to a gzip pickle file'
+        ),
+    )
+    parser.add_argument(
+        '--obsid',
+        action='append',
+        type=float,
+        help="Process only this obsid (can specify multiple times, default=all",
+    )
+    parser.add_argument('--quiet', action='store_true', help='Run quietly')
+    parser.add_argument(
+        '--open-html', action='store_true', help="Open HTML in webbrowser"
+    )
+    parser.add_argument(
+        '--report-dir', type=str, help='Report output directory (default=<load name>'
+    )
+    parser.add_argument(
+        '--report-level',
+        type=str,
+        default='none',
+        help="Make reports for messages at/above level "
+        "('all'|'none'|'info'|'caution'|'warning'|'critical') "
+        "(default='warning')",
+    )
+    parser.add_argument(
+        '--roll-level',
+        type=str,
+        default='none',
+        help="Make alternate roll suggestions for messages at/above level "
+        "('all'|'none'|'info'|'caution'|'warning'|'critical') "
+        "(default='critical')",
+    )
+    parser.add_argument(
+        '--roll-min-improvement',
+        type=float,
+        default=None,
+        help="Min value of improvement metric to accept option (default=0.3)",
+    )
+    parser.add_argument(
+        '--roll-d-roll',
+        type=float,
+        default=None,
+        help=(
+            "Delta roll for sampling available roll range "
+            "(deg, default=0.25 for uniq_ids method and 0.5 for uniform method"
+        ),
+    )
+    parser.add_argument(
+        '--roll-max-roll-dev',
+        type=float,
+        default=None,
+        help="maximum roll deviation (deg, default=max allowed by pitch)",
+    )
+    help = (
+        "Method for determining roll intervals ('uniq_ids' | 'uniform'). "
+        "The 'uniq_ids' method is a faster method that frequently finds an acceptable "
+        "roll option, while 'uniform' is a brute-force search of the entire roll "
+        "range at ``d_roll`` increments. If not provided, the default is to try "
+        "*both* methods in order, stopping when an acceptable option is found."
+    )
+    parser.add_argument('--roll-method', type=str, default=None, help=help)
+    parser.add_argument(
+        '--roll-max-roll-options',
+        type=int,
+        default=None,
+        help="maximum number of roll options to return (default=10)",
+    )
     args = parser.parse_args(sys_args)
 
     # Parse the roll_args from command line args, only handling non-None values
     roll_args = {}
-    for name in ('d_roll', 'max_roll_dev', 'min_improvement', 'max_roll_options', 'method'):
+    for name in (
+        'd_roll',
+        'max_roll_dev',
+        'min_improvement',
+        'max_roll_options',
+        'method',
+    ):
         roll_name = 'roll_' + name
         if getattr(args, roll_name) is not None:
             roll_args[name] = getattr(args, roll_name)
     if not roll_args:
         roll_args = None
 
-    run_aca_review(args.load_name, report_dir=args.report_dir, report_level=args.report_level,
-                   roll_level=args.roll_level, loud=(not args.quiet), obsids=args.obsid,
-                   open_html=args.open_html, roll_args=roll_args)
+    run_aca_review(
+        args.load_name,
+        report_dir=args.report_dir,
+        report_level=args.report_level,
+        roll_level=args.roll_level,
+        loud=(not args.quiet),
+        obsids=args.obsid,
+        open_html=args.open_html,
+        roll_args=roll_args,
+    )
 
 
-def run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=None,
-                   report_level='none', roll_level='none', roll_args=None,
-                   loud=False, obsids=None, open_html=False, context=None, raise_exc=True):
+def run_aca_review(
+    load_name=None,
+    *,
+    acars=None,
+    make_html=True,
+    report_dir=None,
+    report_level='none',
+    roll_level='none',
+    roll_args=None,
+    loud=False,
+    obsids=None,
+    open_html=False,
+    context=None,
+    raise_exc=True,
+):
     """Do ACA load review based on proseco pickle file from ORviewer.
 
     The ``load_name`` specifies the pickle file from which the ``ACATable``
@@ -204,10 +247,19 @@ def run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=Non
 
     """
     try:
-        _run_aca_review(load_name=load_name, acars=acars, make_html=make_html,
-                        report_dir=report_dir, report_level=report_level,
-                        roll_level=roll_level, roll_args=roll_args,
-                        loud=loud, obsids=obsids, open_html=open_html, context=context)
+        _run_aca_review(
+            load_name=load_name,
+            acars=acars,
+            make_html=make_html,
+            report_dir=report_dir,
+            report_level=report_level,
+            roll_level=roll_level,
+            roll_args=roll_args,
+            loud=loud,
+            obsids=obsids,
+            open_html=open_html,
+            context=context,
+        )
     except Exception:
         if raise_exc:
             raise
@@ -218,9 +270,20 @@ def run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=Non
     return exception
 
 
-def _run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=None,
-                    report_level='none', roll_level='none', roll_args=None,
-                    loud=False, obsids=None, open_html=False, context=None):
+def _run_aca_review(
+    load_name=None,
+    *,
+    acars=None,
+    make_html=True,
+    report_dir=None,
+    report_level='none',
+    roll_level='none',
+    roll_args=None,
+    loud=False,
+    obsids=None,
+    open_html=False,
+    context=None,
+):
     if acars is None:
         acars, load_name = get_acas_from_pickle(load_name, loud)
 
@@ -238,7 +301,9 @@ def _run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=No
         # Generate outdir from load_name if necessary
         if report_dir is None:
             if not load_name:
-                raise ValueError('load_name must be provided if outdir is not specified')
+                raise ValueError(
+                    'load_name must be provided if outdir is not specified'
+                )
             # Chop any directory path from load_name
             load_name = Path(load_name).name
             report_dir = re.sub(r'(_proseco)?.pkl(.gz)?', '', load_name) + '_sparkles'
@@ -264,7 +329,8 @@ def _run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=No
             # Get roll selection algorithms to try
             max_roll_options = roll_args.pop('max_roll_options', 10)
             methods = roll_args.pop(
-                'method', ('uniq_ids', 'uniform') if aca.is_OR else 'uniq_ids')
+                'method', ('uniq_ids', 'uniform') if aca.is_OR else 'uniq_ids'
+            )
             if isinstance(methods, str):
                 methods = [methods]
 
@@ -279,20 +345,23 @@ def _run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=No
                     # If there is at least one option with no messages at the
                     # roll_level (typically "critical") then declare success and
                     # stop looking for roll options.
-                    if any(not roll_option['acar'].messages >= roll_level
-                           for roll_option in aca.roll_options):
+                    if any(
+                        not roll_option['acar'].messages >= roll_level
+                        for roll_option in aca.roll_options
+                    ):
                         break
 
                 aca.sort_and_limit_roll_options(roll_level, max_roll_options)
 
             except Exception:  # as err:
                 err = traceback.format_exc()
-                aca.add_message('critical', text=f'Running get_roll_options() failed: \n{err}')
+                aca.add_message(
+                    'critical', text=f'Running get_roll_options() failed: \n{err}'
+                )
                 aca.roll_options = None
                 aca.roll_info = None
 
         if make_html:
-
             # Output directory for the main prelim review index.html and for this obsid.
             # Note that the obs{aca.obsid} is not flexible because it must match the
             # convention used in ACATable.make_report().  Oops.
@@ -307,7 +376,9 @@ def _run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=No
                     aca.make_report()
                 except Exception:
                     err = traceback.format_exc()
-                    aca.add_message('critical', text=f'Running make_report() failed:\n{err}')
+                    aca.add_message(
+                        'critical', text=f'Running make_report() failed:\n{err}'
+                    )
 
             if aca.roll_info:
                 aca.make_roll_options_report()
@@ -350,6 +421,7 @@ def _run_aca_review(load_name=None, *, acars=None, make_html=True, report_dir=No
 
         if open_html:
             import webbrowser
+
             out_url = f'file://{out_filename.absolute()}'
             print(f'Open URL in browser: {out_url}')
             webbrowser.open(out_url)
@@ -367,12 +439,20 @@ def stylize(text, category):
 
 
 def get_acas_dict_from_local_file(load_name, loud):
-    filenames = [load_name,
-                 f'{load_name}_proseco.pkl.gz', f'{load_name}.pkl.gz',
-                 f'{load_name}_proseco.pkl', f'{load_name}.pkl']
+    filenames = [
+        load_name,
+        f'{load_name}_proseco.pkl.gz',
+        f'{load_name}.pkl.gz',
+        f'{load_name}_proseco.pkl',
+        f'{load_name}.pkl',
+    ]
     for filename in filenames:
         pth = Path(filename)
-        if pth.exists() and pth.is_file() and pth.suffixes in (['.pkl'], ['.pkl', '.gz']):
+        if (
+            pth.exists()
+            and pth.is_file()
+            and pth.suffixes in (['.pkl'], ['.pkl', '.gz'])
+        ):
             if loud:
                 print(f'Reading pickle file {filename}')
 
@@ -387,7 +467,7 @@ def get_acas_dict_from_local_file(load_name, loud):
 
 
 def get_acas_dict_from_occweb(path):
-    """ Get pickle file from OCCweb"""
+    """Get pickle file from OCCweb"""
     from kadi.occweb import get_occweb_dir, get_occweb_page
 
     if not path.endswith('.pkl.gz'):
@@ -435,8 +515,9 @@ def get_acas_from_pickle(load_name, loud=False):
     else:
         acas_dict, path_name = get_acas_dict_from_local_file(load_name, loud)
 
-    acas = [ACAReviewTable(aca, obsid=obsid, loud=loud)
-            for obsid, aca in acas_dict.items()]
+    acas = [
+        ACAReviewTable(aca, obsid=obsid, loud=loud) for obsid, aca in acas_dict.items()
+    ]
     return acas, path_name
 
 
@@ -460,9 +541,11 @@ def get_summary_text(acas):
         fill = " " * (max_obsid_len - len(report_id_str))
         # Is this being generated for a roll options report?
         ident = 'ROLL' if aca.is_roll_option else 'OBSID'
-        line = (f'<a href="#id{aca.report_id}">{ident} = {report_id_str}</a>{fill}'
-                f' at {aca.date}   '
-                f'{aca.acq_count:.1f} ACQ | {aca.guide_count:.1f} GUI |')
+        line = (
+            f'<a href="#id{aca.report_id}">{ident} = {report_id_str}</a>{fill}'
+            f' at {aca.date}   '
+            f'{aca.acq_count:.1f} ACQ | {aca.guide_count:.1f} GUI |'
+        )
 
         # Warnings
         for category in reversed(MessagesList.categories):
@@ -488,8 +571,11 @@ class MessagesList(list):
     def __ge__(self, other):
         if isinstance(other, str):
             other_idx = self.categories.index(other)
-            return [msg for msg in self
-                    if self.categories.index(msg['category']) >= other_idx]
+            return [
+                msg
+                for msg in self
+                if self.categories.index(msg['category']) >= other_idx
+            ]
         else:
             return super().__ge__(other)
 
@@ -561,10 +647,18 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
             self.guides.obsid = num_obsid
             self.fids.obsid = num_obsid
 
-        if 'mag_err' not in self.colnames and self.acqs is not None and self.guides is not None:
+        if (
+            'mag_err' not in self.colnames
+            and self.acqs is not None
+            and self.guides is not None
+        ):
             # Add 'mag_err' column after 'mag' using 'mag_err' from guides and acqs
-            mag_errs = {entry['id']: entry['mag_err'] for entry in chain(self.acqs, self.guides)}
-            mag_errs = Column([mag_errs.get(id, 0.0) for id in self['id']], name='mag_err')
+            mag_errs = {
+                entry['id']: entry['mag_err'] for entry in chain(self.acqs, self.guides)
+            }
+            mag_errs = Column(
+                [mag_errs.get(id, 0.0) for id in self['id']], name='mag_err'
+            )
             self.add_column(mag_errs, index=self.colnames.index('mag') + 1)
 
         # Don't want maxmag column
@@ -623,8 +717,16 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
             self._acq_count = np.sum(self.acqs['p_acq'])
         return self._acq_count
 
-    def run_aca_review(self, *, make_html=False, report_dir='.', report_level='none',
-                       roll_level='none', roll_args=None, raise_exc=True):
+    def run_aca_review(
+        self,
+        *,
+        make_html=False,
+        report_dir='.',
+        report_level='none',
+        roll_level='none',
+        roll_args=None,
+        raise_exc=True,
+    ):
         """Do aca review based for this catalog
 
         The ``report_level`` arg specifies the message category at which the full
@@ -665,10 +767,17 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
         acars = [self]
 
         # Do aca review checks and update acas[0] in place
-        exc = run_aca_review(load_name=f'Obsid {self.obsid}', acars=acars, make_html=make_html,
-                             report_dir=report_dir, report_level=report_level,
-                             roll_level=roll_level, roll_args=roll_args,
-                             loud=False, raise_exc=raise_exc)
+        exc = run_aca_review(
+            load_name=f'Obsid {self.obsid}',
+            acars=acars,
+            make_html=make_html,
+            report_dir=report_dir,
+            report_level=report_level,
+            roll_level=roll_level,
+            roll_args=roll_args,
+            loud=False,
+            raise_exc=raise_exc,
+        )
         return exc
 
     def review_status(self):
@@ -714,9 +823,7 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
         return not self.is_OR
 
     def make_report(self):
-        """Make report for acq and guide.
-
-        """
+        """Make report for acq and guide."""
         if self.loud:
             print(f'  Creating HTML reports for obsid {self.obsid}')
 
@@ -726,7 +833,9 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
         # Let the jinja template know this has reports and set the correct
         # relative link from <preview_dir>/index.html to the reports directory
         # containing acq/index.html and guide/index.html files.
-        self.context['reports_dir'] = self.obsid_dir.relative_to(self.preview_dir).as_posix()
+        self.context['reports_dir'] = self.obsid_dir.relative_to(
+            self.preview_dir
+        ).as_posix()
 
     def set_stars_and_mask(self):
         """Set stars attribute for plotting.
@@ -751,10 +860,23 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
         for opt in opts:
             del opt['acar']
             for name in ('add_ids', 'drop_ids'):
-                opt[name] = ' '.join(str(id_) for id_ in opt[name]) if opt[name] else '--'
+                opt[name] = (
+                    ' '.join(str(id_) for id_ in opt[name]) if opt[name] else '--'
+                )
 
-        opts_table = Table(opts, names=['roll', 'P2', 'n_stars', 'improvement',
-                                        'roll_min', 'roll_max', 'add_ids', 'drop_ids'])
+        opts_table = Table(
+            opts,
+            names=[
+                'roll',
+                'P2',
+                'n_stars',
+                'improvement',
+                'roll_min',
+                'roll_max',
+                'add_ids',
+                'drop_ids',
+            ],
+        )
         for col in opts_table.itercols():
             if col.dtype.kind == 'f':
                 col.info.format = '.2f'
@@ -762,9 +884,7 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
         return opts_table
 
     def make_roll_options_report(self):
-        """Make a summary table and separate report page for roll options.
-
-        """
+        """Make a summary table and separate report page for roll options."""
         self.roll_options_table = self.get_roll_options_table()
 
         # rolls = [opt['acar'].att.roll for opt in self.roll_options]
@@ -784,16 +904,23 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
         self.roll_options_table['warnings'] = msgs_summaries
 
         # Set context for HTML output
-        rolls_index = self.obsid_dir.relative_to(self.preview_dir) / 'rolls' / 'index.html'
+        rolls_index = (
+            self.obsid_dir.relative_to(self.preview_dir) / 'rolls' / 'index.html'
+        )
         io_html = io.StringIO()
         self.roll_options_table.write(
-            io_html, format='ascii.html',
-            htmldict={'table_class': 'table-striped',
-                      'raw_html_cols': ['warnings'],
-                      'raw_html_clean_kwargs': {'tags': ['span'],
-                                                'attributes': ['class']}})
+            io_html,
+            format='ascii.html',
+            htmldict={
+                'table_class': 'table-striped',
+                'raw_html_cols': ['warnings'],
+                'raw_html_clean_kwargs': {'tags': ['span'], 'attributes': ['class']},
+            },
+        )
         htmls = [line.strip() for line in io_html.getvalue().splitlines()]
-        htmls = htmls[htmls.index('<table class="table-striped">'):htmls.index('</table>') + 1]
+        htmls = htmls[
+            htmls.index('<table class="table-striped">') : htmls.index('</table>') + 1
+        ]
         roll_context = {}
         roll_context['roll_options_table'] = '\n'.join(htmls)
         roll_context['roll_options_index'] = rolls_index.as_posix()
@@ -804,9 +931,15 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
 
         # Make a separate preview page for the roll options
         rolls_dir = self.obsid_dir / 'rolls'
-        run_aca_review(f'Obsid {self.obsid} roll options', acars=acas, report_dir=rolls_dir,
-                       report_level='none', roll_level='none', loud=False,
-                       context=roll_context)
+        run_aca_review(
+            f'Obsid {self.obsid} roll options',
+            acars=acas,
+            report_dir=rolls_dir,
+            report_level='none',
+            roll_level='none',
+            loud=False,
+            context=roll_context,
+        )
 
     def plot(self, ax=None, **kwargs):
         """
@@ -824,8 +957,9 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
         ax.set_ylim(-770, 770)  # pixels
 
         # Draw a circle at 735 pixels showing extent of CCD corners
-        circle = Circle((0, 0), radius=735, facecolor='none',
-                        edgecolor='g', alpha=0.5, lw=3)
+        circle = Circle(
+            (0, 0), radius=735, facecolor='none', edgecolor='g', alpha=0.5, lw=3
+        )
         ax.add_patch(circle)
 
         # Plot a circle around stars that were not already candidates
@@ -834,20 +968,32 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
         idxs = self.get_candidate_better_stars()
         stars = self.stars[idxs]
         for star in stars:
-            already_checked = ((star['id'] in self.acqs.cand_acqs['id'])
-                               and (star['id'] in self.guides.cand_guides['id']))
-            selected = (star['id'] in set(self.acqs['id']) | set(self.guides['id']))
-            if (not already_checked and not selected):
-                circle = Circle((star['row'], star['col']), radius=20,
-                                facecolor='none', edgecolor='r', alpha=0.8, lw=1.5)
+            already_checked = (star['id'] in self.acqs.cand_acqs['id']) and (
+                star['id'] in self.guides.cand_guides['id']
+            )
+            selected = star['id'] in set(self.acqs['id']) | set(self.guides['id'])
+            if not already_checked and not selected:
+                circle = Circle(
+                    (star['row'], star['col']),
+                    radius=20,
+                    facecolor='none',
+                    edgecolor='r',
+                    alpha=0.8,
+                    lw=1.5,
+                )
                 ax.add_patch(circle)
-                ax.text(star['row'] + 24, star['col'], f'{star["mag"]:.2f}',
-                        ha='left', va='center', fontsize='small', color='r')
+                ax.text(
+                    star['row'] + 24,
+                    star['col'],
+                    f'{star["mag"]:.2f}',
+                    ha='left',
+                    va='center',
+                    fontsize='small',
+                    color='r',
+                )
 
     def make_starcat_plot(self):
-        """Make star catalog plot for this observation.
-
-        """
+        """Make star catalog plot for this observation."""
         plotname = f'starcat{self.report_id}.png'
         outfile = self.obsid_dir / plotname
         self.context['catalog_plot'] = outfile.relative_to(self.preview_dir).as_posix()
@@ -873,18 +1019,20 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
         return out
 
     def get_text_pre(self):
-        """Get pre-formatted text for report.
-
-        """
+        """Get pre-formatted text for report."""
         P2 = -np.log10(self.acqs.calc_p_safe())
         att = self.att
         att_targ = self.att_targ
         self._base_repr_()  # Hack to set default ``format`` for cols as needed
         catalog = '\n'.join(self.pformat(max_width=-1, max_lines=-1))
 
-        att_string = f'ACA RA, Dec, Roll (deg): {att.ra:.5f} {att.dec:.5f} {att.roll:.5f}'
+        att_string = (
+            f'ACA RA, Dec, Roll (deg): {att.ra:.5f} {att.dec:.5f} {att.roll:.5f}'
+        )
         if self.is_OR:
-            att_string += f'  [Target: {att_targ.ra:.5f} {att_targ.dec:.5f} {att_targ.roll:.5f}]'
+            att_string += (
+                f'  [Target: {att_targ.ra:.5f} {att_targ.dec:.5f} {att_targ.roll:.5f}]'
+            )
 
         message_text = self.get_formatted_messages()
 
@@ -895,14 +1043,16 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
         if np.isclose(self.t_ccd_guide, self.t_ccd_eff_guide):
             t_ccd_eff_guide_msg = ''
         else:
-            t_ccd_eff_guide_msg = ' ' + stylize(f'(Effective : {self.t_ccd_eff_guide:.1f})',
-                                                'caution')
+            t_ccd_eff_guide_msg = ' ' + stylize(
+                f'(Effective : {self.t_ccd_eff_guide:.1f})', 'caution'
+            )
 
         if np.isclose(self.t_ccd_acq, self.t_ccd_eff_acq):
             t_ccd_eff_acq_msg = ''
         else:
-            t_ccd_eff_acq_msg = ' ' + stylize(f'(Effective : {self.t_ccd_eff_acq:.1f})',
-                                              'caution')
+            t_ccd_eff_acq_msg = ' ' + stylize(
+                f'(Effective : {self.t_ccd_eff_acq:.1f})', 'caution'
+            )
 
         text_pre = f"""\
 {self.detector} SIM-Z offset: {self.sim_offset}
@@ -925,9 +1075,7 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
         return text_pre
 
     def get_formatted_messages(self):
-        """Format message dicts into pre-formatted lines for the preview report.
-
-        """
+        """Format message dicts into pre-formatted lines for the preview report."""
         lines = []
         for message in self.messages:
             category = message['category']
@@ -940,9 +1088,7 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
         return out
 
     def add_row_col(self):
-        """Add row and col columns if not present
-
-        """
+        """Add row and col columns if not present"""
         if 'row' in self.colnames:
             return
 
@@ -952,9 +1098,7 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
         self.add_column(Column(col, name='col'), index=index + 1)
 
     def check_catalog(self):
-        """Perform all star catalog checks.
-
-        """
+        """Perform all star catalog checks."""
         for entry in self:
             entry_type = entry['type']
             is_guide = entry_type in ('BOT', 'GUI')
@@ -999,8 +1143,10 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
             drow = entry1['row'] - entry2['row']
             dcol = entry1['col'] - entry2['col']
             if np.abs(drow) <= 12 and np.abs(dcol) <= 12:
-                msg = ('Overlapping track index (within 12 pix) '
-                       f'idx [{entry1["idx"]}] and idx [{entry2["idx"]}]')
+                msg = (
+                    'Overlapping track index (within 12 pix) '
+                    f'idx [{entry1["idx"]}] and idx [{entry2["idx"]}]'
+                )
                 self.add_message('critical', msg)
 
     def check_guide_geometry(self):
@@ -1031,7 +1177,7 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
 
         # First check for any set of n_guide-2 stars within 500" of each other.
         min_dist = 500
-        min_dist2 = min_dist ** 2
+        min_dist2 = min_dist**2
         for idxs in combinations(guide_idxs, n_guide - 2):
             for idx0, idx1 in combinations(idxs, 2):
                 # If any distance in this combination exceeds min_dist then
@@ -1052,7 +1198,7 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
 
         # Check for all stars within 2500" of each other
         min_dist = 2500
-        min_dist2 = min_dist ** 2
+        min_dist2 = min_dist**2
         for idx0, idx1 in combinations(guide_idxs, 2):
             if dist2(self[idx0], self[idx1]) > min_dist2:
                 break
@@ -1061,9 +1207,7 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
             self.add_message('warning', msg)
 
     def check_guide_fid_position_on_ccd(self, entry):
-        """Check position of guide stars and fid lights on CCD.
-
-        """
+        """Check position of guide stars and fid lights on CCD."""
         # Shortcuts and translate y/z to yaw/pitch
         dither_guide_y = self.dither_guide.y
         dither_guide_p = self.dither_guide.z
@@ -1083,19 +1227,24 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
             """
             return -1 if (entry[axis] < 0) else 1
 
-        track_lims = {'row': (row_lim - dither_track_y * ACA.ARC_2_PIX) * sign('row'),
-                      'col': (col_lim - dither_track_p * ACA.ARC_2_PIX) * sign('col')}
+        track_lims = {
+            'row': (row_lim - dither_track_y * ACA.ARC_2_PIX) * sign('row'),
+            'col': (col_lim - dither_track_p * ACA.ARC_2_PIX) * sign('col'),
+        }
 
         for axis in ('row', 'col'):
             track_delta = abs(track_lims[axis]) - abs(entry[axis])
-            track_delta = np.round(track_delta, decimals=1)  # Official check is to 1 decimal
-            for delta_lim, category in ((3.0, 'critical'),
-                                        (5.0, 'info')):
+            track_delta = np.round(
+                track_delta, decimals=1
+            )  # Official check is to 1 decimal
+            for delta_lim, category in ((3.0, 'critical'), (5.0, 'info')):
                 if track_delta < delta_lim:
-                    text = (f"Less than {delta_lim} pix edge margin {axis} "
-                            f"lim {track_lims[axis]:.1f} "
-                            f"val {entry[axis]:.1f} "
-                            f"delta {track_delta:.1f}")
+                    text = (
+                        f"Less than {delta_lim} pix edge margin {axis} "
+                        f"lim {track_lims[axis]:.1f} "
+                        f"val {entry[axis]:.1f} "
+                        f"delta {track_delta:.1f}"
+                    )
                     self.add_message(category, text, idx=entry['idx'])
                     break
 
@@ -1127,22 +1276,22 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
         self.messages.append(message)
 
     def check_acq_p2(self):
-        """Check acquisition catalog safing probability.
-
-        """
+        """Check acquisition catalog safing probability."""
         P2 = -np.log10(self.acqs.calc_p_safe())
         P2 = np.round(P2, decimals=2)  # Official check is to 2 decimals
         obs_type = 'OR' if self.is_OR else 'ER'
         P2_lim = 2.0 if self.is_OR else 3.0
         if P2 < P2_lim:
-            self.add_message('critical', f'P2: {P2:.2f} less than {P2_lim} for {obs_type}')
+            self.add_message(
+                'critical', f'P2: {P2:.2f} less than {P2_lim} for {obs_type}'
+            )
         elif P2 < P2_lim + 1:
-            self.add_message('warning', f'P2: {P2:.2f} less than {P2_lim + 1} for {obs_type}')
+            self.add_message(
+                'warning', f'P2: {P2:.2f} less than {P2_lim + 1} for {obs_type}'
+            )
 
     def check_include_exclude(self):
-        """Check for included or excluded guide or acq stars or fids (info)
-
-        """
+        """Check for included or excluded guide or acq stars or fids (info)"""
         call_args = self.call_args
         for typ in ('acq', 'guide', 'fid'):
             for action in ('include', 'exclude'):
@@ -1173,7 +1322,8 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
             self.add_message(
                 'critical',
                 f'{obs_type} count of 9th ({mag9:.1f} for {self.guides.t_ccd:.1f}C) '
-                f'mag guide stars {self.guide_count_9th:.2f} < {count_9th_lim}')
+                f'mag guide stars {self.guide_count_9th:.2f} < {count_9th_lim}',
+            )
 
         # Rounded guide count
         guide_count_round = np.round(self.guide_count, decimals=2)
@@ -1190,18 +1340,21 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
         if guide_count_round < count_lim:
             self.add_message(
                 'critical',
-                f'{obs_type} count of guide stars {self.guide_count:.2f} < {count_lim}')
+                f'{obs_type} count of guide stars {self.guide_count:.2f} < {count_lim}',
+            )
         # If in the 3.5 to 4.0 range, this probably deserves a warning.
         elif count_lim == 3.5 and guide_count_round < 4.0:
             self.add_message(
                 'warning',
-                f'{obs_type} count of guide stars {self.guide_count:.2f} < 4.0')
+                f'{obs_type} count of guide stars {self.guide_count:.2f} < 4.0',
+            )
 
         bright_cnt_lim = 1 if self.is_OR else 3
         if np.count_nonzero(self.guides['mag'] < 5.5) > bright_cnt_lim:
             self.add_message(
                 'caution',
-                f'{obs_type} with more than {bright_cnt_lim} stars brighter than 5.5.')
+                f'{obs_type} with more than {bright_cnt_lim} stars brighter than 5.5.',
+            )
 
         # Requested slots for guide stars and mon windows
         n_guide_or_mon_request = self.call_args['n_guide']
@@ -1221,19 +1374,25 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
         if n_guide + n_mon != n_guide_or_mon_request:
             if n_mon == 0:
                 # Usual case
-                msg = (f'{obs_type} with {n_guide} guides '
-                       f'but {n_guide_or_mon_request} were requested')
+                msg = (
+                    f'{obs_type} with {n_guide} guides '
+                    f'but {n_guide_or_mon_request} were requested'
+                )
             else:
-                msg = (f'{obs_type} with {n_guide} guides and {n_mon} monitor(s) '
-                       f'but {n_guide_or_mon_request} guides or mon slots were requested')
+                msg = (
+                    f'{obs_type} with {n_guide} guides and {n_mon} monitor(s) '
+                    f'but {n_guide_or_mon_request} guides or mon slots were requested'
+                )
             self.add_message('caution', msg)
 
         # Caution for any "unusual" guide star request
         typical_n_guide = 5 if self.is_OR else 8
         if n_guide_or_mon_request != typical_n_guide:
             or_mon_slots = ' or mon slots' if n_mon > 0 else ''
-            msg = (f'{obs_type} with {n_guide_or_mon_request} guides{or_mon_slots} requested '
-                   f'but {typical_n_guide} is typical')
+            msg = (
+                f'{obs_type} with {n_guide_or_mon_request} guides{or_mon_slots} requested '
+                f'but {typical_n_guide} is typical'
+            )
             self.add_message('caution', msg)
 
     # Add a check that for ORs with guide count between 3.5 and 4.0, the
@@ -1256,29 +1415,26 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
         if self.dither_guide.y > 4.0 or self.dither_guide.z > 4.0:
             self.add_message(
                 'critical',
-                f'guide_count {self.guide_count:.2f} and dither > 4x4 arcsec')
+                f'guide_count {self.guide_count:.2f} and dither > 4x4 arcsec',
+            )
 
     def check_pos_err_guide(self, star):
-        """Warn on stars with larger POS_ERR (warning at 1" critical at 2")
-
-        """
+        """Warn on stars with larger POS_ERR (warning at 1" critical at 2")"""
         agasc_id = star['id']
         idx = self.get_id(agasc_id)['idx']
         # POS_ERR is in milliarcsecs in the table
         pos_err = star['POS_ERR'] * 0.001
-        for limit, category in ((2.0, 'critical'),
-                                (1.25, 'warning')):
+        for limit, category in ((2.0, 'critical'), (1.25, 'warning')):
             if np.round(pos_err, decimals=2) > limit:
                 self.add_message(
                     category,
                     f'Guide star {agasc_id} POS_ERR {pos_err:.2f}, limit {limit} arcsec',
-                    idx=idx)
+                    idx=idx,
+                )
                 break
 
     def check_imposters_guide(self, star):
-        """Warn on stars with larger imposter centroid offsets
-
-        """
+        """Warn on stars with larger imposter centroid offsets"""
 
         # Borrow the imposter offset method from starcheck
         def imposter_offset(cand_mag, imposter_mag):
@@ -1295,13 +1451,13 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
         agasc_id = star['id']
         idx = self.get_id(agasc_id)['idx']
         offset = imposter_offset(star['mag'], star['imp_mag'])
-        for limit, category in ((4.0, 'critical'),
-                                (2.5, 'warning')):
+        for limit, category in ((4.0, 'critical'), (2.5, 'warning')):
             if np.round(offset, decimals=1) > limit:
                 self.add_message(
                     category,
                     f'Guide star imposter offset {offset:.1f}, limit {limit} arcsec',
-                    idx=idx)
+                    idx=idx,
+                )
                 break
 
     def check_guide_is_candidate(self, star):
@@ -1315,7 +1471,9 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
             idx = self.get_id(agasc_id)['idx']
             self.add_message(
                 'critical',
-                f'Guide star {agasc_id} does not meet guide candidate criteria', idx=idx)
+                f'Guide star {agasc_id} does not meet guide candidate criteria',
+                idx=idx,
+            )
 
     def check_too_bright_guide(self, star):
         """Warn on guide stars that may be too bright.
@@ -1326,13 +1484,14 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
         agasc_id = star['id']
         idx = self.get_id(agasc_id)['idx']
         mag_err = star['mag_err']
-        for mult, category in ((2, 'critical'),
-                               (3, 'caution')):
+        for mult, category in ((2, 'critical'), (3, 'caution')):
             if star['mag'] - (mult * mag_err) < 5.2:
                 self.add_message(
                     category,
                     f'Guide star {agasc_id} within {mult}*mag_err of 5.2 '
-                    f'(mag_err={mag_err:.2f})', idx=idx)
+                    f'(mag_err={mag_err:.2f})',
+                    idx=idx,
+                )
                 break
 
     def check_bad_stars(self, entry):
@@ -1357,12 +1516,13 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
             return
 
         fid_id = fid['id']
-        category_map = {'yellow': 'warning',
-                        'red': 'critical'}
+        category_map = {'yellow': 'warning', 'red': 'critical'}
 
         for spoiler in fid['spoilers']:
-            msg = (f'Fid {fid_id} has {spoiler["warn"]} spoiler: star {spoiler["id"]} with mag '
-                   f'{spoiler["mag"]:.2f}')
+            msg = (
+                f'Fid {fid_id} has {spoiler["warn"]} spoiler: star {spoiler["id"]} with mag '
+                f'{spoiler["mag"]:.2f}'
+            )
             self.add_message(category_map[spoiler['warn']], msg, idx=idx)
 
     def check_fid_count(self):
@@ -1374,13 +1534,17 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
         obs_type = 'ER' if self.is_ER else 'OR'
 
         if len(self.fids) != self.n_fid:
-            msg = f'{obs_type} has {len(self.fids)} fids but {self.n_fid} were requested'
+            msg = (
+                f'{obs_type} has {len(self.fids)} fids but {self.n_fid} were requested'
+            )
             self.add_message('critical', msg)
 
         # Check for "typical" number of fids for an OR / ER (3 or 0)
         typical_n_fid = 3 if self.is_OR else 0
         if self.n_fid != typical_n_fid:
-            msg = f'{obs_type} requested {self.n_fid} fids but {typical_n_fid} is typical'
+            msg = (
+                f'{obs_type} requested {self.n_fid} fids but {typical_n_fid} is typical'
+            )
             self.add_message('caution', msg)
 
     @classmethod
@@ -1404,7 +1568,8 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
         if roll is not None:
             params_yoshi['roll_targ'] = roll
         params_proseco = convert_yoshi_to_proseco_params(
-            **params_yoshi, obsid=obsid, man_angle=man_angle, t_ccd=t_ccd)
+            **params_yoshi, obsid=obsid, man_angle=man_angle, t_ccd=t_ccd
+        )
         params_proseco.update(kwargs)
         aca = get_aca_catalog(**params_proseco)
         acar = cls(aca)

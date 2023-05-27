@@ -14,8 +14,11 @@ os.environ[agasc.SUPPLEMENT_ENABLED_ENV] = 'False'
 
 
 from sparkles.find_er_catalog import (
-    get_candidate_stars, find_er_catalog, filter_candidate_stars_on_ccd,
-    get_guide_counts)
+    get_candidate_stars,
+    find_er_catalog,
+    filter_candidate_stars_on_ccd,
+    get_guide_counts,
+)
 
 
 # Known tough field: PKS 0023-26 pointing
@@ -25,13 +28,21 @@ T_CCD = -8.0
 
 # Get initial catalog at the PKS 0023-26 attitude. Ignore the penalty limit for
 # this work.
-KWARGS = mod_std_info(att=ATT, t_ccd=T_CCD, date=DATE, n_guide=8,
-                      n_fid=0, obsid=99999, t_ccd_penalty_limit=999)
+KWARGS = mod_std_info(
+    att=ATT,
+    t_ccd=T_CCD,
+    date=DATE,
+    n_guide=8,
+    n_fid=0,
+    obsid=99999,
+    t_ccd_penalty_limit=999,
+)
 ACA = get_aca_catalog(**KWARGS)
 DPITCHES, DYAWS = np.ogrid[-0.01:-3.5:4j, -3.1:3:3j]
 SUN_RA, SUN_DEC = Ska.Sun.position(ACA.date)
-ATTS = Ska.Sun.apply_sun_pitch_yaw(ACA.att, pitch=DPITCHES, yaw=DYAWS,
-                                   sun_ra=SUN_RA, sun_dec=SUN_DEC)
+ATTS = Ska.Sun.apply_sun_pitch_yaw(
+    ACA.att, pitch=DPITCHES, yaw=DYAWS, sun_ra=SUN_RA, sun_dec=SUN_DEC
+)
 
 
 def test_get_candidate_and_filter_stars():
@@ -39,14 +50,23 @@ def test_get_candidate_and_filter_stars():
     stars = filter_candidate_stars_on_ccd(ATT, stars)
 
     count_9th, count_10th, count_all = get_guide_counts(
-        stars['MAG_ACA'][stars['guide_mask']], t_ccd=T_CCD)
+        stars['MAG_ACA'][stars['guide_mask']], t_ccd=T_CCD
+    )
     assert np.isclose(count_9th, 2.00, atol=0.01)
     assert np.isclose(count_10th, 2.67, atol=0.01)
     assert np.isclose(count_all, 2.25, atol=0.01)
 
 
-TEST_COLS = ['dpitch', 'dyaw', 'count_9th', 'count_10th', 'count_all',
-             'count_ok', 'n_critical', 'att']
+TEST_COLS = [
+    'dpitch',
+    'dyaw',
+    'count_9th',
+    'count_10th',
+    'count_all',
+    'count_ok',
+    'n_critical',
+    'att',
+]
 
 
 def test_find_er_catalog_minus_2_pitch_bins():
@@ -68,7 +88,8 @@ def test_find_er_catalog_minus_2_pitch_bins():
         ' -2.34  3.00      8.53      13.90     12.67     True          0  6.64 -28.78 23.5',
         ' -3.50 -3.10      2.12      10.01      6.66    False         -- 10.16 -27.91 30.4',
         ' -3.50 -0.05      4.87       9.63      7.50     True         --  8.80 -28.86 27.2',
-        ' -3.50  3.00      3.60       9.93      6.38     True         --  7.37 -29.75 23.8']
+        ' -3.50  3.00      3.60       9.93      6.38     True         --  7.37 -29.75 23.8',
+    ]
 
 
 def test_find_er_catalog_minus_2_count_all():
@@ -89,7 +110,8 @@ def test_find_er_catalog_minus_2_count_all():
         ' -2.34  3.00      8.53      13.90     12.67     True          0  6.64 -28.78 23.5',
         ' -3.50 -3.10      2.12      10.01      6.66    False         -- 10.16 -27.91 30.4',
         ' -3.50 -0.05      4.87       9.63      7.50     True         --  8.80 -28.86 27.2',
-        ' -3.50  3.00      3.60       9.93      6.38     True         --  7.37 -29.75 23.8']
+        ' -3.50  3.00      3.60       9.93      6.38     True         --  7.37 -29.75 23.8',
+    ]
 
 
 def test_find_er_catalog_minus_2_input_order():
@@ -110,13 +132,21 @@ def test_find_er_catalog_minus_2_input_order():
         ' -2.34  3.00      8.53      13.90     12.67     True          0  6.64 -28.78 23.5',
         ' -3.50 -3.10      2.12      10.01      6.66    False         -- 10.16 -27.91 30.4',
         ' -3.50 -0.05      4.87       9.63      7.50     True         --  8.80 -28.86 27.2',
-        ' -3.50  3.00      3.60       9.93      6.38     True         --  7.37 -29.75 23.8']
+        ' -3.50  3.00      3.60       9.93      6.38     True         --  7.37 -29.75 23.8',
+    ]
 
 
 def test_find_er_catalog_fails():
     """Test a catalog that will certainly fail at +10 degC"""
-    kwargs = mod_std_info(att=ATT, t_ccd=+10, date=DATE, n_guide=8,
-                          n_fid=0, obsid=99999, t_ccd_penalty_limit=999)
+    kwargs = mod_std_info(
+        att=ATT,
+        t_ccd=+10,
+        date=DATE,
+        n_guide=8,
+        n_fid=0,
+        obsid=99999,
+        t_ccd_penalty_limit=999,
+    )
 
     with warnings.catch_warnings():
         # Ignore warning about grid_model clipping t_ccd
