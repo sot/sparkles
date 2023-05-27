@@ -58,15 +58,13 @@ def get_yoshi_params_from_ocat(obsid, obs_date=None, web_ocat=True, cycle=None):
         targ["sim_offset"] = ocat["z_sim"] * 397.7225924607
 
     if cycle is None:
-
         # The zero offset aimpoint table starts at cycle 15.
         # For ancient obsids, just use the earliest in the table.
-        cycle = np.max([15, int(ocat['prop_cycle'])])
+        cycle = np.max([15, int(ocat["prop_cycle"])])
 
     chip_x, chip_y, chip_id = get_target_aimpoint(
-        date=obs_date,
-        cycle=cycle,
-        detector=ocat['instr'])
+        date=obs_date, cycle=cycle, detector=ocat["instr"]
+    )
 
     targ.update({"chipx": chip_x, "chipy": chip_y, "chip_id": chip_id})
 
