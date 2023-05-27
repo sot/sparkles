@@ -168,7 +168,7 @@ class RollOptimizeMixin:
         def get_ids_list(roll_offsets):
             ids_list = []
 
-            for ii, roll_offset in enumerate(roll_offsets):
+            for roll_offset in roll_offsets:
                 # Roll about the target attitude, which is offset from ACA attitude by a bit
                 att_targ_rolled = Quat(
                     [att_targ.ra, att_targ.dec, att_targ.roll + roll_offset]
