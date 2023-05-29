@@ -357,6 +357,40 @@ def test_run_aca_review_function(tmpdir):
     assert "TEST_LOAD sparkles review" in (path / "index.html").read_text()
 
 
+def test_run_aca_review_dyn_bgd_n_faint(tmpdir):
+    aca = get_aca_catalog(**KWARGS_48464)
+    acar = aca.get_review_table()
+    acars = [acar]
+
+    exc = run_aca_review(
+        load_name="test_load",
+        report_dir=tmpdir,
+        acars=acars,
+        dyn_bgd_n_faint=2,
+    )
+
+    assert exc is None
+    assert acar.dyn_bgd_n_faint == 2
+    assert np.isclose(acar.guide_count, 6, atol=0.1)
+
+    # Assert same warnings as test_run_aca_review_function but with a different
+    # guide count and new info message
+    assert acar.messages == [
+        {"text": "Using dyn_bgd_n_faint=2 (call_args val=0)", "category": "info"},
+        {
+            "text": "Guide star imposter offset 2.6, limit 2.5 arcsec",
+            "category": "warning",
+            "idx": 4,
+        },
+        {"text": "P2: 3.33 less than 4.0 for ER", "category": "warning"},
+        {
+            "text": "ER count of 9th (8.9 for -9.9C) mag guide stars 2.16 < 3.0",
+            "category": "critical",
+        },
+        {"text": "ER with 6 guides but 8 were requested", "category": "caution"},
+    ]
+
+
 def test_roll_outside_range():
     """
     Run a test on obsid 48334 from ~MAR1119 that is at a pitch that has 0 roll_dev
