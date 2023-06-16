@@ -76,6 +76,7 @@ def main(sys_args=None):
         help="Process only this obsid (can specify multiple times, default=all",
     )
     parser.add_argument("--quiet", action="store_true", help="Run quietly")
+    parser.add_argument("--dyn-bgd-n-faint", type=int, help="Dynamic bgd bonus stars")
     parser.add_argument(
         "--open-html", action="store_true", help="Open HTML in webbrowser"
     )
@@ -163,6 +164,7 @@ def main(sys_args=None):
         obsids=args.obsid,
         open_html=args.open_html,
         roll_args=roll_args,
+        dyn_bgd_n_faint=args.dyn_bgd_n_faint,
     )
 
 
@@ -175,6 +177,7 @@ def run_aca_review(
     report_level="none",
     roll_level="none",
     roll_args=None,
+    dyn_bgd_n_faint=None,
     loud=False,
     obsids=None,
     open_html=False,
@@ -242,6 +245,8 @@ def run_aca_review(
     :param report_level: report level threshold for generating acq and guide report
     :param roll_level: level threshold for suggesting alternate rolls
     :param roll_args: None or dict of arguments for ``get_roll_options``
+    :param dyn_bgd_n_faint: int for dynamic background bonus calculation.  Overrides value
+        in input.
     :param loud: print status information during checking
     :param obsids: list of obsids for selecting a subset for review (mostly for debug)
     :param is_ORs: list of is_OR values (for roll options review page)
@@ -259,6 +264,7 @@ def run_aca_review(
             report_level=report_level,
             roll_level=roll_level,
             roll_args=roll_args,
+            dyn_bgd_n_faint=dyn_bgd_n_faint,
             loud=loud,
             obsids=obsids,
             open_html=open_html,
@@ -283,6 +289,7 @@ def _run_aca_review(
     report_level="none",
     roll_level="none",
     roll_args=None,
+    dyn_bgd_n_faint=None,
     loud=False,
     obsids=None,
     open_html=False,
@@ -326,6 +333,16 @@ def _run_aca_review(
         aca.context.clear()
 
         aca.set_stars_and_mask()  # Not stored in pickle, need manual restoration
+
+        if dyn_bgd_n_faint is not None:
+            if aca.dyn_bgd_n_faint != dyn_bgd_n_faint:
+                aca.add_message(
+                    "info",
+                    text=f"Using dyn_bgd_n_faint={dyn_bgd_n_faint} "
+                         f"(call_args val={aca.dyn_bgd_n_faint})",
+                )
+                aca.dyn_bgd_n_faint = dyn_bgd_n_faint
+
         aca.check_catalog()
 
         # Find roll options if requested
