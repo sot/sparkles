@@ -63,17 +63,15 @@ more difficult problem of part (1) will be **solved by the FOT**.
      from the star fields that appear to be the best based on available stars.
    3. Prioritize by the order of attitudes passed in to the function.
 """
-import numpy as np
-from astropy.table import Table, MaskedColumn
-
-from chandra_aca.transform import radec_to_yagzag, snr_mag_for_t_ccd, yagzag_to_pixels
-import proseco.characteristics_guide as GUIDE
-from proseco import get_aca_catalog
 import agasc
-from Quaternion import Quat
-from chandra_aca.star_probs import guide_count
+import numpy as np
+import proseco.characteristics_guide as GUIDE
 import ska_sun
-
+from astropy.table import MaskedColumn, Table
+from chandra_aca.star_probs import guide_count
+from chandra_aca.transform import radec_to_yagzag, snr_mag_for_t_ccd, yagzag_to_pixels
+from proseco import get_aca_catalog
+from Quaternion import Quat
 from ska_sun import get_sun_pitch_yaw
 
 
@@ -317,7 +315,7 @@ def get_att_opts_table(acar, atts):
     )
     # Creating a numpy object array of empty lists requires this workaround
     for ii in range(n_atts):
-        t["status"][ii] = list()
+        t["status"][ii] = []
 
     for name in ["dpitch", "dyaw", "droll", "count_9th", "count_10th", "count_all"]:
         t[name].info.format = ".2f"

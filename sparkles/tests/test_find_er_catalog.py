@@ -1,25 +1,24 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import os
-
 import warnings
+
+import agasc
+import numpy as np
+import Ska.Sun
 from proseco import get_aca_catalog
 from proseco.tests.test_common import mod_std_info
-import numpy as np
 from Quaternion import Quat
-import Ska.Sun
-import agasc
 
 # Do not use the AGASC supplement in testing since mags can change
 os.environ[agasc.SUPPLEMENT_ENABLED_ENV] = "False"
 
 
 from sparkles.find_er_catalog import (
-    get_candidate_stars,
-    find_er_catalog,
     filter_candidate_stars_on_ccd,
+    find_er_catalog,
+    get_candidate_stars,
     get_guide_counts,
 )
-
 
 # Known tough field: PKS 0023-26 pointing
 ATT = Quat([0.20668099834, 0.23164729391, 0.002658888173, 0.9505868852])

@@ -13,7 +13,7 @@ from proseco.core import StarsTable
 from proseco.tests.test_common import DARK40, STD_INFO, mod_std_info
 from Quaternion import Quat
 
-from .. import ACAReviewTable
+from sparkles import ACAReviewTable
 
 
 def test_check_slice_index():

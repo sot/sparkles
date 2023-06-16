@@ -6,33 +6,30 @@ Preliminary review of ACA catalogs selected by proseco.
 """
 import gzip
 import io
+import pickle
+import pprint
 import re
 import traceback
+from itertools import chain, combinations
 from pathlib import Path
-import pickle
-from itertools import combinations, chain
-import pprint
 
 import matplotlib
 
-matplotlib.use("Agg")  # noqa
-import matplotlib.pyplot as plt
-from matplotlib.patches import Circle
-
-import numpy as np
-from jinja2 import Template
-from chandra_aca.star_probs import guide_count
-from chandra_aca.transform import yagzag_to_pixels, mag_to_count_rate, snr_mag_for_t_ccd
+matplotlib.use("Agg")
 import chandra_aca
-from astropy.table import Column, Table
-
+import matplotlib.pyplot as plt
+import numpy as np
 import proseco
-from proseco.catalog import ACATable
 import proseco.characteristics as ACA
+from astropy.table import Column, Table
+from chandra_aca.star_probs import guide_count
+from chandra_aca.transform import mag_to_count_rate, snr_mag_for_t_ccd, yagzag_to_pixels
+from jinja2 import Template
+from matplotlib.patches import Circle
+from proseco.catalog import ACATable
 from proseco.core import MetaAttribute
 
 from .roll_optimize import RollOptimizeMixin
-
 
 CACHE = {}
 FILEDIR = Path(__file__).parent
@@ -51,9 +48,9 @@ CREEP_AWAY_THRESHOLD = 5.0
 
 def main(sys_args=None):
     """Command line interface to preview_load()"""
-    from . import __version__
-
     import argparse
+
+    from . import __version__
 
     parser = argparse.ArgumentParser(
         description=f"Sparkles ACA review tool {__version__}"
@@ -531,7 +528,7 @@ def get_acas_from_pickle(load_name, loud=False):
     :param load_name: load name
     :param loud: print processing information
     """
-    if load_name.startswith(r"\\noodle") or load_name.startswith("https://occweb"):
+    if load_name.startswith((r"\\noodle", "https://occweb")):
         acas_dict, path_name = get_acas_dict_from_occweb(load_name)
     else:
         acas_dict, path_name = get_acas_dict_from_local_file(load_name, loud)
@@ -1188,7 +1185,7 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
         n_guide = len(guide_idxs)
 
         if n_guide < 2:
-            msg = f"Cannot check geometry with fewer than 2 guide stars"
+            msg = "Cannot check geometry with fewer than 2 guide stars"
             self.add_message("critical", msg)
             return
 
@@ -1591,7 +1588,8 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
         :returns: AcaReviewTable object
         """
         from proseco import get_aca_catalog
-        from .yoshi import get_yoshi_params_from_ocat, convert_yoshi_to_proseco_params
+
+        from .yoshi import convert_yoshi_to_proseco_params, get_yoshi_params_from_ocat
 
         params_yoshi = get_yoshi_params_from_ocat(obsid, obs_date=date)
         if roll is not None:

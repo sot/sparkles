@@ -1,10 +1,10 @@
 import numpy as np
 import numpy.ma
-from chandra_aca.transform import calc_aca_from_targ
 from chandra_aca.drift import get_aca_offsets, get_target_aimpoint
-from mica.archive.cda import get_ocat_web, get_ocat_local
-from ska_sun import nominal_roll
+from chandra_aca.transform import calc_aca_from_targ
 from cxotime import CxoTime
+from mica.archive.cda import get_ocat_local, get_ocat_web
+from ska_sun import nominal_roll
 
 
 def get_yoshi_params_from_ocat(obsid, obs_date=None, web_ocat=True, cycle=None):
@@ -245,20 +245,20 @@ def convert_yoshi_to_proseco_params(
     )
 
     # Get keywords for proseco
-    out = dict(
-        obsid=obsid,
-        att=q_aca,
-        man_angle=man_angle,
-        date=obs_date,
-        t_ccd=t_ccd,
-        dither=(dither_y, dither_z),
-        detector=detector,
-        sim_offset=sim_offset,
-        focus_offset=focus_offset,
-        n_acq=8,
-        n_guide=5,
-        n_fid=3,
-    )
+    out = {
+        "obsid": obsid,
+        "att": q_aca,
+        "man_angle": man_angle,
+        "date": obs_date,
+        "t_ccd": t_ccd,
+        "dither": (dither_y, dither_z),
+        "detector": detector,
+        "sim_offset": sim_offset,
+        "focus_offset": focus_offset,
+        "n_acq": 8,
+        "n_guide": 5,
+        "n_fid": 3,
+    }
 
     out.update(kwargs)
 
