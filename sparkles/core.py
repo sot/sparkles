@@ -363,8 +363,10 @@ def _run_aca_review(
             if aca.dyn_bgd_n_faint != dyn_bgd_n_faint:
                 aca.add_message(
                     "info",
-                    text=f"Using dyn_bgd_n_faint={dyn_bgd_n_faint} "
-                    f"(call_args val={aca.dyn_bgd_n_faint})",
+                    text=(
+                        f"Using dyn_bgd_n_faint={dyn_bgd_n_faint} "
+                        f"(call_args val={aca.dyn_bgd_n_faint})"
+                    ),
                 )
                 aca.dyn_bgd_n_faint = dyn_bgd_n_faint
 
