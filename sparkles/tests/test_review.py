@@ -382,7 +382,7 @@ def test_run_aca_review_dyn_bgd_n_faint(tmpdir):
         },
         {"text": "P2: 3.33 less than 4.0 for ER", "category": "warning"},
         {
-            "text": "ER count of 9th (8.9 for -9.9C) mag guide stars 2.16 < 3.0",
+            "text": "ER count of 9th (8.9 for -9.9C) mag guide stars 1.91 < 3.0",
             "category": "critical",
         },
         {"text": "ER with 6 guides but 8 were requested", "category": "caution"},
