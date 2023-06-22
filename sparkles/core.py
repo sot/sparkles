@@ -46,6 +46,34 @@ MIN_DYN_BGD_ANCHOR_STARS = 3
 CREEP_AWAY_THRESHOLD = 5.0
 
 
+def get_t_ccds_bonus(mags, t_ccd, dyn_bgd_n_faint, dyn_bgd_dt_ccd):
+    """Return array of t_ccds with dynamic background bonus applied.
+
+    This adds ``dyn_bgd_dt_ccd`` to the effective CCD temperature for the
+    ``dyn_bgd_n_faint`` faintest stars, ensuring that at least MIN_DYN_BGD_ANCHOR_STARS
+    are evaluated without the bonus. See:
+    https://nbviewer.org/urls/cxc.harvard.edu/mta/ASPECT/ipynb/misc/guide-count-dyn-bgd.ipynb
+
+    :param mags: array of star magnitudes
+    :param t_ccd: single T_ccd value (degC)
+    :param dyn_bgd_n_faint: number of faintest stars to apply bonus
+    :returns: array of t_ccds (matching ``mags``) with dynamic background bonus applied
+    """
+    t_ccds = np.full_like(mags, t_ccd)
+
+    # If no bonus stars then just return the input t_ccd broadcast to all stars
+    if dyn_bgd_n_faint == 0:
+        return t_ccds
+
+    idxs = np.argsort(mags)
+    n_faint = min(dyn_bgd_n_faint, len(t_ccds))
+    idx_bonus = max(len(t_ccds) - n_faint, MIN_DYN_BGD_ANCHOR_STARS)
+    for idx in idxs[idx_bonus:]:
+        t_ccds[idx] += dyn_bgd_dt_ccd
+
+    return t_ccds
+
+
 def main(sys_args=None):
     """Command line interface to preview_load()"""
     import argparse
@@ -336,7 +364,7 @@ def _run_aca_review(
                 aca.add_message(
                     "info",
                     text=f"Using dyn_bgd_n_faint={dyn_bgd_n_faint} "
-                         f"(call_args val={aca.dyn_bgd_n_faint})",
+                    f"(call_args val={aca.dyn_bgd_n_faint})",
                 )
                 aca.dyn_bgd_n_faint = dyn_bgd_n_faint
 
@@ -700,19 +728,12 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
     def t_ccds_bonus(self):
         """Effective T_ccd for each guide star, including dynamic background bonus."""
         if not hasattr(self, "_t_ccds_bonus"):
-            # Compute guide count once for the record
-            mags = self.guides["mag"]
-            t_ccds = np.full_like(mags, self.guides.t_ccd)
-            if self.dyn_bgd_n_faint > 0:
-                # Apply the dynamic background t_ccd bonus to the
-                # dyn_bgd_n_faint faintest stars, ensuring that at least
-                # MIN_DYN_BGD_ANCHOR_STARS are evaluated without the bonus. See:
-                # https://nbviewer.org/urls/cxc.harvard.edu/mta/ASPECT/ipynb/misc/guide-count-dyn-bgd.ipynb
-                mags = np.sort(mags)
-                n_faint = min(self.dyn_bgd_n_faint, len(t_ccds))
-                idx_bonus = max(len(t_ccds) - n_faint, MIN_DYN_BGD_ANCHOR_STARS)
-                t_ccds[idx_bonus:] += self.dyn_bgd_dt_ccd
-            self._t_ccds_bonus = t_ccds
+            self._t_ccds_bonus = get_t_ccds_bonus(
+                self.guides["mag"],
+                self.guides.t_ccd,
+                self.dyn_bgd_n_faint,
+                self.dyn_bgd_dt_ccd,
+            )
         return self._t_ccds_bonus
 
     @property
