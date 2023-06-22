@@ -13,7 +13,7 @@ from proseco.core import StarsTable
 from proseco.tests.test_common import DARK40, STD_INFO, mod_std_info
 from Quaternion import Quat
 
-from sparkles import ACAReviewTable
+from sparkles import ACAReviewTable, get_t_ccds_bonus
 
 
 def test_check_slice_index():
@@ -464,6 +464,44 @@ def test_reduced_dither_low_guide_count():
     # Run the dither check
     acar.check_dither()
     assert len(acar.messages) == 0
+
+
+def test_get_t_ccds_bonus_1():
+    mags = [1, 10, 2, 11, 3, 4]
+    t_ccd = 10
+
+    # Temps corresponding to two faintest stars are smaller.
+    t_ccds = get_t_ccds_bonus(mags, t_ccd, dyn_bgd_n_faint=2, dyn_bgd_dt_ccd=-1)
+    assert np.all(t_ccds == [10, 9, 10, 9, 10, 10])
+
+    # Temps corresponding to three faintest stars are smaller.
+    t_ccds = get_t_ccds_bonus(mags, t_ccd, dyn_bgd_n_faint=3, dyn_bgd_dt_ccd=-1)
+    assert np.all(t_ccds == [10, 9, 10, 9, 10, 9])
+
+    # Temps corresponding to just the three faintest stars are smaller because of the
+    # minimum number of anchor stars = 3.
+    t_ccds = get_t_ccds_bonus(mags, t_ccd, dyn_bgd_n_faint=4, dyn_bgd_dt_ccd=-1)
+    assert np.all(t_ccds == [10, 9, 10, 9, 10, 9])
+
+    t_ccds = get_t_ccds_bonus(mags, t_ccd, dyn_bgd_n_faint=0, dyn_bgd_dt_ccd=-1)
+    assert np.all(t_ccds == [10, 10, 10, 10, 10, 10])
+
+
+def test_get_t_ccds_bonus_min_anchor():
+    mags = [1, 10, 2]
+    t_ccd = 10
+    t_ccds = get_t_ccds_bonus(mags, t_ccd, dyn_bgd_n_faint=2, dyn_bgd_dt_ccd=-1)
+    assert np.all(t_ccds == [10, 10, 10])
+
+    t_ccds = get_t_ccds_bonus(mags, t_ccd, dyn_bgd_n_faint=4, dyn_bgd_dt_ccd=-1)
+    assert np.all(t_ccds == [10, 10, 10])
+
+
+def test_get_t_ccds_bonus_small_catalog():
+    mags = [1]
+    t_ccd = 10
+    t_ccds = get_t_ccds_bonus(mags, t_ccd, dyn_bgd_n_faint=2, dyn_bgd_dt_ccd=-1)
+    assert np.all(t_ccds == [10])
 
 
 def test_not_reduced_dither_low_guide_count():
