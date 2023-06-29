@@ -369,6 +369,7 @@ def _run_aca_review(
                     ),
                 )
                 aca.dyn_bgd_n_faint = dyn_bgd_n_faint
+                aca.guides.dyn_bgd_n_faint = dyn_bgd_n_faint
 
         aca.check_catalog()
 
