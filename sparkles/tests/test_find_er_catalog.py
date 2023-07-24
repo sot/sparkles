@@ -1,9 +1,7 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-import os
 import warnings
 import pytest
 
-import agasc
 import numpy as np
 import Ska.Sun
 from proseco import get_aca_catalog

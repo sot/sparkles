@@ -1,9 +1,7 @@
 import gzip
-import os
 import pickle
 from pathlib import Path
 
-import agasc
 import numpy as np
 import pytest
 import ska_sun
