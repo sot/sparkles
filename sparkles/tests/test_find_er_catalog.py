@@ -1,19 +1,16 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import warnings
-import pytest
 
 import numpy as np
+import pytest
 import Ska.Sun
 from proseco import get_aca_catalog
 from proseco.tests.test_common import mod_std_info
 from Quaternion import Quat
 
-from sparkles.find_er_catalog import (
-    filter_candidate_stars_on_ccd,
-    find_er_catalog,
-    get_candidate_stars,
-    get_guide_counts,
-)
+from sparkles.find_er_catalog import (filter_candidate_stars_on_ccd,
+                                      find_er_catalog, get_candidate_stars,
+                                      get_guide_counts)
 
 
 # Known tough field: PKS 0023-26 pointing

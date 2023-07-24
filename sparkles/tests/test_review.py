@@ -14,7 +14,6 @@ from ska_sun import apply_sun_pitch_yaw, nominal_roll
 
 from sparkles import ACAReviewTable, run_aca_review
 
-
 KWARGS_48464 = {
     "att": [-0.51759295, -0.30129397, 0.27093045, 0.75360213],
     "date": "2019:031:13:25:30.000",
