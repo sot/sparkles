@@ -12,12 +12,6 @@ from sparkles.yoshi import (
 )
 
 
-@pytest.fixture(autouse=True)
-def do_not_use_agasc_supplement(monkeypatch):
-    """Do not use AGASC supplement in any test"""
-    monkeypatch.setenv(agasc.SUPPLEMENT_ENABLED_ENV, "False")
-
-
 @pytest.mark.skipif(not HAS_WEB_SERVICES, reason="No web services available")
 def test_run_one_yoshi():
     """Regression test a single run for a real obsid"""

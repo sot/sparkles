@@ -9,10 +9,6 @@ from proseco import get_aca_catalog
 from proseco.tests.test_common import mod_std_info
 from Quaternion import Quat
 
-# Do not use the AGASC supplement in testing since mags can change
-os.environ[agasc.SUPPLEMENT_ENABLED_ENV] = "False"
-
-
 from sparkles.find_er_catalog import (
     filter_candidate_stars_on_ccd,
     find_er_catalog,
