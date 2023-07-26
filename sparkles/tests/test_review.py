@@ -1,9 +1,7 @@
 import gzip
-import os
 import pickle
 from pathlib import Path
 
-import agasc
 import numpy as np
 import pytest
 import ska_sun
@@ -15,9 +13,6 @@ from Quaternion import Quat
 from ska_sun import apply_sun_pitch_yaw, nominal_roll
 
 from sparkles import ACAReviewTable, run_aca_review
-
-# Do not use the AGASC supplement in testing by default since mags can change
-os.environ[agasc.SUPPLEMENT_ENABLED_ENV] = "False"
 
 KWARGS_48464 = {
     "att": [-0.51759295, -0.30129397, 0.27093045, 0.75360213],
