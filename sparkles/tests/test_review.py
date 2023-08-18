@@ -47,9 +47,13 @@ def test_t_ccd_effective_message():
     text = acar.get_text_pre()
 
     eff_guide = (
-        kwargs["t_ccd_guide"] + 1 + (kwargs["t_ccd_guide"] - ACA.aca_t_ccd_penalty_limit)
+        kwargs["t_ccd_guide"]
+        + 1
+        + (kwargs["t_ccd_guide"] - ACA.aca_t_ccd_penalty_limit)
     )
-    eff_acq = kwargs["t_ccd_acq"] + 1 + (kwargs["t_ccd_acq"] - ACA.aca_t_ccd_penalty_limit)
+    eff_acq = (
+        kwargs["t_ccd_acq"] + 1 + (kwargs["t_ccd_acq"] - ACA.aca_t_ccd_penalty_limit)
+    )
     assert (
         f'Predicted Guide CCD temperature (max): {kwargs["t_ccd_guide"]:.1f} '
         f'<span class="caution">(Effective : {eff_guide:.1f})</span>' in text
