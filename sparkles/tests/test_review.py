@@ -3,10 +3,11 @@ import pickle
 from pathlib import Path
 
 import numpy as np
+import proseco.characteristics as ACA
 import pytest
 import ska_sun
 from proseco import get_aca_catalog
-from proseco.characteristics import MonCoord, MonFunc, aca_t_ccd_penalty_limit
+from proseco.characteristics import MonCoord, MonFunc
 from proseco.core import StarsTable
 from proseco.tests.test_common import DARK40, mod_std_info
 from Quaternion import Quat
@@ -36,8 +37,8 @@ def test_t_ccd_effective_message():
     """Test printing a message about effective guide and/or acq CCD temperature
     when it is different from the predicted temperature."""
     kwargs = KWARGS_48464.copy()
-    kwargs["t_ccd_guide"] = aca_t_ccd_penalty_limit + 0.75
-    kwargs["t_ccd_acq"] = aca_t_ccd_penalty_limit + 0.5
+    kwargs["t_ccd_guide"] = ACA.aca_t_ccd_penalty_limit + 0.75
+    kwargs["t_ccd_acq"] = ACA.aca_t_ccd_penalty_limit + 0.5
     aca = get_aca_catalog(**kwargs)
     acar = aca.get_review_table()
     acar.run_aca_review()
@@ -46,9 +47,13 @@ def test_t_ccd_effective_message():
     text = acar.get_text_pre()
 
     eff_guide = (
-        kwargs["t_ccd_guide"] + 1 + (kwargs["t_ccd_guide"] - aca_t_ccd_penalty_limit)
+        kwargs["t_ccd_guide"]
+        + 1
+        + (kwargs["t_ccd_guide"] - ACA.aca_t_ccd_penalty_limit)
     )
-    eff_acq = kwargs["t_ccd_acq"] + 1 + (kwargs["t_ccd_acq"] - aca_t_ccd_penalty_limit)
+    eff_acq = (
+        kwargs["t_ccd_acq"] + 1 + (kwargs["t_ccd_acq"] - ACA.aca_t_ccd_penalty_limit)
+    )
     assert (
         f'Predicted Guide CCD temperature (max): {kwargs["t_ccd_guide"]:.1f} '
         f'<span class="caution">(Effective : {eff_guide:.1f})</span>' in text
