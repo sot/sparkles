@@ -3,11 +3,11 @@ import pickle
 from pathlib import Path
 
 import numpy as np
+import proseco.characteristics as ACA
 import pytest
 import ska_sun
 from proseco import get_aca_catalog
 from proseco.characteristics import MonCoord, MonFunc
-import proseco.characteristics as ACA
 from proseco.core import StarsTable
 from proseco.tests.test_common import DARK40, mod_std_info
 from Quaternion import Quat
