@@ -6,7 +6,9 @@ import pickle
 import agasc
 import numpy as np
 import pytest
+import tables
 from chandra_aca.transform import mag_to_count_rate
+from packaging.version import Version
 from proseco import get_aca_catalog
 from proseco.characteristics import CCD, MonCoord, MonFunc
 from proseco.core import StarsTable
@@ -705,7 +707,8 @@ def test_imposters_on_guide(exp_warn):
         assert len(acar.messages) == 0
 
 
-def test_bad_star_set():
+def test_bad_star_set(proseco_agasc_1p7):
+    # This faint star is no longer in proseco_agasc >= 1.8 so we use 1.7
     bad_id = 1248994952
     star = agasc.get_star(bad_id)
     ra = star["RA"]
@@ -963,3 +966,12 @@ def test_copy_deepcopy_pickle():
             val2 = func(val)
             assert repr(val) == repr(val2)
             assert val is not val2
+
+
+def test_agasc_1p8_or_later():
+    """Check that AGASC 1.8 or later (including RC's) is being used."""
+    agasc_file = agasc.get_agasc_filename()
+    with tables.open_file(agasc_file) as h5:
+        version = Version(h5.root.data.attrs["version"].replace("p", "."))
+    assert version.major == 1
+    assert version.minor >= 8

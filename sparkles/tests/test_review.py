@@ -64,7 +64,7 @@ def test_t_ccd_effective_message():
     )
 
 
-def test_review_catalog(tmpdir):
+def test_review_catalog(proseco_agasc_1p7, tmpdir):
     aca = get_aca_catalog(**KWARGS_48464)
     acar = aca.get_review_table()
     acar.run_aca_review()
@@ -261,7 +261,7 @@ def test_roll_options_with_monitor_star():
     acar.get_roll_options()
 
 
-def test_uniform_roll_options():
+def test_uniform_roll_options(proseco_agasc_1p7):
     """Use obsid 22508 as a test case for failing to find a roll option using
     the 'uniq_ids' algorithm and falling through to a 'uniform' search.
 
@@ -326,7 +326,7 @@ def test_catch_exception_from_method():
         acar.run_aca_review(roll_level="BAD VALUE")
 
 
-def test_run_aca_review_function(tmpdir):
+def test_run_aca_review_function(proseco_agasc_1p7, tmpdir):
     aca = get_aca_catalog(**KWARGS_48464)
     acar = aca.get_review_table()
     acars = [acar]
@@ -355,7 +355,7 @@ def test_run_aca_review_function(tmpdir):
     assert "TEST_LOAD sparkles review" in (path / "index.html").read_text()
 
 
-def test_run_aca_review_dyn_bgd_n_faint(tmpdir):
+def test_run_aca_review_dyn_bgd_n_faint(proseco_agasc_1p7, tmpdir):
     aca = get_aca_catalog(**KWARGS_48464)
     acar = aca.get_review_table()
     acars = [acar]
@@ -421,7 +421,7 @@ def test_roll_outside_range():
     assert Quat(kw["att"]).roll >= acar.roll_info["roll_min"]
 
 
-def test_roll_options_dec89_9():
+def test_roll_options_dec89_9(proseco_agasc_1p7):
     """Test getting roll options for an OR and ER at very high declination
     where the difference between the ACA and target frames is large.  Here
     the roll will differ by around 10 deg.
@@ -492,7 +492,7 @@ def test_calc_targ_from_aca():
     assert np.isclose(acar.att.dq(q_targ).yaw * 3600, 69.59, atol=0.01, rtol=0)
 
 
-def test_get_roll_intervals():
+def test_get_roll_intervals(proseco_agasc_1p7):
     """
     Test that the behavior of get_roll_intervals is different for ORs and ERs with
     regard to use of offsets.  They are set to arbitrary large values in the test.

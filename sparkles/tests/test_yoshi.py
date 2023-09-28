@@ -13,7 +13,7 @@ from sparkles.yoshi import (
 
 
 @pytest.mark.skipif(not HAS_WEB_SERVICES, reason="No web services available")
-def test_run_one_yoshi():
+def test_run_one_yoshi(proseco_agasc_1p7):
     """Regression test a single run for a real obsid"""
     request = {
         "obsid": 20562,
@@ -148,7 +148,7 @@ def test_get_params_use_cycle():
 
 
 @pytest.mark.skipif(not HAS_WEB_SERVICES, reason="No web services available")
-def test_acar_from_ocat(monkeypatch):
+def test_acar_from_ocat(proseco_agasc_1p7, monkeypatch):
     """Get an AcaReviewTable with minimal information filling in rest from OCAT"""
     monkeypatch.setenv(agasc.SUPPLEMENT_ENABLED_ENV, "False")
 
