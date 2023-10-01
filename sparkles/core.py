@@ -13,11 +13,7 @@ import traceback
 from itertools import chain, combinations
 from pathlib import Path
 
-import matplotlib
-
-matplotlib.use("Agg")
 import chandra_aca
-import matplotlib.pyplot as plt
 import numpy as np
 import proseco
 import proseco.characteristics as ACA
@@ -25,7 +21,6 @@ from astropy.table import Column, Table
 from chandra_aca.star_probs import guide_count
 from chandra_aca.transform import mag_to_count_rate, snr_mag_for_t_ccd, yagzag_to_pixels
 from jinja2 import Template
-from matplotlib.patches import Circle
 from proseco.catalog import ACATable
 from proseco.core import MetaAttribute
 
@@ -990,6 +985,8 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
         :param ax: matplotlib axes object for plotting to (optional)
         :param kwargs: other keyword args for plot_stars
         """
+        from matplotlib.patches import Circle
+
         fig = super().plot(ax, **kwargs)
         if ax is None:
             ax = fig.gca()
@@ -1036,6 +1033,11 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
 
     def make_starcat_plot(self):
         """Make star catalog plot for this observation."""
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
         plotname = f"starcat{self.report_id}.png"
         outfile = self.obsid_dir / plotname
         self.context["catalog_plot"] = outfile.relative_to(self.preview_dir).as_posix()
