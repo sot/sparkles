@@ -1,4 +1,3 @@
-import agasc
 import numpy as np
 import pytest
 from mica.archive.tests.test_cda import HAS_WEB_SERVICES
@@ -148,10 +147,8 @@ def test_get_params_use_cycle():
 
 
 @pytest.mark.skipif(not HAS_WEB_SERVICES, reason="No web services available")
-def test_acar_from_ocat(proseco_agasc_1p7, monkeypatch):
+def test_acar_from_ocat(proseco_agasc_1p7):
     """Get an AcaReviewTable with minimal information filling in rest from OCAT"""
-    monkeypatch.setenv(agasc.SUPPLEMENT_ENABLED_ENV, "False")
-
     acar = ACAReviewTable.from_ocat(
         obsid=8008, date="2022:001", t_ccd=-10, n_acq=6, target_name="Target name"
     )
