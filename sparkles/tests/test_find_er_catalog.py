@@ -63,7 +63,7 @@ def ATTS(ACA):
     )
 
 
-def test_get_candidate_and_filter_stars(ATT, T_CCD, DATE):
+def test_get_candidate_and_filter_stars(proseco_agasc_1p7, ATT, T_CCD, DATE):
     stars = get_candidate_stars(ATT, T_CCD, date=DATE)
     stars = filter_candidate_stars_on_ccd(ATT, stars)
 
@@ -87,7 +87,7 @@ TEST_COLS = [
 ]
 
 
-def test_find_er_catalog_minus_2_pitch_bins(ACA, ATTS):
+def test_find_er_catalog_minus_2_pitch_bins(proseco_agasc_1p7, ACA, ATTS):
     # Try it all for the bad field near PKS 0023-26
     acar, att_opts = find_er_catalog(ACA, ATTS, alg="pitch_bins")
     # import pprint; pprint.pprint(att_opts[TEST_COLS].pformat_all(), width=100)
@@ -152,7 +152,7 @@ def test_find_er_catalog_minus_2_pitch_bins(ACA, ATTS):
     ]
 
 
-def test_find_er_catalog_minus_2_count_all(ACA, ATTS):
+def test_find_er_catalog_minus_2_count_all(proseco_agasc_1p7, ACA, ATTS):
     acar, att_opts = find_er_catalog(ACA, ATTS, alg="count_all")
     # import pprint; pprint.pprint(att_opts[TEST_COLS].pformat_all(), width=100)
     assert acar is att_opts["acar"][8]
@@ -216,7 +216,7 @@ def test_find_er_catalog_minus_2_count_all(ACA, ATTS):
     ]
 
 
-def test_find_er_catalog_minus_2_input_order(ACA, ATTS):
+def test_find_er_catalog_minus_2_input_order(proseco_agasc_1p7, ACA, ATTS):
     acar, att_opts = find_er_catalog(ACA, ATTS, alg="input_order")
     # import pprint; pprint.pprint(att_opts[TEST_COLS].pformat_all(), width=100)
     assert acar is att_opts["acar"][8]
