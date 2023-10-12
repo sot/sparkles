@@ -80,6 +80,66 @@ def test_n_guide_check_not_enough_stars():
     ]
 
 
+def test_or_too_cold():
+    """Test the check that OR is not too cold"""
+
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=5, mag=8.5)
+    aca = get_aca_catalog(
+        **mod_std_info(n_fid=3, n_guide=5, obsid=5000, t_ccd_acq=-5, date="2023:001"),
+        stars=stars,
+        dark=DARK40,
+        raise_exc=True
+    )
+    acar = ACAReviewTable(aca)
+    acar.check_t_ccd_acq()
+    assert acar.messages == []
+
+    aca = get_aca_catalog(
+        **mod_std_info(n_fid=3, n_guide=5, obsid=5000, t_ccd_acq=-19, date="2019:001"),
+        stars=stars,
+        dark=DARK40,
+        raise_exc=True
+    )
+    acar = ACAReviewTable(aca)
+    acar.check_t_ccd_acq()
+    assert acar.messages == []
+
+    aca = get_aca_catalog(
+        **mod_std_info(
+            n_fid=3, n_guide=5, obsid=5000, t_ccd_acq=-13.6, date="2023:001"
+        ),
+        stars=stars,
+        dark=DARK40,
+        raise_exc=True
+    )
+    acar = ACAReviewTable(aca)
+    acar.check_t_ccd_acq()
+    assert acar.messages == [
+        {
+            "text": "Fid lights near box edge (t_ccd_acq -13.6 <= -13.5)",
+            "category": "caution",
+        }
+    ]
+
+    aca = get_aca_catalog(
+        **mod_std_info(
+            n_fid=3, n_guide=5, obsid=5000, t_ccd_acq=-14.1, date="2023:001"
+        ),
+        stars=stars,
+        dark=DARK40,
+        raise_exc=True
+    )
+    acar = ACAReviewTable(aca)
+    acar.check_t_ccd_acq()
+    assert acar.messages == [
+        {
+            "text": "Fid lights outside boxes (t_ccd_acq -14.1 <= -14.0)",
+            "category": "critical",
+        }
+    ]
+
+
 def test_guide_is_candidate():
     """Test the check that guide star meets candidate star requirements
 

@@ -20,6 +20,7 @@ import proseco.characteristics as ACA
 from astropy.table import Column, Table
 from chandra_aca.star_probs import guide_count
 from chandra_aca.transform import mag_to_count_rate, snr_mag_for_t_ccd, yagzag_to_pixels
+from cxotime import CxoTime
 from jinja2 import Template
 from proseco.catalog import ACATable
 from proseco.core import MetaAttribute
@@ -1173,6 +1174,7 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
         self.check_dither()
         self.check_fid_count()
         self.check_include_exclude()
+        self.check_t_ccd_acq()
 
     def check_guide_overlap(self):
         """
@@ -1350,6 +1352,25 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
                         msg = msg + f" halfwidths(s): {halfws}"
 
                     self.add_message("info", msg)
+
+    def check_t_ccd_acq(self):
+        """
+        Check that the fid lights are in the current search boxes by a check on t_ccd_acq.
+        These tolerances apply to observations after the 2022:294 safe mode.
+        """
+        if not self.is_ER and CxoTime(self.date).date > "2022:294":
+            if self.fids.t_ccd_acq <= -14.0:
+                self.add_message(
+                    "critical",
+                    f"Fid lights outside boxes (t_ccd_acq {self.fids.t_ccd_acq:.1f} <= -14.0)",
+                )
+                return
+            if self.fids.t_ccd_acq <= -13.5:
+                self.add_message(
+                    "caution",
+                    f"Fid lights near box edge (t_ccd_acq {self.fids.t_ccd_acq:.1f} <= -13.5)",
+                )
+                return
 
     def check_guide_count(self):
         """
