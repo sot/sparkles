@@ -1358,19 +1358,21 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
         Check that the fid lights are in the current search boxes by a check on t_ccd_acq.
         These tolerances apply to observations after the 2022:294 safe mode.
         """
-        if not self.is_ER and CxoTime(self.date).date > "2022:294":
-            if self.fids.t_ccd_acq <= -14.0:
-                self.add_message(
-                    "critical",
-                    f"Fid lights outside boxes (t_ccd_acq {self.fids.t_ccd_acq:.1f} <= -14.0)",
-                )
-                return
-            if self.fids.t_ccd_acq <= -13.5:
-                self.add_message(
-                    "caution",
-                    f"Fid lights near box edge (t_ccd_acq {self.fids.t_ccd_acq:.1f} <= -13.5)",
-                )
-                return
+        if self.is_ER or CxoTime(self.date).date < "2022:294":
+            return
+
+        t_ccd_acq = self.fids.t_ccd_acq
+
+        if t_ccd_acq <= -14.0:
+            self.add_message(
+                "critical",
+                f"Fid lights outside boxes (t_ccd_acq {t_ccd_acq:.1f} <= -14.0)",
+            )
+        elif t_ccd_acq <= -13.5:
+            self.add_message(
+                "caution",
+                f"Fid lights near box edge (t_ccd_acq {t_ccd_acq:.1f} <= -13.5)",
+            )
 
     def check_guide_count(self):
         """

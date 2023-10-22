@@ -80,64 +80,50 @@ def test_n_guide_check_not_enough_stars():
     ]
 
 
-def test_or_too_cold():
-    """Test the check that OR is not too cold"""
+@pytest.mark.parametrize(
+    "obsid, t_ccd_acq, date, expected_messages",
+    [
+        (5000, -5, "2023:001", []),
+        (5000, -19, "2019:001", []),
+        (
+            5000,
+            -13.62312,
+            "2023:001",
+            [
+                {
+                    "text": "Fid lights near box edge (t_ccd_acq -13.6 <= -13.5)",
+                    "category": "caution",
+                }
+            ],
+        ),
+        (
+            5000,
+            -14.1,
+            "2023:001",
+            [
+                {
+                    "text": "Fid lights outside boxes (t_ccd_acq -14.1 <= -14.0)",
+                    "category": "critical",
+                }
+            ],
+        ),
+        (40000, -15, "2023:001", []),
+    ],
+)
+def test_too_cold(obsid, t_ccd_acq, date, expected_messages):
+    """Test check_t_ccd_acq"""
 
     stars = StarsTable.empty()
     stars.add_fake_constellation(n_stars=5, mag=8.5)
     aca = get_aca_catalog(
-        **mod_std_info(n_fid=3, n_guide=5, obsid=5000, t_ccd_acq=-5, date="2023:001"),
+        **mod_std_info(n_fid=3, n_guide=5, obsid=obsid, t_ccd_acq=t_ccd_acq, date=date),
         stars=stars,
         dark=DARK40,
         raise_exc=True
     )
     acar = ACAReviewTable(aca)
     acar.check_t_ccd_acq()
-    assert acar.messages == []
-
-    aca = get_aca_catalog(
-        **mod_std_info(n_fid=3, n_guide=5, obsid=5000, t_ccd_acq=-19, date="2019:001"),
-        stars=stars,
-        dark=DARK40,
-        raise_exc=True
-    )
-    acar = ACAReviewTable(aca)
-    acar.check_t_ccd_acq()
-    assert acar.messages == []
-
-    aca = get_aca_catalog(
-        **mod_std_info(
-            n_fid=3, n_guide=5, obsid=5000, t_ccd_acq=-13.6, date="2023:001"
-        ),
-        stars=stars,
-        dark=DARK40,
-        raise_exc=True
-    )
-    acar = ACAReviewTable(aca)
-    acar.check_t_ccd_acq()
-    assert acar.messages == [
-        {
-            "text": "Fid lights near box edge (t_ccd_acq -13.6 <= -13.5)",
-            "category": "caution",
-        }
-    ]
-
-    aca = get_aca_catalog(
-        **mod_std_info(
-            n_fid=3, n_guide=5, obsid=5000, t_ccd_acq=-14.1, date="2023:001"
-        ),
-        stars=stars,
-        dark=DARK40,
-        raise_exc=True
-    )
-    acar = ACAReviewTable(aca)
-    acar.check_t_ccd_acq()
-    assert acar.messages == [
-        {
-            "text": "Fid lights outside boxes (t_ccd_acq -14.1 <= -14.0)",
-            "category": "critical",
-        }
-    ]
+    assert acar.messages == expected_messages
 
 
 def test_guide_is_candidate():
