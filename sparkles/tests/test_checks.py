@@ -1,4 +1,3 @@
-# coding: utf-8
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import copy
 import pickle
@@ -52,7 +51,7 @@ def test_check_P2():
         **mod_std_info(n_fid=0, n_guide=8, obsid=50000),
         stars=stars,
         dark=DARK40,
-        raise_exc=True
+        raise_exc=True,
     )
     acar = ACAReviewTable(aca)
     acar.check_acq_p2()
@@ -71,7 +70,7 @@ def test_n_guide_check_not_enough_stars():
         **mod_std_info(n_fid=3, n_guide=5, obsid=5000),
         stars=stars,
         dark=DARK40,
-        raise_exc=True
+        raise_exc=True,
     )
     acar = ACAReviewTable(aca)
     acar.check_guide_count()
@@ -93,7 +92,7 @@ def test_guide_is_candidate():
         stars=stars,
         dark=DARK40,
         include_ids_guide=[100],
-        raise_exc=True
+        raise_exc=True,
     )
     acar = ACAReviewTable(aca)
     acar.check_catalog()
@@ -116,7 +115,7 @@ def test_n_guide_check_atypical_request():
         **mod_std_info(n_fid=3, n_guide=4, obsid=5000),
         stars=stars,
         dark=DARK40,
-        raise_exc=True
+        raise_exc=True,
     )
     acar = ACAReviewTable(aca)
     acar.check_guide_count()
@@ -137,7 +136,7 @@ def test_n_guide_mon_check_atypical_request():
         **mod_std_info(n_fid=2, n_guide=6, obsid=5000, monitors=monitors),
         stars=stars,
         dark=DARK40,
-        raise_exc=True
+        raise_exc=True,
     )
     acar = ACAReviewTable(aca)
     acar.check_guide_count()
@@ -193,7 +192,7 @@ def test_n_guide_too_few_guide_or_mon():
         **mod_std_info(n_fid=2, n_guide=6, obsid=5000, monitors=monitors),
         stars=stars,
         dark=DARK40,
-        raise_exc=True
+        raise_exc=True,
     )
     acar = ACAReviewTable(aca)
     acar.check_guide_count()
@@ -222,7 +221,7 @@ def test_guide_count_er1():
         **mod_std_info(n_fid=0, n_guide=8, obsid=50000),
         stars=stars,
         dark=DARK40,
-        raise_exc=True
+        raise_exc=True,
     )
     acar = ACAReviewTable(aca)
     acar.check_guide_count()
@@ -240,7 +239,7 @@ def test_guide_count_er2():
         **mod_std_info(n_fid=0, n_guide=8, obsid=50000),
         stars=stars,
         dark=DARK40,
-        raise_exc=True
+        raise_exc=True,
     )
     acar = ACAReviewTable(aca)
     acar.check_guide_count()
@@ -259,7 +258,7 @@ def test_guide_count_er3():
         **mod_std_info(obsid=50000, n_fid=0, n_guide=8),
         stars=stars,
         dark=DARK40,
-        raise_exc=True
+        raise_exc=True,
     )
     acar = ACAReviewTable(aca)
     acar.check_guide_count()
@@ -280,7 +279,7 @@ def test_guide_count_er4():
         **mod_std_info(obsid=50000, n_fid=0, n_guide=8),
         stars=stars,
         dark=DARK40,
-        raise_exc=True
+        raise_exc=True,
     )
     acar = ACAReviewTable(aca)
     acar.check_guide_count()
@@ -302,7 +301,7 @@ def test_include_exclude():
         exclude_ids_guide=[100, 101],
         include_ids_acq=[106, 107],
         include_halfws_acq=[140, 120],
-        raise_exc=True
+        raise_exc=True,
     )
     acar = ACAReviewTable(aca)
     acar.check_include_exclude()
@@ -328,7 +327,7 @@ def test_guide_count_er5():
         **mod_std_info(obsid=50000, n_fid=0, n_guide=8),
         stars=stars,
         dark=DARK40,
-        raise_exc=True
+        raise_exc=True,
     )
     acar = ACAReviewTable(aca)
     acar.check_guide_count()
@@ -346,7 +345,7 @@ def test_guide_count_or():
         **mod_std_info(n_fid=3, n_guide=5, obsid=1),
         stars=stars,
         dark=DARK40,
-        raise_exc=True
+        raise_exc=True,
     )
     acar = ACAReviewTable(aca)
     acar.check_guide_count()
@@ -366,7 +365,7 @@ def test_ok_number_bright_guide_stars():
         **mod_std_info(n_fid=3, n_guide=5, obsid=1),
         stars=stars,
         dark=DARK40,
-        raise_exc=True
+        raise_exc=True,
     )
     acar = ACAReviewTable(aca)
     acar.check_guide_count()
@@ -386,7 +385,7 @@ def test_too_many_bright_stars():
         **mod_std_info(n_fid=3, n_guide=5, obsid=1),
         stars=stars,
         dark=DARK40,
-        raise_exc=True
+        raise_exc=True,
     )
     acar = ACAReviewTable(aca)
     acar.check_guide_count()
@@ -407,7 +406,7 @@ def test_low_guide_count():
         **mod_std_info(n_fid=3, n_guide=5, obsid=1),
         stars=stars,
         dark=DARK40,
-        raise_exc=True
+        raise_exc=True,
     )
     acar = ACAReviewTable(aca)
     # Confirm the guide_count is in the range we want for the test to be valid
@@ -432,7 +431,7 @@ def test_low_guide_count_creep_away():
         **mod_std_info(n_fid=3, n_guide=5, obsid=1, man_angle_next=5.0),
         stars=stars,
         dark=DARK40,
-        raise_exc=True
+        raise_exc=True,
     )
     acar = ACAReviewTable(aca)
     # Confirm the guide_count is in the range we want for the test to be valid
@@ -456,7 +455,7 @@ def test_reduced_dither_low_guide_count():
         **mod_std_info(n_fid=3, n_guide=5, obsid=1, dyn_bgd_n_faint=0, dither=(4, 4)),
         stars=stars,
         dark=DARK40,
-        raise_exc=True
+        raise_exc=True,
     )
     acar = ACAReviewTable(aca)
 
@@ -518,7 +517,7 @@ def test_not_reduced_dither_low_guide_count():
         **mod_std_info(n_fid=3, n_guide=5, obsid=1, dyn_bgd_n_faint=0, dither=(8, 8)),
         stars=stars,
         dark=DARK40,
-        raise_exc=True
+        raise_exc=True,
     )
     acar = ACAReviewTable(aca)
 
@@ -546,7 +545,7 @@ def test_not_reduced_dither_low_guide_count_dyn_bgd():
         **mod_std_info(n_fid=3, n_guide=5, obsid=1, dyn_bgd_n_faint=1, dither=(8, 8)),
         stars=stars,
         dark=DARK40,
-        raise_exc=True
+        raise_exc=True,
     )
     acar = ACAReviewTable(aca)
     # Confirm the guide_count is in the range we want for the test to be valid
@@ -574,7 +573,7 @@ def test_pos_err_on_guide():
         stars=stars,
         dark=DARK40,
         raise_exc=True,
-        include_ids_guide=[100, 101]
+        include_ids_guide=[100, 101],
     )  # Must force 100, 101, pos_err too big
 
     acar = ACAReviewTable(aca)
@@ -607,7 +606,7 @@ def test_guide_overlap():
         stars=stars,
         dark=DARK40,
         raise_exc=True,
-        include_ids_guide=[1, 2]
+        include_ids_guide=[1, 2],
     )
     assert 2 in aca.guides["id"]
     assert 1 in aca.guides["id"]
@@ -644,7 +643,7 @@ def test_guide_edge_check():
         stars=stars,
         dark=DARK40,
         raise_exc=True,
-        include_ids_guide=np.arange(1, 7)
+        include_ids_guide=np.arange(1, 7),
     )
     acar = ACAReviewTable(aca)
     acar.check_catalog()
@@ -694,7 +693,7 @@ def test_imposters_on_guide(exp_warn):
         **mod_std_info(n_fid=0, n_guide=8),
         stars=stars,
         dark=dark_with_badpix,
-        raise_exc=True
+        raise_exc=True,
     )
     acar = ACAReviewTable(aca)
     acar.check_imposters_guide(aca.guides.get_id(110))
@@ -716,7 +715,7 @@ def test_bad_star_set(proseco_agasc_1p7):
     aca = get_aca_catalog(
         **mod_std_info(n_fid=0, att=(ra, dec, 0)),
         dark=DARK40,
-        include_ids_guide=[bad_id]
+        include_ids_guide=[bad_id],
     )
     acar = ACAReviewTable(aca)
     acar.check_catalog()

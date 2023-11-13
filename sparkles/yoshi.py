@@ -8,7 +8,8 @@ from ska_sun import nominal_roll
 
 
 def get_yoshi_params_from_ocat(obsid, obs_date=None, web_ocat=True, cycle=None):
-    """
+    """Get yoshi parameters from the OCAT for use in proseco / sparkles.
+
     For an obsid in the OCAT, fetch params from OCAT and define a few defaults
     for the standard info needed to get an ACA attitude and run
     yoshi / proseco / sparkles.
@@ -108,9 +109,8 @@ def run_one_yoshi(
     man_angle,
     **kwargs,
 ):
-    """
-    Run proseco and sparkles for an observation request in a roll/temperature/man_angle
-    scenario.
+    """Run proseco and sparkles for an OR in a roll/temperature/man_angle scenario.
+
     :param obsid: obsid
     :param detector: detector (ACIS-I|ACIS-S|HRC-I|HRC-S)
     :param chipx: chipx from zero-offset aimpoint table entry for obsid
