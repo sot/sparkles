@@ -1,4 +1,3 @@
-# coding: utf-8
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 
 """
@@ -23,8 +22,8 @@ from Quaternion import Quat
 
 
 def logical_intervals(vals, x=None):
-    """
-    Determine contiguous intervals during which ``vals`` is True.
+    """Determine contiguous intervals during which ``vals`` is True.
+
     Returns an Astropy Table with a row for each interval.  Columns are:
     * idx_start: index of interval start
     * idx_stop: index of interval stop
@@ -59,6 +58,7 @@ def logical_intervals(vals, x=None):
 class RollOptimizeMixin:
     def get_candidate_better_stars(self):
         """Find stars that *might* substantially improve guide or acq catalogs.
+
         Get stars that might be candidates at a different roll.  This takes
         stars outside the original square CCD FOV (but made smaller by 40
         pixels) and inside a circle corresponding to the box corners (but made
@@ -66,8 +66,8 @@ class RollOptimizeMixin:
         originally excluded because of dither size etc are considered.
         :returns: list of indexes into self.stars
         """
-        # First define a spatial mask ``sp_ok`` on ``stars`` that is the
-        # region (mentioned above) between an inner square and outer circle.
+        # First define a spatial mask ``sp_ok`` on ``stars`` that is the region
+        # (mentioned above) between an inner square and outer circle.
         rc_pad = 40
         stars = self.stars
         in_fov = (np.abs(stars["row"]) < CCD["row_max"] - rc_pad) & (
@@ -123,6 +123,7 @@ class RollOptimizeMixin:
         max_roll_dev=None,
     ):
         """Find a list of rolls that might substantially improve guide or acq catalogs.
+
         If ``roll_nom`` is not specified then an approximate value is computed
         via ska_sun for the catalog ``date``.  if ``roll_dev`` (max allowed
         off-nominal roll) is not specified it is computed using the OFLS table.
@@ -276,9 +277,10 @@ class RollOptimizeMixin:
     def _get_roll_intervals_uniq_ids(
         ids0, ids_list, roll, roll_min, roll_max, roll_offsets, d_roll
     ):
-        """Private method to get roll intervals that span a range where there is a unique
-        set of available candidate stars within the entire interval.
+        """Get roll intervals.
 
+        Private method to get roll intervals that span a range where there is a unique
+        set of available candidate stars within the entire interval.
         """
         # Get all unique sets of stars that are in the FOV over the sampled
         # roll offsets.  Ignore ids sets that do not add new candidate stars.
@@ -426,7 +428,9 @@ class RollOptimizeMixin:
         self.roll_options = roll_options
 
     def sort_and_limit_roll_options(self, roll_level, max_roll_options):
-        """Sort the roll options based on two keys:
+        """Sort the roll options based on two keys.
+
+        Keys are:
         - Number of warnings at roll_level or worse (e.g. number of criticals,
           so smaller is better)
         - Negative of improvement (larger improvement is better)

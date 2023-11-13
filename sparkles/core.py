@@ -1,4 +1,3 @@
-# coding: utf-8
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 
 """
@@ -1175,8 +1174,8 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
         self.check_include_exclude()
 
     def check_guide_overlap(self):
-        """
-        Check for overlapping tracked items.
+        """Check for overlapping tracked items.
+
         Overlap is defined as within 12 pixels.
         """
         ok = np.in1d(self["type"], ("GUI", "BOT", "FID", "MON"))
@@ -1266,8 +1265,9 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
         col_lim = ACA.max_ccd_col - ACA.CCD["window_pad"]
 
         def sign(axis):
-            """Return sign of the corresponding entry value.  Note that np.sign returns 0
-            if the value is 0.0, not the right thing here.
+            """Return sign of the corresponding entry value.
+
+            Note that np.sign returns 0 if the value is 0.0, not the right thing here.
             """
             return -1 if (entry[axis] < 0) else 1
 
@@ -1445,9 +1445,10 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
     # Add a check that for ORs with guide count between 3.5 and 4.0, the
     # dither is 4 arcsec if dynamic background not enabled.
     def check_dither(self):
-        """
-        Check dither.  This presently checks that dither is 4x4 arcsec if
-        dynamic background is not in use and the field has a low guide_count.
+        """Check dither.
+
+        This presently checks that dither is 4x4 arcsec if dynamic background is not in
+        use and the field has a low guide_count.
         """
 
         # Skip check if guide_count is 4.0 or greater
@@ -1488,11 +1489,12 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
 
         # Borrow the imposter offset method from starcheck
         def imposter_offset(cand_mag, imposter_mag):
-            """
-            For a given candidate star and the pseudomagnitude of the brightest 2x2 imposter
-            calculate the max offset of the imposter counts are at the edge of the 6x6
-            (as if they were in one pixel).  This is somewhat the inverse of
-            proseco.get_pixmag_for_offset .
+            """Get imposter offset.
+
+            For a given candidate star and the pseudomagnitude of the brightest 2x2
+            imposter calculate the max offset of the imposter counts are at the edge of
+            the 6x6 (as if they were in one pixel).  This is somewhat the inverse of
+            proseco.get_pixmag_for_offset.
             """
             cand_counts = mag_to_count_rate(cand_mag)
             spoil_counts = mag_to_count_rate(imposter_mag)

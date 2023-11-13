@@ -235,12 +235,7 @@ def convert_atts_to_list_of_quats(atts):
     if isinstance(atts, Quat):
         out = [Quat(q) for q in atts.q.reshape(-1, 4)]
     else:
-        out = []
-        # Assume atts is a flat list of Quats or Quat-compatible objects
-        for att in atts:
-            if not isinstance(att, Quat):
-                att = Quat(att)
-            out.append(att)
+        out = [(att if isinstance(att, Quat) else Quat(att)) for att in atts]
     return out
 
 

@@ -546,7 +546,7 @@ def test_get_roll_intervals(proseco_agasc_1p7):
         assert len(intervs) == len(exp_intervs)
         for interv, exp_interv in zip(intervs, exp_intervs):
             assert interv.keys() == exp_interv.keys()
-            for key in interv.keys():
+            for key in interv:
                 if key.startswith("roll"):
                     assert np.isclose(interv[key], exp_interv[key], atol=1e-6, rtol=0)
                 else:
