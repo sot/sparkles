@@ -441,17 +441,17 @@ def test_roll_options_dec89_9(proseco_agasc_1p7):
     exp[48000] = [
         " roll   P2  n_stars improvement roll_min roll_max  add_ids  drop_ids",
         "------ ---- ------- ----------- -------- -------- --------- --------",
-        "287.25 3.61    0.55        0.00   287.25   287.25        --       --",
-        "281.00 7.24    6.98        9.53   276.75   285.25 608567744       --",
-        "287.50 7.25    5.43        7.68   276.42   298.08        --       --",
+        "286.97 3.61    0.55        0.00   286.97   286.97        --       --",
+        "280.97 7.23    6.98        9.53   276.72   285.22 608567744       --",
+        "287.47 7.25    5.43        7.68   276.14   297.81        --       --",
     ]
 
     exp[18000] = [
         " roll   P2  n_stars improvement roll_min roll_max  add_ids  drop_ids",
         "------ ---- ------- ----------- -------- -------- --------- --------",
-        "276.94 3.61    7.54        0.00   276.94   276.94        --       --",
-        "277.07 7.25    8.00        1.89   266.11   287.77        --       --",
-        "270.57 7.16    8.00        1.84   266.19   274.94 608567744       --",
+        "276.71 3.61    7.54        0.00   276.71   276.71        --       --",
+        "277.09 7.25    8.00        1.89   265.88   287.54        --       --",
+        "270.59 7.15    8.00        1.84   266.21   274.96 608567744       --",
     ]
 
     for obsid in (48000, 18000):
@@ -555,65 +555,66 @@ def test_get_roll_intervals(proseco_agasc_1p7):
     # For the OR we expect this
     or_exp_intervs = [
         {
+            "roll": 281.56864473302164,
+            "roll_min": 281.56864473302164,
+            "roll_max": 281.5759766065589,
             "add_ids": {84943288},
             "drop_ids": {84937736},
-            "roll": 281.53501733258395,
-            "roll_max": 281.57597660655892,
-            "roll_min": 281.53501733258395,
         },
         {
+            "roll": 289.0759766065589,
+            "roll_min": 283.8259766065589,
+            "roll_max": 291.56864473302164,
             "add_ids": set(),
             "drop_ids": set(),
-            "roll": 289.07597660655892,
-            "roll_max": 291.53501733258395,
-            "roll_min": 283.82597660655892,
         },
         {
+            "roll": 289.0759766065589,
+            "roll_min": 287.8259766065589,
+            "roll_max": 290.3259766065589,
             "add_ids": {84941648},
             "drop_ids": set(),
-            "roll": 289.07597660655892,
-            "roll_max": 290.32597660655892,
-            "roll_min": 287.82597660655892,
         },
         {
+            "roll": 289.8259766065589,
+            "roll_min": 289.3259766065589,
+            "roll_max": 290.3259766065589,
             "add_ids": {85328120, 84941648},
             "drop_ids": set(),
-            "roll": 289.82597660655892,
-            "roll_max": 290.32597660655892,
-            "roll_min": 289.32597660655892,
         },
         {
+            "roll": 291.56864473302164,
+            "roll_min": 289.3259766065589,
+            "roll_max": 291.56864473302164,
             "add_ids": {85328120},
             "drop_ids": set(),
-            "roll": 291.53501733258395,
-            "roll_max": 291.53501733258395,
-            "roll_min": 289.32597660655892,
         },
     ]
+
     compare_intervs(or_roll_intervs, or_exp_intervs)
 
     # For the ER we expect these
     er_exp_intervs = [
         {
+            "roll": 290.8033828990559,
+            "roll_min": 285.1783828990559,
+            "roll_max": 291.67104636183814,
             "add_ids": set(),
             "drop_ids": set(),
-            "roll": 290.80338289905592,
-            "roll_max": 291.63739755173594,
-            "roll_min": 285.17838289905592,
         },
         {
+            "roll": 291.67104636183814,
+            "roll_min": 289.6783828990559,
+            "roll_max": 291.67104636183814,
             "add_ids": {84943288},
             "drop_ids": set(),
-            "roll": 291.63739755173594,
-            "roll_max": 291.63739755173594,
-            "roll_min": 289.67838289905592,
         },
         {
+            "roll": 291.67104636183814,
+            "roll_min": 290.9283828990559,
+            "roll_max": 291.67104636183814,
             "add_ids": {85328120, 84943288},
             "drop_ids": set(),
-            "roll": 291.63739755173594,
-            "roll_max": 291.63739755173594,
-            "roll_min": 290.92838289905592,
         },
     ]
     compare_intervs(er_roll_intervs, er_exp_intervs)
@@ -629,7 +630,7 @@ def test_roll_options_for_not_allowed_pitch():
     roll = nominal_roll(ra, dec, date)
     att0 = Quat([ra, dec, roll])
 
-    att = apply_sun_pitch_yaw(att0, pitch=40)
+    att = apply_sun_pitch_yaw(att0, pitch=40, time=date)
     aca = get_aca_catalog(**mod_std_info(att=att, date=date))
     acar = aca.get_review_table()
     acar.get_roll_options()
