@@ -20,8 +20,6 @@ from proseco import get_aca_catalog
 from proseco.characteristics import CCD
 from Quaternion import Quat
 
-from sparkles.checks import check_catalog
-
 
 def logical_intervals(vals, x=None):
     """Determine contiguous intervals during which ``vals`` is True.
@@ -341,6 +339,7 @@ class RollOptimizeMixin:
 
         :return: None
         """
+        from sparkles.checks import check_catalog
 
         if self.loud:
             print(f" Exploring roll options {method=}")

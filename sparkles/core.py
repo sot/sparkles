@@ -11,18 +11,18 @@ import re
 import traceback
 from itertools import chain
 from pathlib import Path
+from typing import TypeAlias
 
 import chandra_aca
 import numpy as np
 import proseco
-from astropy.table import Column, Table
+from astropy.table import Column, Row, Table
 from chandra_aca.star_probs import guide_count
 from chandra_aca.transform import yagzag_to_pixels
 from jinja2 import Template
 from proseco.catalog import ACATable
 from proseco.core import MetaAttribute
 
-from sparkles.checks import check_catalog
 from sparkles.roll_optimize import RollOptimizeMixin
 
 CACHE = {}
@@ -34,6 +34,12 @@ FILEDIR = Path(__file__).parent
 # there would be only 2 anchor stars that ensure good tracking even without
 # dyn bgd.
 MIN_DYN_BGD_ANCHOR_STARS = 3
+
+
+# Type aliases for sparkles.
+# TODO: move this into proseco.core
+CatalogRow: TypeAlias = Row
+StarTableRow: TypeAlias = Row
 
 
 def get_t_ccds_bonus(mags, t_ccd, dyn_bgd_n_faint, dyn_bgd_dt_ccd):
@@ -310,6 +316,8 @@ def _run_aca_review(
     open_html=False,
     context=None,
 ):
+    from sparkles.checks import check_catalog
+
     if acars is None:
         acars, load_name = get_acas_from_pickle(load_name, loud)
 

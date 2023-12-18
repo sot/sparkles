@@ -5,55 +5,57 @@ import numpy as np
 import proseco.characteristics as ACA
 from chandra_aca.transform import mag_to_count_rate, snr_mag_for_t_ccd
 
+from sparkles.core import ACAReviewTable, CatalogRow, StarTableRow
+
 # Observations with man_angle_next less than or equal to CREEP_AWAY_THRESHOLD
 # are considered "creep away" observations. CREEP_AWAY_THRESHOLD is in units of degrees.
 CREEP_AWAY_THRESHOLD = 5.0
 
 
-def check_catalog(self):
+def check_catalog(acar: ACAReviewTable):
     """Perform all star catalog checks."""
-    for entry in self:
+    for entry in acar:
         entry_type = entry["type"]
         is_guide = entry_type in ("BOT", "GUI")
         is_acq = entry_type in ("BOT", "ACQ")
         is_fid = entry_type == "FID"
 
         if is_guide or is_fid:
-            check_guide_fid_position_on_ccd(self, entry)
+            check_guide_fid_position_on_ccd(acar, entry)
 
         if is_guide:
-            star = self.guides.get_id(entry["id"])
-            check_pos_err_guide(self, star)
-            check_imposters_guide(self, star)
-            check_too_bright_guide(self, star)
-            check_guide_is_candidate(self, star)
+            star = acar.guides.get_id(entry["id"])
+            check_pos_err_guide(acar, star)
+            check_imposters_guide(acar, star)
+            check_too_bright_guide(acar, star)
+            check_guide_is_candidate(acar, star)
 
         if is_guide or is_acq:
-            check_bad_stars(self, entry)
+            check_bad_stars(acar, entry)
 
         if is_fid:
-            fid = self.fids.get_id(entry["id"])
-            check_fid_spoiler_score(self, entry["idx"], fid)
+            fid = acar.fids.get_id(entry["id"])
+            check_fid_spoiler_score(acar, entry["idx"], fid)
 
-    check_guide_overlap(self)
-    check_guide_geometry(self)
-    check_acq_p2(self)
-    check_guide_count(self)
-    check_dither(self)
-    check_fid_count(self)
-    check_include_exclude(self)
+    check_guide_overlap(acar)
+    check_guide_geometry(acar)
+    check_acq_p2(acar)
+    check_guide_count(acar)
+    check_dither(acar)
+    check_fid_count(acar)
+    check_include_exclude(acar)
 
 
-def check_guide_overlap(self):
+def check_guide_overlap(acar: ACAReviewTable):
     """Check for overlapping tracked items.
 
     Overlap is defined as within 12 pixels.
     """
-    ok = np.in1d(self["type"], ("GUI", "BOT", "FID", "MON"))
+    ok = np.in1d(acar["type"], ("GUI", "BOT", "FID", "MON"))
     idxs = np.flatnonzero(ok)
     for idx1, idx2 in combinations(idxs, 2):
-        entry1 = self[idx1]
-        entry2 = self[idx2]
+        entry1 = acar[idx1]
+        entry2 = acar[idx2]
         drow = entry1["row"] - entry2["row"]
         dcol = entry1["col"] - entry2["col"]
         if np.abs(drow) <= 12 and np.abs(dcol) <= 12:
@@ -61,10 +63,10 @@ def check_guide_overlap(self):
                 "Overlapping track index (within 12 pix) "
                 f'idx [{entry1["idx"]}] and idx [{entry2["idx"]}]'
             )
-            self.add_message("critical", msg)
+            acar.add_message("critical", msg)
 
 
-def check_guide_geometry(self):
+def check_guide_geometry(acar: ACAReviewTable):
     """Check for guide stars too tightly clustered.
 
     (1) Check for any set of n_guide-2 stars within 500" of each other.
@@ -77,13 +79,13 @@ def check_guide_geometry(self):
     (2) Check for all stars being within 2500" of each other.
 
     """
-    ok = np.in1d(self["type"], ("GUI", "BOT"))
+    ok = np.in1d(acar["type"], ("GUI", "BOT"))
     guide_idxs = np.flatnonzero(ok)
     n_guide = len(guide_idxs)
 
     if n_guide < 2:
         msg = "Cannot check geometry with fewer than 2 guide stars"
-        self.add_message("critical", msg)
+        acar.add_message("critical", msg)
         return
 
     def dist2(g1, g2):
@@ -97,36 +99,36 @@ def check_guide_geometry(self):
         for idx0, idx1 in combinations(idxs, 2):
             # If any distance in this combination exceeds min_dist then
             # the combination is OK.
-            if dist2(self[idx0], self[idx1]) > min_dist2:
+            if dist2(acar[idx0], acar[idx1]) > min_dist2:
                 break
         else:
             # Every distance was too small, issue a warning.
             cat_idxs = [idx + 1 for idx in idxs]
             msg = f'Guide indexes {cat_idxs} clustered within {min_dist}" radius'
 
-            if self.man_angle_next > CREEP_AWAY_THRESHOLD:
+            if acar.man_angle_next > CREEP_AWAY_THRESHOLD:
                 msg += f" (man_angle_next > {CREEP_AWAY_THRESHOLD})"
-                self.add_message("critical", msg)
+                acar.add_message("critical", msg)
             else:
                 msg += f" (man_angle_next <= {CREEP_AWAY_THRESHOLD})"
-                self.add_message("warning", msg)
+                acar.add_message("warning", msg)
 
     # Check for all stars within 2500" of each other
     min_dist = 2500
     min_dist2 = min_dist**2
     for idx0, idx1 in combinations(guide_idxs, 2):
-        if dist2(self[idx0], self[idx1]) > min_dist2:
+        if dist2(acar[idx0], acar[idx1]) > min_dist2:
             break
     else:
         msg = f'Guide stars all clustered within {min_dist}" radius'
-        self.add_message("warning", msg)
+        acar.add_message("warning", msg)
 
 
-def check_guide_fid_position_on_ccd(self, entry):
+def check_guide_fid_position_on_ccd(acar: ACAReviewTable, entry: CatalogRow):
     """Check position of guide stars and fid lights on CCD."""
     # Shortcuts and translate y/z to yaw/pitch
-    dither_guide_y = self.dither_guide.y
-    dither_guide_p = self.dither_guide.z
+    dither_guide_y = acar.dither_guide.y
+    dither_guide_p = acar.dither_guide.z
 
     # Set "dither" for FID to be pseudodither of 5.0 to give 1 pix margin
     # Set "track phase" dither for BOT GUI to max guide dither over
@@ -162,7 +164,7 @@ def check_guide_fid_position_on_ccd(self, entry):
                     f"val {entry[axis]:.1f} "
                     f"delta {track_delta:.1f}"
                 )
-                self.add_message(category, text, idx=entry["idx"])
+                acar.add_message(category, text, idx=entry["idx"])
                 break
 
 
@@ -177,28 +179,28 @@ def check_guide_fid_position_on_ccd(self, entry):
 #     push @orange_warn, sprintf "alarm [%2d] Acq Off (padded) CCD by > 60 arcsec.\n",i
 # }
 # elsif ((entry_type =~ /BOT|ACQ/) and (acq_edge_delta < 0)){
-#     push @{self->{fyi}},
+#     push @{acar->{fyi}},
 #                 sprintf "alarm [%2d] Acq Off (padded) CCD (P_ACQ should be < .5)\n",i
 # }
 
 
-def check_acq_p2(self):
+def check_acq_p2(acar: ACAReviewTable):
     """Check acquisition catalog safing probability."""
-    P2 = -np.log10(self.acqs.calc_p_safe())
+    P2 = -np.log10(acar.acqs.calc_p_safe())
     P2 = np.round(P2, decimals=2)  # Official check is to 2 decimals
-    obs_type = "OR" if self.is_OR else "ER"
-    P2_lim = 2.0 if self.is_OR else 3.0
+    obs_type = "OR" if acar.is_OR else "ER"
+    P2_lim = 2.0 if acar.is_OR else 3.0
     if P2 < P2_lim:
-        self.add_message("critical", f"P2: {P2:.2f} less than {P2_lim} for {obs_type}")
+        acar.add_message("critical", f"P2: {P2:.2f} less than {P2_lim} for {obs_type}")
     elif P2 < P2_lim + 1:
-        self.add_message(
+        acar.add_message(
             "warning", f"P2: {P2:.2f} less than {P2_lim + 1} for {obs_type}"
         )
 
 
-def check_include_exclude(self):
+def check_include_exclude(acar: ACAReviewTable):
     """Check for included or excluded guide or acq stars or fids (info)"""
-    call_args = self.call_args
+    call_args = acar.call_args
     for typ in ("acq", "guide", "fid"):
         for action in ("include", "exclude"):
             ids = call_args.get(f"{action}_ids_{typ}")
@@ -211,71 +213,71 @@ def check_include_exclude(self):
                 if halfws is not None:
                     msg = msg + f" halfwidths(s): {halfws}"
 
-                self.add_message("info", msg)
+                acar.add_message("info", msg)
 
 
-def check_guide_count(self):
+def check_guide_count(acar: ACAReviewTable):
     """
     Check for sufficient guide star fractional count.
 
     Also check for multiple very-bright stars
 
     """
-    obs_type = "ER" if self.is_ER else "OR"
+    obs_type = "ER" if acar.is_ER else "OR"
     count_9th_lim = 3.0
-    if self.is_ER and np.round(self.guide_count_9th, decimals=2) < count_9th_lim:
+    if acar.is_ER and np.round(acar.guide_count_9th, decimals=2) < count_9th_lim:
         # Determine the threshold 9th mag equivalent value at the effective guide t_ccd
-        mag9 = snr_mag_for_t_ccd(self.guides.t_ccd, 9.0, -10.9)
-        self.add_message(
+        mag9 = snr_mag_for_t_ccd(acar.guides.t_ccd, 9.0, -10.9)
+        acar.add_message(
             "critical",
             (
-                f"{obs_type} count of 9th ({mag9:.1f} for {self.guides.t_ccd:.1f}C)"
-                f" mag guide stars {self.guide_count_9th:.2f} < {count_9th_lim}"
+                f"{obs_type} count of 9th ({mag9:.1f} for {acar.guides.t_ccd:.1f}C)"
+                f" mag guide stars {acar.guide_count_9th:.2f} < {count_9th_lim}"
             ),
         )
 
     # Rounded guide count
-    guide_count_round = np.round(self.guide_count, decimals=2)
+    guide_count_round = np.round(acar.guide_count, decimals=2)
 
     # Set critical guide_count threshold
     # For observations with creep-away in place as a mitigation for end of observation
     # roll error, we can accept a lower guide_count (3.5 instead of 4.0).
     # See https://occweb.cfa.harvard.edu/twiki/bin/view/Aspect/StarWorkingGroupMeeting2023x03x15
-    if self.is_OR:
-        count_lim = 3.5 if (self.man_angle_next <= CREEP_AWAY_THRESHOLD) else 4.0
+    if acar.is_OR:
+        count_lim = 3.5 if (acar.man_angle_next <= CREEP_AWAY_THRESHOLD) else 4.0
     else:
         count_lim = 6.0
 
     if guide_count_round < count_lim:
-        self.add_message(
+        acar.add_message(
             "critical",
-            f"{obs_type} count of guide stars {self.guide_count:.2f} < {count_lim}",
+            f"{obs_type} count of guide stars {acar.guide_count:.2f} < {count_lim}",
         )
     # If in the 3.5 to 4.0 range, this probably deserves a warning.
     elif count_lim == 3.5 and guide_count_round < 4.0:
-        self.add_message(
+        acar.add_message(
             "warning",
-            f"{obs_type} count of guide stars {self.guide_count:.2f} < 4.0",
+            f"{obs_type} count of guide stars {acar.guide_count:.2f} < 4.0",
         )
 
-    bright_cnt_lim = 1 if self.is_OR else 3
-    if np.count_nonzero(self.guides["mag"] < 5.5) > bright_cnt_lim:
-        self.add_message(
+    bright_cnt_lim = 1 if acar.is_OR else 3
+    if np.count_nonzero(acar.guides["mag"] < 5.5) > bright_cnt_lim:
+        acar.add_message(
             "caution",
             f"{obs_type} with more than {bright_cnt_lim} stars brighter than 5.5.",
         )
 
     # Requested slots for guide stars and mon windows
-    n_guide_or_mon_request = self.call_args["n_guide"]
+    n_guide_or_mon_request = acar.call_args["n_guide"]
 
     # Actual guide stars
-    n_guide = len(self.guides)
+    n_guide = len(acar.guides)
 
     # Actual mon windows. For catalogs from pickles from proseco < 5.0
-    # self.mons might be initialized to a NoneType or not be an attribute so
+    # acar.mons might be initialized to a NoneType or not be an attribute so
     # handle that as 0 monitor windows.
     try:
-        n_mon = len(self.mons)
+        n_mon = len(acar.mons)
     except (TypeError, AttributeError):
         n_mon = 0
 
@@ -292,10 +294,10 @@ def check_guide_count(self):
                 f"{obs_type} with {n_guide} guides and {n_mon} monitor(s) "
                 f"but {n_guide_or_mon_request} guides or mon slots were requested"
             )
-        self.add_message("caution", msg)
+        acar.add_message("caution", msg)
 
     # Caution for any "unusual" guide star request
-    typical_n_guide = 5 if self.is_OR else 8
+    typical_n_guide = 5 if acar.is_OR else 8
     if n_guide_or_mon_request != typical_n_guide:
         or_mon_slots = " or mon slots" if n_mon > 0 else ""
         msg = (
@@ -303,12 +305,12 @@ def check_guide_count(self):
             f" {n_guide_or_mon_request} guides{or_mon_slots} requested but"
             f" {typical_n_guide} is typical"
         )
-        self.add_message("caution", msg)
+        acar.add_message("caution", msg)
 
 
 # Add a check that for ORs with guide count between 3.5 and 4.0, the
 # dither is 4 arcsec if dynamic background not enabled.
-def check_dither(self):
+def check_dither(acar: ACAReviewTable):
     """Check dither.
 
     This presently checks that dither is 4x4 arcsec if dynamic background is not in
@@ -316,30 +318,30 @@ def check_dither(self):
     """
 
     # Skip check if guide_count is 4.0 or greater
-    if self.guide_count >= 4.0:
+    if acar.guide_count >= 4.0:
         return
 
     # Skip check if dynamic backround is enabled (inferred from dyn_bgd_n_faint)
-    if self.dyn_bgd_n_faint > 0:
+    if acar.dyn_bgd_n_faint > 0:
         return
 
     # Check that dither is <= 4x4 arcsec
-    if self.dither_guide.y > 4.0 or self.dither_guide.z > 4.0:
-        self.add_message(
+    if acar.dither_guide.y > 4.0 or acar.dither_guide.z > 4.0:
+        acar.add_message(
             "critical",
-            f"guide_count {self.guide_count:.2f} and dither > 4x4 arcsec",
+            f"guide_count {acar.guide_count:.2f} and dither > 4x4 arcsec",
         )
 
 
-def check_pos_err_guide(self, star):
+def check_pos_err_guide(acar: ACAReviewTable, star: StarTableRow):
     """Warn on stars with larger POS_ERR (warning at 1" critical at 2")"""
     agasc_id = star["id"]
-    idx = self.get_id(agasc_id)["idx"]
+    idx = acar.get_id(agasc_id)["idx"]
     # POS_ERR is in milliarcsecs in the table
     pos_err = star["POS_ERR"] * 0.001
     for limit, category in ((2.0, "critical"), (1.25, "warning")):
         if np.round(pos_err, decimals=2) > limit:
-            self.add_message(
+            acar.add_message(
                 category,
                 (
                     f"Guide star {agasc_id} POS_ERR {pos_err:.2f}, limit"
@@ -350,7 +352,7 @@ def check_pos_err_guide(self, star):
             break
 
 
-def check_imposters_guide(self, star):
+def check_imposters_guide(acar: ACAReviewTable, star: StarTableRow):
     """Warn on stars with larger imposter centroid offsets"""
 
     # Borrow the imposter offset method from starcheck
@@ -367,11 +369,11 @@ def check_imposters_guide(self, star):
         return spoil_counts * 3 * 5 / (spoil_counts + cand_counts)
 
     agasc_id = star["id"]
-    idx = self.get_id(agasc_id)["idx"]
+    idx = acar.get_id(agasc_id)["idx"]
     offset = imposter_offset(star["mag"], star["imp_mag"])
     for limit, category in ((4.0, "critical"), (2.5, "warning")):
         if np.round(offset, decimals=1) > limit:
-            self.add_message(
+            acar.add_message(
                 category,
                 f"Guide star imposter offset {offset:.1f}, limit {limit} arcsec",
                 idx=idx,
@@ -379,34 +381,34 @@ def check_imposters_guide(self, star):
             break
 
 
-def check_guide_is_candidate(self, star):
+def check_guide_is_candidate(acar: ACAReviewTable, star: StarTableRow):
     """Critical for guide star that is not a valid guide candidate.
 
     This can occur for a manually included guide star.  In rare cases
     the star may still be acceptable and ACA review can accept the warning.
     """
-    if not self.guides.get_candidates_mask(star):
+    if not acar.guides.get_candidates_mask(star):
         agasc_id = star["id"]
-        idx = self.get_id(agasc_id)["idx"]
-        self.add_message(
+        idx = acar.get_id(agasc_id)["idx"]
+        acar.add_message(
             "critical",
             f"Guide star {agasc_id} does not meet guide candidate criteria",
             idx=idx,
         )
 
 
-def check_too_bright_guide(self, star):
+def check_too_bright_guide(acar: ACAReviewTable, star: StarTableRow):
     """Warn on guide stars that may be too bright.
 
     - Critical if within 2 * mag_err of the hard 5.2 limit, caution within 3 * mag_err
 
     """
     agasc_id = star["id"]
-    idx = self.get_id(agasc_id)["idx"]
+    idx = acar.get_id(agasc_id)["idx"]
     mag_err = star["mag_err"]
     for mult, category in ((2, "critical"), (3, "caution")):
         if star["mag"] - (mult * mag_err) < 5.2:
-            self.add_message(
+            acar.add_message(
                 category,
                 (
                     f"Guide star {agasc_id} within {mult}*mag_err of 5.2 "
@@ -417,7 +419,7 @@ def check_too_bright_guide(self, star):
             break
 
 
-def check_bad_stars(self, entry):
+def check_bad_stars(acar: ACAReviewTable, entry: CatalogRow):
     """Check if entry (guide or acq) is in bad star set from proseco
 
     :param entry: ACAReviewTable row
@@ -425,10 +427,10 @@ def check_bad_stars(self, entry):
     """
     if entry["id"] in ACA.bad_star_set:
         msg = f'Star {entry["id"]} is in proseco bad star set'
-        self.add_message("critical", msg, idx=entry["idx"])
+        acar.add_message("critical", msg, idx=entry["idx"])
 
 
-def check_fid_spoiler_score(self, idx, fid):
+def check_fid_spoiler_score(acar: ACAReviewTable, idx, fid):
     """
     Check the spoiler warnings for fid
 
@@ -447,23 +449,23 @@ def check_fid_spoiler_score(self, idx, fid):
             f'Fid {fid_id} has {spoiler["warn"]} spoiler: star {spoiler["id"]} with'
             f' mag {spoiler["mag"]:.2f}'
         )
-        self.add_message(category_map[spoiler["warn"]], msg, idx=idx)
+        acar.add_message(category_map[spoiler["warn"]], msg, idx=idx)
 
 
-def check_fid_count(self):
+def check_fid_count(acar: ACAReviewTable):
     """
     Check for the correct number of fids.
 
     :return: None
     """
-    obs_type = "ER" if self.is_ER else "OR"
+    obs_type = "ER" if acar.is_ER else "OR"
 
-    if len(self.fids) != self.n_fid:
-        msg = f"{obs_type} has {len(self.fids)} fids but {self.n_fid} were requested"
-        self.add_message("critical", msg)
+    if len(acar.fids) != acar.n_fid:
+        msg = f"{obs_type} has {len(acar.fids)} fids but {acar.n_fid} were requested"
+        acar.add_message("critical", msg)
 
     # Check for "typical" number of fids for an OR / ER (3 or 0)
-    typical_n_fid = 3 if self.is_OR else 0
-    if self.n_fid != typical_n_fid:
-        msg = f"{obs_type} requested {self.n_fid} fids but {typical_n_fid} is typical"
-        self.add_message("caution", msg)
+    typical_n_fid = 3 if acar.is_OR else 0
+    if acar.n_fid != typical_n_fid:
+        msg = f"{obs_type} requested {acar.n_fid} fids but {typical_n_fid} is typical"
+        acar.add_message("caution", msg)
