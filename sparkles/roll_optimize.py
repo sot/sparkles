@@ -20,6 +20,8 @@ from proseco import get_aca_catalog
 from proseco.characteristics import CCD
 from Quaternion import Quat
 
+from sparkles.checks import check_catalog
+
 
 def logical_intervals(vals, x=None):
     """Determine contiguous intervals during which ``vals`` is True.
@@ -359,7 +361,7 @@ class RollOptimizeMixin:
 
         # Special case, first roll option is self but with obsid set to roll
         acar = deepcopy(self)
-        acar.check_catalog()
+        check_catalog(acar)
         acar.is_roll_option = True
         roll_options = [
             {
@@ -414,7 +416,7 @@ class RollOptimizeMixin:
                 acar = self.__class__(aca_rolled, obsid=self.obsid, is_roll_option=True)
 
                 # Do the review and set up messages attribute
-                acar.check_catalog()
+                check_catalog(acar)
 
                 roll_option = {
                     "acar": acar,
