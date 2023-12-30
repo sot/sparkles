@@ -587,7 +587,7 @@ def get_summary_text(acas):
         )
 
         # Warnings
-        for category in reversed(MessagesList.categories):
+        for category in reversed(checks.MessagesList.categories):
             msgs = aca.messages == category
             if msgs:
                 text = stylize(f" {category.capitalize()}: {len(msgs)}", category)
@@ -596,27 +596,6 @@ def get_summary_text(acas):
         lines.append(line)
 
     return "\n".join(lines)
-
-
-class MessagesList(list[checks.Message]):
-    categories = ("all", "info", "caution", "warning", "critical", "none")
-
-    def __eq__(self, other):
-        if isinstance(other, str):
-            return [msg for msg in self if msg["category"] == other]
-        else:
-            return super().__eq__(other)
-
-    def __ge__(self, other):
-        if isinstance(other, str):
-            other_idx = self.categories.index(other)
-            return [
-                msg
-                for msg in self
-                if self.categories.index(msg["category"]) >= other_idx
-            ]
-        else:
-            return super().__ge__(other)
 
 
 class ACAReviewTable(ACATable, RollOptimizeMixin):
@@ -663,7 +642,7 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
         # Add row and col columns from yag/zag, if not already there.
         self.add_row_col()
 
-        self.messages = MessagesList()  # Warning messages
+        self.messages = checks.MessagesList()  # Warning messages
 
         # Instance attributes that won't survive pickling
         self.context = {}  # Jinja2 context for output HTML review
@@ -927,7 +906,7 @@ class ACAReviewTable(ACATable, RollOptimizeMixin):
         msgs_summaries = []
         for aca in acas:
             texts = []
-            for category in reversed(MessagesList.categories):
+            for category in reversed(checks.MessagesList.categories):
                 msgs = aca.messages == category
                 if msgs:
                     text = stylize(f"{category.capitalize()}: {len(msgs)}", category)
