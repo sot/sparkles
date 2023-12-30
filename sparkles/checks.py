@@ -2,7 +2,7 @@
 import functools
 
 import razl.checks
-from razl.core import MessagesList
+from razl.core import Message
 
 from sparkles.core import ACAReviewTable
 
@@ -35,18 +35,17 @@ def acar_check_wrapper(func):
 
     @functools.wraps(func)
     def wrapper(acar: ACAReviewTable, *args, **kwargs):
-        msgs = func(acar, *args, **kwargs)
-        messages = MessagesList(
-            [
-                {
-                    key: val
-                    for key in ("category", "text", "idx")
-                    if (val := getattr(msg, key)) is not None
-                }
-                for msg in msgs
-            ]
-        )
-        acar.messages = messages
+        msgs: list[Message] = func(acar, *args, **kwargs)
+        messages = [
+            {
+                key: val
+                for key in ("category", "text", "idx")
+                if (val := getattr(msg, key)) is not None
+            }
+            for msg in msgs
+        ]
+
+        acar.messages.extend(messages)
 
     return wrapper
 
