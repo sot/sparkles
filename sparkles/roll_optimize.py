@@ -339,7 +339,7 @@ class RollOptimizeMixin:
 
         :return: None
         """
-        from sparkles.checks import check_catalog
+        from sparkles.core import check_catalog
 
         if self.loud:
             print(f" Exploring roll options {method=}")

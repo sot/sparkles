@@ -22,6 +22,7 @@ from jinja2 import Template
 from proseco.catalog import ACATable
 from proseco.core import MetaAttribute
 
+from sparkles import checks
 from sparkles.roll_optimize import RollOptimizeMixin
 
 CACHE = {}
@@ -309,8 +310,6 @@ def _run_aca_review(
     open_html=False,
     context=None,
 ):
-    from sparkles.checks import check_catalog
-
     if acars is None:
         acars, load_name = get_acas_from_pickle(load_name, loud)
 
@@ -599,7 +598,7 @@ def get_summary_text(acas):
     return "\n".join(lines)
 
 
-class MessagesList(list):
+class MessagesList(list[checks.Message]):
     categories = ("all", "info", "caution", "warning", "critical", "none")
 
     def __eq__(self, other):
@@ -1177,3 +1176,67 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
         aca = get_aca_catalog(**params_proseco)
         acar = cls(aca)
         return acar
+
+
+check_acq_p2 = checks.acar_check_wrapper(checks.check_acq_p2)
+check_bad_stars = checks.acar_check_wrapper(checks.check_bad_stars)
+check_dither = checks.acar_check_wrapper(checks.check_dither)
+check_fid_count = checks.acar_check_wrapper(checks.check_fid_count)
+check_fid_spoiler_score = checks.acar_check_wrapper(checks.check_fid_spoiler_score)
+check_guide_count = checks.acar_check_wrapper(checks.check_guide_count)
+check_guide_fid_position_on_ccd = checks.acar_check_wrapper(
+    checks.check_guide_fid_position_on_ccd
+)
+check_guide_geometry = checks.acar_check_wrapper(checks.check_guide_geometry)
+check_guide_is_candidate = checks.acar_check_wrapper(checks.check_guide_is_candidate)
+check_guide_overlap = checks.acar_check_wrapper(checks.check_guide_overlap)
+check_imposters_guide = checks.acar_check_wrapper(checks.check_imposters_guide)
+check_include_exclude = checks.acar_check_wrapper(checks.check_include_exclude)
+check_pos_err_guide = checks.acar_check_wrapper(checks.check_pos_err_guide)
+check_too_bright_guide = checks.acar_check_wrapper(checks.check_too_bright_guide)
+
+
+def check_catalog(acar: ACAReviewTable) -> None:
+    """Perform all star catalog checks."""
+    msgs: list[checks.Message] = []
+    for entry in acar:
+        entry_type = entry["type"]
+        is_guide = entry_type in ("BOT", "GUI")
+        is_acq = entry_type in ("BOT", "ACQ")
+        is_fid = entry_type == "FID"
+
+        if is_guide or is_fid:
+            msgs += checks.check_guide_fid_position_on_ccd(acar, entry)
+
+        if is_guide:
+            star = acar.guides.get_id(entry["id"])
+            msgs += checks.check_pos_err_guide(acar, star)
+            msgs += checks.check_imposters_guide(acar, star)
+            msgs += checks.check_too_bright_guide(acar, star)
+            msgs += checks.check_guide_is_candidate(acar, star)
+
+        if is_guide or is_acq:
+            msgs += checks.check_bad_stars(entry)
+
+        if is_fid:
+            fid = acar.fids.get_id(entry["id"])
+            msgs += checks.check_fid_spoiler_score(entry["idx"], fid)
+
+    msgs += checks.check_guide_overlap(acar)
+    msgs += checks.check_guide_geometry(acar)
+    msgs += checks.check_acq_p2(acar)
+    msgs += checks.check_guide_count(acar)
+    msgs += checks.check_dither(acar)
+    msgs += checks.check_fid_count(acar)
+    msgs += checks.check_include_exclude(acar)
+
+    messages = [
+        {
+            key: val
+            for key in ("category", "text", "idx")
+            if (val := getattr(msg, key)) is not None
+        }
+        for msg in msgs
+    ]
+
+    acar.messages.extend(messages)
