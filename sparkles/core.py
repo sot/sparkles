@@ -1032,7 +1032,7 @@ check_pos_err_guide = checks.acar_check_wrapper(checks.check_pos_err_guide)
 check_too_bright_guide = checks.acar_check_wrapper(checks.check_too_bright_guide)
 
 
-def check_catalog(acar: ACAReviewTable) -> None:
+def check_catalog(acar: ACAChecksTable) -> None:
     """Perform all star catalog checks."""
     msgs: list[checks.Message] = []
     for entry in acar:
