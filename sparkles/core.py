@@ -20,6 +20,7 @@ from proseco.core import MetaAttribute
 
 from sparkles import checks
 from sparkles.aca_checks_table import ACAChecksTable
+from sparkles.messages import Message, MessagesList
 from sparkles.roll_optimize import RollOptimizeMixin
 
 CACHE = {}
@@ -556,7 +557,7 @@ def get_summary_text(acas):
         )
 
         # Warnings
-        for category in reversed(checks.MessagesList.categories):
+        for category in reversed(MessagesList.categories):
             msgs = aca.messages == category
             if msgs:
                 text = stylize(f" {category.capitalize()}: {len(msgs)}", category)
@@ -773,7 +774,7 @@ class ACAReviewTable(ACAChecksTable, RollOptimizeMixin):
         msgs_summaries = []
         for aca in acas:
             texts = []
-            for category in reversed(checks.MessagesList.categories):
+            for category in reversed(MessagesList.categories):
                 msgs = aca.messages == category
                 if msgs:
                     text = stylize(f"{category.capitalize()}: {len(msgs)}", category)
@@ -1034,7 +1035,7 @@ check_too_bright_guide = checks.acar_check_wrapper(checks.check_too_bright_guide
 
 def check_catalog(acar: ACAChecksTable) -> None:
     """Perform all star catalog checks."""
-    msgs: list[checks.Message] = []
+    msgs: list[Message] = []
     for entry in acar:
         entry_type = entry["type"]
         is_guide = entry_type in ("BOT", "GUI")
