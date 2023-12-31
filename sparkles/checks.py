@@ -398,14 +398,16 @@ def check_pos_err_guide(acar: "ACAReviewTable", star: StarTableRow) -> list[Mess
     pos_err = star["POS_ERR"] * 0.001
     for limit, category in ((2.0, "critical"), (1.25, "warning")):
         if np.round(pos_err, decimals=2) > limit:
-            acar.add_message(
-                category,
-                (
-                    f"Guide star {agasc_id} POS_ERR {pos_err:.2f}, limit"
-                    f" {limit} arcsec"
-                ),
-                idx=idx,
-            )
+            msgs += [
+                Message(
+                    category,
+                    (
+                        f"Guide star {agasc_id} POS_ERR {pos_err:.2f}, limit"
+                        f" {limit} arcsec"
+                    ),
+                    idx=idx,
+                )
+            ]
             break
     return msgs
 

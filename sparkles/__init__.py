@@ -2,7 +2,8 @@ import ska_helpers
 
 __version__ = ska_helpers.get_version(__package__)
 
-from .core import ACAReviewTable, get_t_ccds_bonus, run_aca_review  # noqa: F401
+from .aca_checks_table import get_t_ccds_bonus  # noqa: F401
+from .core import ACAReviewTable, run_aca_review  # noqa: F401
 
 
 def test(*args, **kwargs):

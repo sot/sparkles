@@ -15,6 +15,7 @@ from proseco.tests.test_common import DARK40, STD_INFO, mod_std_info
 from Quaternion import Quat
 
 from sparkles import ACAReviewTable, get_t_ccds_bonus
+from sparkles.aca_checks_table import ACAChecksTable
 from sparkles.core import (
     check_acq_p2,
     check_catalog,
@@ -41,12 +42,13 @@ def test_check_slice_index():
             assert np.all(acar1[name] == acar[name][item])
 
 
-def test_check_P2():
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+def test_check_P2(aca_review_table):
     """Test the check of acq P2"""
     stars = StarsTable.empty()
     stars.add_fake_constellation(n_stars=3, mag=10.25)
     aca = get_aca_catalog(**STD_INFO, stars=stars, dark=DARK40)
-    acar = ACAReviewTable(aca)
+    acar = aca_review_table(aca)
 
     # Check P2 for an OR (default obsid=0)
     check_acq_p2(acar)
@@ -64,7 +66,7 @@ def test_check_P2():
         dark=DARK40,
         raise_exc=True,
     )
-    acar = ACAReviewTable(aca)
+    acar = aca_review_table(aca)
     check_acq_p2(acar)
     assert len(acar.messages) == 1
     msg = acar.messages[0]
@@ -72,7 +74,8 @@ def test_check_P2():
     assert "less than 3.0 for ER" in msg["text"]
 
 
-def test_n_guide_check_not_enough_stars():
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+def test_n_guide_check_not_enough_stars(aca_review_table):
     """Test the check that number of guide stars selected is as requested"""
 
     stars = StarsTable.empty()
@@ -83,14 +86,15 @@ def test_n_guide_check_not_enough_stars():
         dark=DARK40,
         raise_exc=True,
     )
-    acar = ACAReviewTable(aca)
+    acar = aca_review_table(aca)
     check_guide_count(acar)
     assert acar.messages == [
         {"text": "OR with 4 guides but 5 were requested", "category": "caution"}
     ]
 
 
-def test_guide_is_candidate():
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+def test_guide_is_candidate(aca_review_table):
     """Test the check that guide star meets candidate star requirements
 
     Make a star catalog with a CLASS=3 star and force include it for guide.
@@ -105,7 +109,7 @@ def test_guide_is_candidate():
         include_ids_guide=[100],
         raise_exc=True,
     )
-    acar = ACAReviewTable(aca)
+    acar = aca_review_table(aca)
     check_catalog(acar)
     assert acar.messages == [
         {
@@ -117,7 +121,8 @@ def test_guide_is_candidate():
     ]
 
 
-def test_n_guide_check_atypical_request():
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+def test_n_guide_check_atypical_request(aca_review_table):
     """Test the check that number of guide stars selected is typical"""
 
     stars = StarsTable.empty()
@@ -128,14 +133,15 @@ def test_n_guide_check_atypical_request():
         dark=DARK40,
         raise_exc=True,
     )
-    acar = ACAReviewTable(aca)
+    acar = aca_review_table(aca)
     check_guide_count(acar)
     assert acar.messages == [
         {"text": "OR with 4 guides requested but 5 is typical", "category": "caution"}
     ]
 
 
-def test_n_guide_mon_check_atypical_request():
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+def test_n_guide_mon_check_atypical_request(aca_review_table):
     """Test the check that number of guide stars selected is typical
     in the case where are monitors"""
 
@@ -149,7 +155,7 @@ def test_n_guide_mon_check_atypical_request():
         dark=DARK40,
         raise_exc=True,
     )
-    acar = ACAReviewTable(aca)
+    acar = aca_review_table(aca)
     check_guide_count(acar)
     assert acar.messages == [
         {
@@ -167,7 +173,8 @@ vals = [
 
 
 @pytest.mark.parametrize("vals", vals)
-def test_guide_count_dyn_bgd_bonus(vals):
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+def test_guide_count_dyn_bgd_bonus(vals, aca_review_table):
     n_guide, leg_guide_count, dyn_guide_count = vals
     stars = StarsTable.empty()
 
@@ -184,14 +191,15 @@ def test_guide_count_dyn_bgd_bonus(vals):
     assert len(aca_dyn.guides) == n_guide
     assert np.all(aca_leg.guides["mag"] == aca_dyn.guides["mag"])
 
-    acar_leg = ACAReviewTable(aca_leg)
-    acar_dyn = ACAReviewTable(aca_dyn)
+    acar_leg = aca_review_table(aca_leg)
+    acar_dyn = aca_review_table(aca_dyn)
     # Computed guide counts without / with dyn_bgd_n_faint=2
     assert np.isclose(acar_leg.guide_count, leg_guide_count, rtol=0, atol=0.1)
     assert np.isclose(acar_dyn.guide_count, dyn_guide_count, rtol=0, atol=0.1)
 
 
-def test_n_guide_too_few_guide_or_mon():
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+def test_n_guide_too_few_guide_or_mon(aca_review_table):
     """Test the check that the number of actual guide and mon stars is what
     was requested"""
 
@@ -205,7 +213,7 @@ def test_n_guide_too_few_guide_or_mon():
         dark=DARK40,
         raise_exc=True,
     )
-    acar = ACAReviewTable(aca)
+    acar = aca_review_table(aca)
     check_guide_count(acar)
     assert acar.messages == [
         {
@@ -222,7 +230,8 @@ def test_n_guide_too_few_guide_or_mon():
     ]
 
 
-def test_guide_count_er1():
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+def test_guide_count_er1(aca_review_table):
     """Test the check that an ER has enough fractional guide stars by guide_count"""
 
     # This configuration should have not enough bright stars
@@ -234,7 +243,7 @@ def test_guide_count_er1():
         dark=DARK40,
         raise_exc=True,
     )
-    acar = ACAReviewTable(aca)
+    acar = aca_review_table(aca)
     check_guide_count(acar)
     assert len(acar.messages) == 1
     msg = acar.messages[0]
@@ -242,7 +251,8 @@ def test_guide_count_er1():
     assert "ER count of 9th" in msg["text"]
 
 
-def test_guide_count_er2():
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+def test_guide_count_er2(aca_review_table):
     # This configuration should have not enough stars overall
     stars = StarsTable.empty()
     stars.add_fake_constellation(n_stars=3, mag=[8.5, 8.5, 8.5])
@@ -252,7 +262,7 @@ def test_guide_count_er2():
         dark=DARK40,
         raise_exc=True,
     )
-    acar = ACAReviewTable(aca)
+    acar = aca_review_table(aca)
     check_guide_count(acar)
     assert acar.messages == [
         {"text": "ER count of guide stars 3.00 < 6.0", "category": "critical"},
@@ -260,7 +270,8 @@ def test_guide_count_er2():
     ]
 
 
-def test_guide_count_er3():
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+def test_guide_count_er3(aca_review_table):
     # And this configuration should have about the bare minumum (of course better
     # to do this with programmatic instead of fixed .. TODO)
     stars = StarsTable.empty()
@@ -271,14 +282,15 @@ def test_guide_count_er3():
         dark=DARK40,
         raise_exc=True,
     )
-    acar = ACAReviewTable(aca)
+    acar = aca_review_table(aca)
     check_guide_count(acar)
     assert acar.messages == [
         {"text": "ER with 6 guides but 8 were requested", "category": "caution"}
     ]
 
 
-def test_guide_count_er4():
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+def test_guide_count_er4(aca_review_table):
     # This configuration should not warn with too many really bright stars
     # (allowed to have 3 stars brighter than 6.1)
     stars = StarsTable.empty()
@@ -292,14 +304,15 @@ def test_guide_count_er4():
         dark=DARK40,
         raise_exc=True,
     )
-    acar = ACAReviewTable(aca)
+    acar = aca_review_table(aca)
     check_guide_count(acar)
     assert acar.messages == [
         {"text": "ER with 6 guides but 8 were requested", "category": "caution"}
     ]
 
 
-def test_include_exclude():
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+def test_include_exclude(aca_review_table):
     """Test INFO statement for explicitly included/excluded entries"""
     stars = StarsTable.empty()
     stars.add_fake_constellation(n_stars=8, mag=np.linspace(7.0, 8.75, 8))
@@ -314,7 +327,7 @@ def test_include_exclude():
         include_halfws_acq=[140, 120],
         raise_exc=True,
     )
-    acar = ACAReviewTable(aca)
+    acar = aca_review_table(aca)
     check_include_exclude(acar)
     assert acar.messages == [
         {
@@ -327,7 +340,8 @@ def test_include_exclude():
     ]
 
 
-def test_guide_count_er5():
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+def test_guide_count_er5(aca_review_table):
     # This configuration should warn with too many bright stars
     # (has > 3.0 stars brighter than 5.5
     stars = StarsTable.empty()
@@ -340,7 +354,7 @@ def test_guide_count_er5():
         dark=DARK40,
         raise_exc=True,
     )
-    acar = ACAReviewTable(aca)
+    acar = aca_review_table(aca)
     check_guide_count(acar)
     assert acar.messages == [
         {"text": "ER with more than 3 stars brighter than 5.5.", "category": "caution"},
@@ -348,7 +362,8 @@ def test_guide_count_er5():
     ]
 
 
-def test_guide_count_or():
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+def test_guide_count_or(aca_review_table):
     """Test the check that an OR has enough fractional guide stars by guide_count"""
     stars = StarsTable.empty()
     stars.add_fake_constellation(n_stars=5, mag=[7.0, 7.0, 10.3, 10.3, 10.3])
@@ -358,7 +373,7 @@ def test_guide_count_or():
         dark=DARK40,
         raise_exc=True,
     )
-    acar = ACAReviewTable(aca)
+    acar = aca_review_table(aca)
     check_guide_count(acar)
     assert acar.messages == [
         {"text": "OR count of guide stars 2.00 < 4.0", "category": "critical"},
@@ -366,7 +381,8 @@ def test_guide_count_or():
     ]
 
 
-def test_ok_number_bright_guide_stars():
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+def test_ok_number_bright_guide_stars(aca_review_table):
     # This configuration should not warn with too many really bright stars
     # (allowed to have 1 stars brighter than 5.5)
     stars = StarsTable.empty()
@@ -378,14 +394,15 @@ def test_ok_number_bright_guide_stars():
         dark=DARK40,
         raise_exc=True,
     )
-    acar = ACAReviewTable(aca)
+    acar = aca_review_table(aca)
     check_guide_count(acar)
     assert acar.messages == [
         {"text": "OR with 4 guides but 5 were requested", "category": "caution"}
     ]
 
 
-def test_too_many_bright_stars():
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+def test_too_many_bright_stars(aca_review_table):
     # This configuration should warn with too many bright stars
     # (has > 1.0 stars brighter than 5.5
     stars = StarsTable.empty()
@@ -398,7 +415,7 @@ def test_too_many_bright_stars():
         dark=DARK40,
         raise_exc=True,
     )
-    acar = ACAReviewTable(aca)
+    acar = aca_review_table(aca)
     check_guide_count(acar)
     assert len(acar.messages) == 1
     msg = acar.messages[0]
@@ -406,7 +423,8 @@ def test_too_many_bright_stars():
     assert "OR with more than 1 stars brighter than 5.5." in msg["text"]
 
 
-def test_low_guide_count():
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+def test_low_guide_count(aca_review_table):
     """Test that a 3.5 to 4.0 guide_count observation gets a critical warning
     on guide_count if man_angle_next > 5 (no creep-away)."""
     # Set a scenario with guide_count in the 3.5 to 4.0 range and confirm a
@@ -419,7 +437,7 @@ def test_low_guide_count():
         dark=DARK40,
         raise_exc=True,
     )
-    acar = ACAReviewTable(aca)
+    acar = aca_review_table(aca)
     # Confirm the guide_count is in the range we want for the test to be valid
     assert acar.guide_count <= 4.0 and acar.guide_count > 3.5
     assert acar.man_angle_next > 5
@@ -430,7 +448,8 @@ def test_low_guide_count():
     ]
 
 
-def test_low_guide_count_creep_away():
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+def test_low_guide_count_creep_away(aca_review_table):
     """Test that a 3.5 to 4.0 guide_count observation does not get a critical warning
     on guide_count if man_angle_next <= 5 (creep-away)."""
     # Set a scenario with guide_count in the 3.5 to 4.0 range but with
@@ -444,7 +463,7 @@ def test_low_guide_count_creep_away():
         dark=DARK40,
         raise_exc=True,
     )
-    acar = ACAReviewTable(aca)
+    acar = aca_review_table(aca)
     # Confirm the guide_count is in the range we want for the test to be valid
     assert acar.guide_count <= 4.0 and acar.guide_count > 3.5
     check_guide_count(acar)
@@ -454,7 +473,8 @@ def test_low_guide_count_creep_away():
     ]
 
 
-def test_reduced_dither_low_guide_count():
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+def test_reduced_dither_low_guide_count(aca_review_table):
     """Test that a 3.5 to 4.0 guide_count observation without dynamic background
     in use (dyn_bgd_n_faint == 0) does not get a dither critical warning for 4x4 arcsec dither.
     """
@@ -468,7 +488,7 @@ def test_reduced_dither_low_guide_count():
         dark=DARK40,
         raise_exc=True,
     )
-    acar = ACAReviewTable(aca)
+    acar = aca_review_table(aca)
 
     # Confirm the guide_count is in the range we want for the test to be valid
     assert acar.guide_count <= 4.0 and acar.guide_count > 3.5
@@ -478,7 +498,8 @@ def test_reduced_dither_low_guide_count():
     assert len(acar.messages) == 0
 
 
-def test_get_t_ccds_bonus_1():
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+def test_get_t_ccds_bonus_1(aca_review_table):
     mags = [1, 10, 2, 11, 3, 4]
     t_ccd = 10
 
@@ -499,7 +520,8 @@ def test_get_t_ccds_bonus_1():
     assert np.all(t_ccds == [10, 10, 10, 10, 10, 10])
 
 
-def test_get_t_ccds_bonus_min_anchor():
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+def test_get_t_ccds_bonus_min_anchor(aca_review_table):
     mags = [1, 10, 2]
     t_ccd = 10
     t_ccds = get_t_ccds_bonus(mags, t_ccd, dyn_bgd_n_faint=2, dyn_bgd_dt_ccd=-1)
@@ -516,7 +538,8 @@ def test_get_t_ccds_bonus_small_catalog():
     assert np.all(t_ccds == [10])
 
 
-def test_not_reduced_dither_low_guide_count():
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+def test_not_reduced_dither_low_guide_count(aca_review_table):
     """Test that a 3.5 to 4.0 guide_count observation without dynamic background
     in use (dyn_bgd_n_faint == 0) gets a dither critical warning for 8x8 arcsec dither.
     """
@@ -530,7 +553,7 @@ def test_not_reduced_dither_low_guide_count():
         dark=DARK40,
         raise_exc=True,
     )
-    acar = ACAReviewTable(aca)
+    acar = aca_review_table(aca)
 
     # Confirm the guide_count is in the range we want for the test to be valid
     assert acar.guide_count <= 4.0 and acar.guide_count > 3.5
@@ -542,7 +565,8 @@ def test_not_reduced_dither_low_guide_count():
     ]
 
 
-def test_not_reduced_dither_low_guide_count_dyn_bgd():
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+def test_not_reduced_dither_low_guide_count_dyn_bgd(aca_review_table):
     """Test that a 3.5 to 4.0 guide_count observation with dynamic background
     in use (dyn_bgd_n_faint > 0) does not get a dither critical warning for 8x8 arcsec dither.
     """
@@ -558,14 +582,15 @@ def test_not_reduced_dither_low_guide_count_dyn_bgd():
         dark=DARK40,
         raise_exc=True,
     )
-    acar = ACAReviewTable(aca)
+    acar = aca_review_table(aca)
     # Confirm the guide_count is in the range we want for the test to be valid
     assert acar.guide_count <= 4.0 and acar.guide_count > 3.5
     check_dither(acar)
     assert len(acar.messages) == 0
 
 
-def test_pos_err_on_guide():
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+def test_pos_err_on_guide(aca_review_table):
     """Test the check that no guide star has large POS_ERR"""
     stars = StarsTable.empty()
     stars.add_fake_star(id=100, yang=100, zang=-200, POS_ERR=2010, mag=8.0)
@@ -587,7 +612,7 @@ def test_pos_err_on_guide():
         include_ids_guide=[100, 101],
     )  # Must force 100, 101, pos_err too big
 
-    acar = ACAReviewTable(aca)
+    acar = aca_review_table(aca)
 
     # 103 not selected because pos_err > 1.25 arcsec
     assert acar.guides["id"].tolist() == [100, 101, 102]
@@ -630,7 +655,8 @@ def test_guide_overlap():
     )
 
 
-def test_guide_edge_check():
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+def test_guide_edge_check(aca_review_table):
     stars = StarsTable.empty()
     dither = 8
     row_lim = CCD["row_max"] - CCD["row_pad"] - CCD["window_pad"] - dither / 5
@@ -656,7 +682,7 @@ def test_guide_edge_check():
         raise_exc=True,
         include_ids_guide=np.arange(1, 7),
     )
-    acar = ACAReviewTable(aca)
+    acar = aca_review_table(aca)
     check_catalog(acar)
 
     assert acar.messages == [
@@ -685,7 +711,8 @@ def test_guide_edge_check():
 
 
 @pytest.mark.parametrize("exp_warn", [False, True])
-def test_imposters_on_guide(exp_warn):
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+def test_imposters_on_guide(exp_warn, aca_review_table):
     """Test the check for imposters by adding one imposter to a fake star"""
     stars = StarsTable.empty()
     # Add two stars because separate P2 tests seem to break with just one star
@@ -706,7 +733,7 @@ def test_imposters_on_guide(exp_warn):
         dark=dark_with_badpix,
         raise_exc=True,
     )
-    acar = ACAReviewTable(aca)
+    acar = aca_review_table(aca)
     check_imposters_guide(acar, aca.guides.get_id(110))
     if exp_warn:
         assert len(acar.messages) == 1
@@ -717,7 +744,8 @@ def test_imposters_on_guide(exp_warn):
         assert len(acar.messages) == 0
 
 
-def test_bad_star_set(proseco_agasc_1p7):
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+def test_bad_star_set(proseco_agasc_1p7, aca_review_table):
     # This faint star is no longer in proseco_agasc >= 1.8 so we use 1.7
     bad_id = 1248994952
     star = agasc.get_star(bad_id)
@@ -728,7 +756,7 @@ def test_bad_star_set(proseco_agasc_1p7):
         dark=DARK40,
         include_ids_guide=[bad_id],
     )
-    acar = ACAReviewTable(aca)
+    acar = aca_review_table(aca)
     check_catalog(acar)
     assert acar.messages == [
         {
@@ -746,7 +774,8 @@ def test_bad_star_set(proseco_agasc_1p7):
     ]
 
 
-def test_too_bright_guide_magerr():
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+def test_too_bright_guide_magerr(aca_review_table):
     """Test the check for too-bright guide stars within mult*mag_err of 5.2"""
     stars = StarsTable.empty()
     # Add two stars because separate P2 tests seem to break with just one star
@@ -757,14 +786,15 @@ def test_too_bright_guide_magerr():
     aca = get_aca_catalog(
         **mod_std_info(n_fid=0), stars=stars, dark=DARK40, raise_exc=True
     )
-    acar = ACAReviewTable(aca)
+    acar = aca_review_table(aca)
     check_too_bright_guide(acar, aca.guides.get_id(100))
     msg = acar.messages[0]
     assert msg["category"] == "critical"
     assert "2*mag_err of 5.2" in msg["text"]
 
 
-def test_check_fid_spoiler_score():
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+def test_check_fid_spoiler_score(aca_review_table):
     """Test checking fid spoiler score"""
     stars = StarsTable.empty()
     # def add_fake_stars_from_fid(self, fid_id=1, offset_y=0, offset_z=0, mag=7.0,
@@ -779,7 +809,7 @@ def test_check_fid_spoiler_score():
 
     assert np.all(aca.fids.cand_fids["spoiler_score"] == [4, 4, 4, 4, 1, 0])
 
-    acar = ACAReviewTable(aca)
+    acar = aca_review_table(aca)
     check_catalog(acar)
     assert acar.messages == [
         {
@@ -795,7 +825,8 @@ def test_check_fid_spoiler_score():
     ]
 
 
-def test_check_fid_count1():
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+def test_check_fid_count1(aca_review_table):
     """Test checking fid count"""
     stars = StarsTable.empty()
     stars.add_fake_constellation(n_stars=8)
@@ -803,7 +834,7 @@ def test_check_fid_count1():
     aca = get_aca_catalog(
         stars=stars, **mod_std_info(detector="HRC-S", sim_offset=40000)
     )
-    acar = ACAReviewTable(aca)
+    acar = aca_review_table(aca)
     check_catalog(acar)
 
     assert acar.messages == [
@@ -811,13 +842,14 @@ def test_check_fid_count1():
     ]
 
 
-def test_check_fid_count2():
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+def test_check_fid_count2(aca_review_table):
     """Test checking fid count"""
     stars = StarsTable.empty()
     stars.add_fake_constellation(n_stars=8)
 
     aca = get_aca_catalog(stars=stars, **mod_std_info(detector="HRC-S", n_fid=2))
-    acar = ACAReviewTable(aca)
+    acar = aca_review_table(aca)
     check_catalog(acar)
 
     assert acar.messages == [
@@ -825,7 +857,8 @@ def test_check_fid_count2():
     ]
 
 
-def test_check_guide_geometry():
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+def test_check_guide_geometry(aca_review_table):
     """Test the checks of geometry (not all within 2500" not N-2 within 500")"""
     yangs = np.array([1, 0, -1, 0])
     zangs = np.array([0, 1, 0, -1])
