@@ -1,53 +1,18 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import functools
-from dataclasses import dataclass
 from itertools import combinations
-from typing import TYPE_CHECKING
 
 import numpy as np
 import proseco.characteristics as ACA
 from chandra_aca.transform import mag_to_count_rate, snr_mag_for_t_ccd
 from proseco.core import CatalogRow, StarTableRow
 
-if TYPE_CHECKING:
-    from sparkles.core import ACAReviewTable
+from sparkles.aca_checks_table import ACAChecksTable
+from sparkles.messages import Message
 
 # Observations with man_angle_next less than or equal to CREEP_AWAY_THRESHOLD
 # are considered "creep away" observations. CREEP_AWAY_THRESHOLD is in units of degrees.
 CREEP_AWAY_THRESHOLD = 5.0
-
-
-@dataclass(frozen=True, slots=True)
-class Message:
-    """Message class."""
-
-    category: str
-    text: str
-    idx: int | None = None
-
-    def __getitem__(self, key):
-        return getattr(self, key)
-
-
-class MessagesList(list[Message]):
-    categories = ("all", "info", "caution", "warning", "critical", "none")
-
-    def __eq__(self, other):
-        if isinstance(other, str):
-            return [msg for msg in self if msg["category"] == other]
-        else:
-            return super().__eq__(other)
-
-    def __ge__(self, other):
-        if isinstance(other, str):
-            other_idx = self.categories.index(other)
-            return [
-                msg
-                for msg in self
-                if self.categories.index(msg["category"]) >= other_idx
-            ]
-        else:
-            return super().__ge__(other)
 
 
 def acar_check_wrapper(func):
@@ -59,7 +24,7 @@ def acar_check_wrapper(func):
     """
 
     @functools.wraps(func)
-    def wrapper(acar: "ACAReviewTable", *args, **kwargs):
+    def wrapper(acar: ACAChecksTable, *args, **kwargs):
         msgs: list[Message] = func(acar, *args, **kwargs)
         messages = [
             {
@@ -75,7 +40,7 @@ def acar_check_wrapper(func):
     return wrapper
 
 
-def check_guide_overlap(acar: "ACAReviewTable") -> list[Message]:
+def check_guide_overlap(acar: ACAChecksTable) -> list[Message]:
     """Check for overlapping tracked items.
 
     Overlap is defined as within 12 pixels.
@@ -97,7 +62,7 @@ def check_guide_overlap(acar: "ACAReviewTable") -> list[Message]:
     return msgs
 
 
-def check_guide_geometry(acar: "ACAReviewTable") -> list[Message]:
+def check_guide_geometry(acar: ACAChecksTable) -> list[Message]:
     """Check for guide stars too tightly clustered.
 
     (1) Check for any set of n_guide-2 stars within 500" of each other.
@@ -158,7 +123,7 @@ def check_guide_geometry(acar: "ACAReviewTable") -> list[Message]:
 
 
 def check_guide_fid_position_on_ccd(
-    acar: "ACAReviewTable", entry: CatalogRow
+    acar: ACAChecksTable, entry: CatalogRow
 ) -> list[Message]:
     """Check position of guide stars and fid lights on CCD."""
     msgs = []
@@ -221,7 +186,7 @@ def check_guide_fid_position_on_ccd(
 # }
 
 
-def check_acq_p2(acar: "ACAReviewTable") -> list[Message]:
+def check_acq_p2(acar: ACAChecksTable) -> list[Message]:
     """Check acquisition catalog safing probability."""
     msgs = []
     P2 = -np.log10(acar.acqs.calc_p_safe())
@@ -237,7 +202,7 @@ def check_acq_p2(acar: "ACAReviewTable") -> list[Message]:
     return msgs
 
 
-def check_include_exclude(acar: "ACAReviewTable") -> list[Message]:
+def check_include_exclude(acar: ACAChecksTable) -> list[Message]:
     """Check for included or excluded guide or acq stars or fids (info)"""
     msgs = []
     call_args = acar.call_args
@@ -257,7 +222,7 @@ def check_include_exclude(acar: "ACAReviewTable") -> list[Message]:
     return msgs
 
 
-def check_guide_count(acar: "ACAReviewTable") -> list[Message]:
+def check_guide_count(acar: ACAChecksTable) -> list[Message]:
     """
     Check for sufficient guide star fractional count.
 
@@ -362,7 +327,7 @@ def check_guide_count(acar: "ACAReviewTable") -> list[Message]:
 
 # Add a check that for ORs with guide count between 3.5 and 4.0, the
 # dither is 4 arcsec if dynamic background not enabled.
-def check_dither(acar: "ACAReviewTable") -> list[Message]:
+def check_dither(acar: ACAChecksTable) -> list[Message]:
     """Check dither.
 
     This presently checks that dither is 4x4 arcsec if dynamic background is not in
@@ -389,7 +354,7 @@ def check_dither(acar: "ACAReviewTable") -> list[Message]:
     return msgs
 
 
-def check_pos_err_guide(acar: "ACAReviewTable", star: StarTableRow) -> list[Message]:
+def check_pos_err_guide(acar: ACAChecksTable, star: StarTableRow) -> list[Message]:
     """Warn on stars with larger POS_ERR (warning at 1" critical at 2")"""
     msgs = []
     agasc_id = star["id"]
@@ -412,7 +377,7 @@ def check_pos_err_guide(acar: "ACAReviewTable", star: StarTableRow) -> list[Mess
     return msgs
 
 
-def check_imposters_guide(acar: "ACAReviewTable", star: StarTableRow) -> list[Message]:
+def check_imposters_guide(acar: ACAChecksTable, star: StarTableRow) -> list[Message]:
     """Warn on stars with larger imposter centroid offsets"""
 
     # Borrow the imposter offset method from starcheck
@@ -445,9 +410,7 @@ def check_imposters_guide(acar: "ACAReviewTable", star: StarTableRow) -> list[Me
     return msgs
 
 
-def check_guide_is_candidate(
-    acar: "ACAReviewTable", star: StarTableRow
-) -> list[Message]:
+def check_guide_is_candidate(acar: ACAChecksTable, star: StarTableRow) -> list[Message]:
     """Critical for guide star that is not a valid guide candidate.
 
     This can occur for a manually included guide star.  In rare cases
@@ -467,7 +430,7 @@ def check_guide_is_candidate(
     return msgs
 
 
-def check_too_bright_guide(acar: "ACAReviewTable", star: StarTableRow) -> list[Message]:
+def check_too_bright_guide(acar: ACAChecksTable, star: StarTableRow) -> list[Message]:
     """Warn on guide stars that may be too bright.
 
     - Critical if within 2 * mag_err of the hard 5.2 limit, caution within 3 * mag_err
@@ -530,7 +493,7 @@ def check_fid_spoiler_score(idx, fid) -> list[Message]:
     return msgs
 
 
-def check_fid_count(acar: "ACAReviewTable") -> list[Message]:
+def check_fid_count(acar: ACAChecksTable) -> list[Message]:
     """
     Check for the correct number of fids.
 

@@ -45,7 +45,6 @@ ignore = [
   "PLR0913", # Too many arguments to function call
   "PLR0915", # Too many statements
   "PLR2004", # Magic number
-  "TCH002", # Move third-party import into a type-checking block
 ]
 
 extend-exclude = [
