@@ -15,7 +15,7 @@ from proseco.tests.test_common import DARK40, STD_INFO, mod_std_info
 from Quaternion import Quat
 
 from sparkles import ACAReviewTable, get_t_ccds_bonus
-from sparkles.aca_checks_table import ACAChecksTable
+from sparkles.aca_check_table import ACACheckTable
 from sparkles.core import (
     check_acq_p2,
     check_catalog,
@@ -42,7 +42,7 @@ def test_check_slice_index():
             assert np.all(acar1[name] == acar[name][item])
 
 
-@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_check_P2(aca_review_table):
     """Test the check of acq P2"""
     stars = StarsTable.empty()
@@ -74,7 +74,7 @@ def test_check_P2(aca_review_table):
     assert "less than 3.0 for ER" in msg["text"]
 
 
-@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_n_guide_check_not_enough_stars(aca_review_table):
     """Test the check that number of guide stars selected is as requested"""
 
@@ -93,7 +93,7 @@ def test_n_guide_check_not_enough_stars(aca_review_table):
     ]
 
 
-@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_guide_is_candidate(aca_review_table):
     """Test the check that guide star meets candidate star requirements
 
@@ -121,7 +121,7 @@ def test_guide_is_candidate(aca_review_table):
     ]
 
 
-@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_n_guide_check_atypical_request(aca_review_table):
     """Test the check that number of guide stars selected is typical"""
 
@@ -140,7 +140,7 @@ def test_n_guide_check_atypical_request(aca_review_table):
     ]
 
 
-@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_n_guide_mon_check_atypical_request(aca_review_table):
     """Test the check that number of guide stars selected is typical
     in the case where are monitors"""
@@ -173,7 +173,7 @@ vals = [
 
 
 @pytest.mark.parametrize("vals", vals)
-@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_guide_count_dyn_bgd_bonus(vals, aca_review_table):
     n_guide, leg_guide_count, dyn_guide_count = vals
     stars = StarsTable.empty()
@@ -198,7 +198,7 @@ def test_guide_count_dyn_bgd_bonus(vals, aca_review_table):
     assert np.isclose(acar_dyn.guide_count, dyn_guide_count, rtol=0, atol=0.1)
 
 
-@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_n_guide_too_few_guide_or_mon(aca_review_table):
     """Test the check that the number of actual guide and mon stars is what
     was requested"""
@@ -230,7 +230,7 @@ def test_n_guide_too_few_guide_or_mon(aca_review_table):
     ]
 
 
-@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_guide_count_er1(aca_review_table):
     """Test the check that an ER has enough fractional guide stars by guide_count"""
 
@@ -251,7 +251,7 @@ def test_guide_count_er1(aca_review_table):
     assert "ER count of 9th" in msg["text"]
 
 
-@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_guide_count_er2(aca_review_table):
     # This configuration should have not enough stars overall
     stars = StarsTable.empty()
@@ -270,7 +270,7 @@ def test_guide_count_er2(aca_review_table):
     ]
 
 
-@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_guide_count_er3(aca_review_table):
     # And this configuration should have about the bare minumum (of course better
     # to do this with programmatic instead of fixed .. TODO)
@@ -289,7 +289,7 @@ def test_guide_count_er3(aca_review_table):
     ]
 
 
-@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_guide_count_er4(aca_review_table):
     # This configuration should not warn with too many really bright stars
     # (allowed to have 3 stars brighter than 6.1)
@@ -311,7 +311,7 @@ def test_guide_count_er4(aca_review_table):
     ]
 
 
-@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_include_exclude(aca_review_table):
     """Test INFO statement for explicitly included/excluded entries"""
     stars = StarsTable.empty()
@@ -340,7 +340,7 @@ def test_include_exclude(aca_review_table):
     ]
 
 
-@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_guide_count_er5(aca_review_table):
     # This configuration should warn with too many bright stars
     # (has > 3.0 stars brighter than 5.5
@@ -362,7 +362,7 @@ def test_guide_count_er5(aca_review_table):
     ]
 
 
-@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_guide_count_or(aca_review_table):
     """Test the check that an OR has enough fractional guide stars by guide_count"""
     stars = StarsTable.empty()
@@ -381,7 +381,7 @@ def test_guide_count_or(aca_review_table):
     ]
 
 
-@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_ok_number_bright_guide_stars(aca_review_table):
     # This configuration should not warn with too many really bright stars
     # (allowed to have 1 stars brighter than 5.5)
@@ -401,7 +401,7 @@ def test_ok_number_bright_guide_stars(aca_review_table):
     ]
 
 
-@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_too_many_bright_stars(aca_review_table):
     # This configuration should warn with too many bright stars
     # (has > 1.0 stars brighter than 5.5
@@ -423,7 +423,7 @@ def test_too_many_bright_stars(aca_review_table):
     assert "OR with more than 1 stars brighter than 5.5." in msg["text"]
 
 
-@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_low_guide_count(aca_review_table):
     """Test that a 3.5 to 4.0 guide_count observation gets a critical warning
     on guide_count if man_angle_next > 5 (no creep-away)."""
@@ -448,7 +448,7 @@ def test_low_guide_count(aca_review_table):
     ]
 
 
-@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_low_guide_count_creep_away(aca_review_table):
     """Test that a 3.5 to 4.0 guide_count observation does not get a critical warning
     on guide_count if man_angle_next <= 5 (creep-away)."""
@@ -473,7 +473,7 @@ def test_low_guide_count_creep_away(aca_review_table):
     ]
 
 
-@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_reduced_dither_low_guide_count(aca_review_table):
     """Test that a 3.5 to 4.0 guide_count observation without dynamic background
     in use (dyn_bgd_n_faint == 0) does not get a dither critical warning for 4x4 arcsec dither.
@@ -498,7 +498,7 @@ def test_reduced_dither_low_guide_count(aca_review_table):
     assert len(acar.messages) == 0
 
 
-@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_get_t_ccds_bonus_1(aca_review_table):
     mags = [1, 10, 2, 11, 3, 4]
     t_ccd = 10
@@ -520,7 +520,7 @@ def test_get_t_ccds_bonus_1(aca_review_table):
     assert np.all(t_ccds == [10, 10, 10, 10, 10, 10])
 
 
-@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_get_t_ccds_bonus_min_anchor(aca_review_table):
     mags = [1, 10, 2]
     t_ccd = 10
@@ -538,7 +538,7 @@ def test_get_t_ccds_bonus_small_catalog():
     assert np.all(t_ccds == [10])
 
 
-@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_not_reduced_dither_low_guide_count(aca_review_table):
     """Test that a 3.5 to 4.0 guide_count observation without dynamic background
     in use (dyn_bgd_n_faint == 0) gets a dither critical warning for 8x8 arcsec dither.
@@ -565,7 +565,7 @@ def test_not_reduced_dither_low_guide_count(aca_review_table):
     ]
 
 
-@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_not_reduced_dither_low_guide_count_dyn_bgd(aca_review_table):
     """Test that a 3.5 to 4.0 guide_count observation with dynamic background
     in use (dyn_bgd_n_faint > 0) does not get a dither critical warning for 8x8 arcsec dither.
@@ -589,7 +589,7 @@ def test_not_reduced_dither_low_guide_count_dyn_bgd(aca_review_table):
     assert len(acar.messages) == 0
 
 
-@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_pos_err_on_guide(aca_review_table):
     """Test the check that no guide star has large POS_ERR"""
     stars = StarsTable.empty()
@@ -655,7 +655,7 @@ def test_guide_overlap():
     )
 
 
-@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_guide_edge_check(aca_review_table):
     stars = StarsTable.empty()
     dither = 8
@@ -711,7 +711,7 @@ def test_guide_edge_check(aca_review_table):
 
 
 @pytest.mark.parametrize("exp_warn", [False, True])
-@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_imposters_on_guide(exp_warn, aca_review_table):
     """Test the check for imposters by adding one imposter to a fake star"""
     stars = StarsTable.empty()
@@ -744,7 +744,7 @@ def test_imposters_on_guide(exp_warn, aca_review_table):
         assert len(acar.messages) == 0
 
 
-@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_bad_star_set(proseco_agasc_1p7, aca_review_table):
     # This faint star is no longer in proseco_agasc >= 1.8 so we use 1.7
     bad_id = 1248994952
@@ -774,7 +774,7 @@ def test_bad_star_set(proseco_agasc_1p7, aca_review_table):
     ]
 
 
-@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_too_bright_guide_magerr(aca_review_table):
     """Test the check for too-bright guide stars within mult*mag_err of 5.2"""
     stars = StarsTable.empty()
@@ -793,7 +793,7 @@ def test_too_bright_guide_magerr(aca_review_table):
     assert "2*mag_err of 5.2" in msg["text"]
 
 
-@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_check_fid_spoiler_score(aca_review_table):
     """Test checking fid spoiler score"""
     stars = StarsTable.empty()
@@ -825,7 +825,7 @@ def test_check_fid_spoiler_score(aca_review_table):
     ]
 
 
-@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_check_fid_count1(aca_review_table):
     """Test checking fid count"""
     stars = StarsTable.empty()
@@ -842,7 +842,7 @@ def test_check_fid_count1(aca_review_table):
     ]
 
 
-@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_check_fid_count2(aca_review_table):
     """Test checking fid count"""
     stars = StarsTable.empty()
@@ -857,7 +857,7 @@ def test_check_fid_count2(aca_review_table):
     ]
 
 
-@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACAChecksTable))
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_check_guide_geometry(aca_review_table):
     """Test the checks of geometry (not all within 2500" not N-2 within 500")"""
     yangs = np.array([1, 0, -1, 0])

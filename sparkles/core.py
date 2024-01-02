@@ -19,7 +19,7 @@ from jinja2 import Template
 from proseco.core import MetaAttribute
 
 from sparkles import checks
-from sparkles.aca_checks_table import ACAChecksTable
+from sparkles.aca_check_table import ACACheckTable
 from sparkles.messages import Message, MessagesList
 from sparkles.roll_optimize import RollOptimizeMixin
 
@@ -568,7 +568,7 @@ def get_summary_text(acas):
     return "\n".join(lines)
 
 
-class ACAReviewTable(ACAChecksTable, RollOptimizeMixin):
+class ACAReviewTable(ACACheckTable, RollOptimizeMixin):
     # Whether this instance is a roll option (controls how HTML report page is formatted)
     is_roll_option = MetaAttribute()
     roll_options = MetaAttribute()
@@ -1033,7 +1033,7 @@ check_pos_err_guide = checks.acar_check_wrapper(checks.check_pos_err_guide)
 check_too_bright_guide = checks.acar_check_wrapper(checks.check_too_bright_guide)
 
 
-def check_catalog(acar: ACAChecksTable) -> None:
+def check_catalog(acar: ACACheckTable) -> None:
     """Perform all star catalog checks."""
     msgs: list[Message] = []
     for entry in acar:

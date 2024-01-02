@@ -46,7 +46,7 @@ def get_t_ccds_bonus(mags, t_ccd, dyn_bgd_n_faint, dyn_bgd_dt_ccd):
     return t_ccds
 
 
-class ACAChecksTable(ACATable):
+class ACACheckTable(ACATable):
     messages = MetaAttribute()
 
     def __init__(self, *args, **kwargs):
