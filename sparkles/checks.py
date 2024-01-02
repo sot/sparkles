@@ -5,7 +5,7 @@ from itertools import combinations
 import numpy as np
 import proseco.characteristics as ACA
 from chandra_aca.transform import mag_to_count_rate, snr_mag_for_t_ccd
-from proseco.core import CatalogRow, StarTableRow
+from proseco.core import ACACatalogTableRow, StarsTableRow
 
 from sparkles.aca_checks_table import ACAChecksTable
 from sparkles.messages import Message
@@ -123,7 +123,7 @@ def check_guide_geometry(acar: ACAChecksTable) -> list[Message]:
 
 
 def check_guide_fid_position_on_ccd(
-    acar: ACAChecksTable, entry: CatalogRow
+    acar: ACAChecksTable, entry: ACACatalogTableRow
 ) -> list[Message]:
     """Check position of guide stars and fid lights on CCD."""
     msgs = []
@@ -354,7 +354,7 @@ def check_dither(acar: ACAChecksTable) -> list[Message]:
     return msgs
 
 
-def check_pos_err_guide(acar: ACAChecksTable, star: StarTableRow) -> list[Message]:
+def check_pos_err_guide(acar: ACAChecksTable, star: StarsTableRow) -> list[Message]:
     """Warn on stars with larger POS_ERR (warning at 1" critical at 2")"""
     msgs = []
     agasc_id = star["id"]
@@ -377,7 +377,7 @@ def check_pos_err_guide(acar: ACAChecksTable, star: StarTableRow) -> list[Messag
     return msgs
 
 
-def check_imposters_guide(acar: ACAChecksTable, star: StarTableRow) -> list[Message]:
+def check_imposters_guide(acar: ACAChecksTable, star: StarsTableRow) -> list[Message]:
     """Warn on stars with larger imposter centroid offsets"""
 
     # Borrow the imposter offset method from starcheck
@@ -410,7 +410,9 @@ def check_imposters_guide(acar: ACAChecksTable, star: StarTableRow) -> list[Mess
     return msgs
 
 
-def check_guide_is_candidate(acar: ACAChecksTable, star: StarTableRow) -> list[Message]:
+def check_guide_is_candidate(
+    acar: ACAChecksTable, star: StarsTableRow
+) -> list[Message]:
     """Critical for guide star that is not a valid guide candidate.
 
     This can occur for a manually included guide star.  In rare cases
@@ -430,7 +432,7 @@ def check_guide_is_candidate(acar: ACAChecksTable, star: StarTableRow) -> list[M
     return msgs
 
 
-def check_too_bright_guide(acar: ACAChecksTable, star: StarTableRow) -> list[Message]:
+def check_too_bright_guide(acar: ACAChecksTable, star: StarsTableRow) -> list[Message]:
     """Warn on guide stars that may be too bright.
 
     - Critical if within 2 * mag_err of the hard 5.2 limit, caution within 3 * mag_err
@@ -456,7 +458,7 @@ def check_too_bright_guide(acar: ACAChecksTable, star: StarTableRow) -> list[Mes
     return msgs
 
 
-def check_bad_stars(entry: CatalogRow) -> list[Message]:
+def check_bad_stars(entry: ACACatalogTableRow) -> list[Message]:
     """Check if entry (guide or acq) is in bad star set from proseco
 
     :param entry: ACATable row
