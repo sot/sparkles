@@ -93,10 +93,6 @@ class ACACheckTable(ACATable):
             )
             self.add_column(mag_errs, index=self.colnames.index("mag") + 1)
 
-        # Don't want maxmag column
-        if "maxmag" in self.colnames:
-            del self["maxmag"]
-
         # Customizations for ACAReviewTable.  Don't really need 2 decimals on these.
         for name in ("yang", "zang", "row", "col"):
             self._default_formats[name] = ".1f"
