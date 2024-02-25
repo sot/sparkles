@@ -1,4 +1,4 @@
-# Copied originally from pandas
+# Copied originally from pandas. This config requires ruff >= 0.2.
 target-version = "py310"
 
 # fix = true
@@ -27,7 +27,7 @@ lint.select = [
 lint.extend-select = [
 "UP009",  # UTF-8 encoding declaration is unnecessary
 "SIM118",  # Use `key in dict` instead of `key in dict.keys()`
-# "D205",  # One blank line required between summary line and description
+"D205",  # One blank line required between summary line and description
 "ARG001",  # Unused function argument
 "RSE102",  # Unnecessary parentheses on raised exception
 "PERF401",  # Use a list comprehension to create a transformed list
@@ -35,21 +35,14 @@ lint.extend-select = [
 
 lint.ignore = [
   "ISC001", # Disable this for compatibility with ruff format
-  "B028", # No explicit `stacklevel` keyword argument found
-  "B905", # `zip()` without an explicit `strict=` parameter
   "E402", # module level import not at top of file
   "E731", # do not assign a lambda expression, use a def
-  "PLC1901", # compare-to-empty-string
-  "PLR0911", # Too many returns
-  "PLR0912", # Too many branches
-  "PLR0913", # Too many arguments to function call
-  "PLR0915", # Too many statements
   "PLR2004", # Magic number
+  "B028", # No explicit `stacklevel` keyword argument found
 ]
 
 extend-exclude = [
   "docs",
-  "roll_play.py",
 ]
 
 [lint.pycodestyle]
