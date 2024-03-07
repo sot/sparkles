@@ -739,7 +739,10 @@ def test_imposters_on_guide(exp_warn, aca_review_table):
         assert len(acar.messages) == 1
         msg = acar.messages[0]
         assert msg["category"] == "warning"
-        assert msg["text"] == "Guide star imposter offset 2.6, limit 2.5 arcsec"
+        assert msg["text"] == (
+            "Imposter mag 9.7 centroid offset 2.6 row, col "
+            "( 100, -201) star ( 100, -200)"
+        )
     else:
         assert len(acar.messages) == 0
 

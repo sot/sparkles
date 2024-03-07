@@ -4,6 +4,7 @@ from itertools import combinations
 
 import numpy as np
 import proseco.characteristics as ACA
+from chandra_aca.dark_model import dark_temp_scale
 from chandra_aca.transform import mag_to_count_rate, snr_mag_for_t_ccd
 from proseco.core import ACACatalogTableRow, StarsTableRow
 
@@ -377,6 +378,21 @@ def check_pos_err_guide(acar: ACACheckTable, star: StarsTableRow) -> list[Messag
     return msgs
 
 
+def adjust_imp_mag_for_t_ccds_bonus(imp_mag, t_ccd, t_ccd_bonus):
+    """Adjust the guide star imposter magnitudes in-place for dyn bgd bonus.
+
+    mag0 = MAG0 - 2.5 * np.log10(count_rate / ACA_CNT_RATE_MAG0)
+    mag1 = MAG0 - 2.5 * np.log10(count_rate * scale / ACA_CNT_RATE_MAG0)
+            MAG0 - 2.5 * (np.log10(count_rate / ACA_CNT_RATE_MAG0) + np.log10(scale))
+            mag0 - 2.5 * np.log10(scale)
+    """
+    if t_ccd_bonus != t_ccd:
+        # count scaling factor to convert from t_ccd to t_ccd_bonus
+        scale = dark_temp_scale(t_ccd, t_ccd_bonus)
+        imp_mag -= 2.5 * np.log10(scale)
+    return imp_mag
+
+
 def check_imposters_guide(acar: ACACheckTable, star: StarsTableRow) -> list[Message]:
     """Warn on stars with larger imposter centroid offsets"""
 
@@ -395,15 +411,20 @@ def check_imposters_guide(acar: ACACheckTable, star: StarsTableRow) -> list[Mess
 
     msgs = []
     agasc_id = star["id"]
-    idx = acar.get_id(agasc_id)["idx"]
-    offset = imposter_offset(star["mag"], star["imp_mag"])
+    idx = acar.guides.get_id_idx(agasc_id)
+    imp_mag = adjust_imp_mag_for_t_ccds_bonus(
+        star["imp_mag"], acar.guides.t_ccd, acar.t_ccds_bonus[idx]
+    )
+    offset = imposter_offset(star["mag"], imp_mag)
     for limit, category in ((4.0, "critical"), (2.5, "warning")):
         if np.round(offset, decimals=1) > limit:
             msgs += [
                 Message(
                     category,
-                    f"Guide star imposter offset {offset:.1f}, limit {limit} arcsec",
-                    idx=idx,
+                    f"Imposter mag {imp_mag:.1f} centroid offset {offset:.1f} "
+                    f"row, col ({star['imp_r']:4.0f}, {star['imp_c']:4.0f}) "
+                    f"star ({star['row']:4.0f}, {star['col']:4.0f})",
+                    idx=acar.get_id(agasc_id)["idx"],
                 )
             ]
             break

@@ -3,7 +3,6 @@ from itertools import chain
 
 import numpy as np
 from astropy.table import Column
-from chandra_aca.dark_model import dark_temp_scale
 from chandra_aca.star_probs import guide_count
 from chandra_aca.transform import yagzag_to_pixels
 from proseco.catalog import ACATable
@@ -107,8 +106,6 @@ class ACACheckTable(ACATable):
             del self["idx"]
             self.rename_column("idx_temp", "idx")
 
-        self.adjust_guide_imp_mag_for_bonus_stars()
-
     @property
     def t_ccds_bonus(self):
         """Effective T_ccd for each guide star, including dynamic background bonus."""
@@ -168,22 +165,3 @@ class ACACheckTable(ACATable):
         index = self.colnames.index("zang") + 1
         self.add_column(Column(row, name="row"), index=index)
         self.add_column(Column(col, name="col"), index=index + 1)
-
-    def adjust_guide_imp_mag_for_bonus_stars(self):
-        """Adjust the guide star imposter magnitudes in-place for dyn bgd bonus.
-
-        mag0 = MAG0 - 2.5 * np.log10(count_rate / ACA_CNT_RATE_MAG0)
-        mag1 = MAG0 - 2.5 * np.log10(count_rate * scale / ACA_CNT_RATE_MAG0)
-               MAG0 - 2.5 * (np.log10(count_rate / ACA_CNT_RATE_MAG0) + np.log10(scale))
-               mag0 - 2.5 * np.log10(scale)
-        """
-
-        if self.dyn_bgd_n_faint == 0:
-            return
-
-        t_ccd = self.guides.t_ccd
-        for entry, t_ccd_bonus in zip(self.guides, self.t_ccds_bonus):
-            if t_ccd_bonus != t_ccd:
-                # count scaling factor to convert from t_ccd to t_ccd_bonus
-                scale = dark_temp_scale(t_ccd, t_ccd_bonus)
-                entry["imp_mag"] -= 2.5 * np.log10(scale)
