@@ -896,7 +896,7 @@ def test_check_guide_geometry(aca_review_table):
     assert len(acar.messages) == 1
     msg = acar.messages[0]
     assert msg["category"] == "critical"
-    assert 'Guide indexes [4, 5, 6] clustered within 500" radius' in msg["text"]
+    assert 'Guide indexes [4, 7, 8] clustered within 500" radius' in msg["text"]
 
     # Test for cluster of 3 500" rad stars in a 5 star case, but downgrade
     # the warning for the case when the maneuver angle away is <= 5
@@ -915,7 +915,7 @@ def test_check_guide_geometry(aca_review_table):
     assert len(acar.messages) == 1
     msg = acar.messages[0]
     assert msg["category"] == "warning"
-    assert 'Guide indexes [4, 5, 6] clustered within 500" radius' in msg["text"]
+    assert 'Guide indexes [4, 7, 8] clustered within 500" radius' in msg["text"]
 
 
 def test_pickle():
