@@ -3,6 +3,7 @@
 """
 Roll optimization during preliminary review of ACA catalogs.
 """
+
 import warnings
 from copy import deepcopy
 
