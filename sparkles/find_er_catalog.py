@@ -63,6 +63,7 @@ more difficult problem of part (1) will be **solved by the FOT**.
      from the star fields that appear to be the best based on available stars.
    3. Prioritize by the order of attitudes passed in to the function.
 """
+
 import agasc
 import numpy as np
 import proseco.characteristics_guide as GUIDE
