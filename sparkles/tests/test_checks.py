@@ -763,7 +763,7 @@ def test_bad_star_set(aca_review_table):
             "category": "critical",
             "idx": 5,
         },
-        {'category': 'warning', 'text': 'P2: 2.39 less than 3.0 for OR'},
+        {"category": "warning", "text": "P2: 2.39 less than 3.0 for OR"},
         {"text": "OR requested 0 fids but 3 is typical", "category": "caution"},
         {"category": "info", "text": f"included guide ID(s): [{bad_id}]"},
     ]
