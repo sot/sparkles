@@ -745,9 +745,8 @@ def test_imposters_on_guide(exp_warn, aca_review_table):
 
 
 @pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
-def test_bad_star_set(proseco_agasc_1p7, aca_review_table):
-    # This faint star is no longer in proseco_agasc >= 1.8 so we use 1.7
-    bad_id = 1248994952
+def test_bad_star_set(aca_review_table):
+    bad_id = 260713672
     star = agasc.get_star(bad_id)
     ra = star["RA"]
     dec = star["DEC"]
@@ -760,17 +759,13 @@ def test_bad_star_set(proseco_agasc_1p7, aca_review_table):
     check_catalog(acar)
     assert acar.messages == [
         {
-            "text": "Guide star 1248994952 does not meet guide candidate criteria",
+            "text": f"Star {bad_id} is in proseco bad star set",
             "category": "critical",
             "idx": 5,
         },
-        {
-            "text": "Star 1248994952 is in proseco bad star set",
-            "category": "critical",
-            "idx": 5,
-        },
+        {"category": "warning", "text": "P2: 2.39 less than 3.0 for OR"},
         {"text": "OR requested 0 fids but 3 is typical", "category": "caution"},
-        {"category": "info", "text": "included guide ID(s): [1248994952]"},
+        {"category": "info", "text": f"included guide ID(s): [{bad_id}]"},
     ]
 
 
