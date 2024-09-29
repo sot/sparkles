@@ -70,8 +70,8 @@ def test_review_catalog(proseco_agasc_1p7, tmpdir):
     acar.run_aca_review()
     assert acar.messages == [
         {
-            "text": "Guide star imposter offset 2.6, limit 2.5 arcsec",
             "category": "warning",
+            "text": "Imposter mag 11.4 centroid offset 2.6 row, col (-333,   21) star (-329,   22)",
             "idx": 4,
         },
         {"text": "P2: 3.33 less than 4.0 for ER", "category": "warning"},
@@ -336,8 +336,8 @@ def test_run_aca_review_function(proseco_agasc_1p7, tmpdir):
     assert exc is None
     assert acar.messages == [
         {
-            "text": "Guide star imposter offset 2.6, limit 2.5 arcsec",
             "category": "warning",
+            "text": "Imposter mag 11.4 centroid offset 2.6 row, col (-333,   21) star (-329,   22)",
             "idx": 4,
         },
         {"text": "P2: 3.33 less than 4.0 for ER", "category": "warning"},
@@ -375,11 +375,6 @@ def test_run_aca_review_dyn_bgd_n_faint(proseco_agasc_1p7, tmpdir):
     # guide count and new info message
     assert acar.messages == [
         {"text": "Using dyn_bgd_n_faint=2 (call_args val=0)", "category": "info"},
-        {
-            "text": "Guide star imposter offset 2.6, limit 2.5 arcsec",
-            "category": "warning",
-            "idx": 4,
-        },
         {"text": "P2: 3.33 less than 4.0 for ER", "category": "warning"},
         {
             "text": "ER count of 9th (8.9 for -9.9C) mag guide stars 1.91 < 3.0",
