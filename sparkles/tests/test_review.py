@@ -70,16 +70,17 @@ def test_review_catalog(proseco_agasc_1p7, tmpdir):
     acar.run_aca_review()
     assert acar.messages == [
         {
-            "text": "Guide star imposter offset 2.6, limit 2.5 arcsec",
             "category": "warning",
+            "text": "Guide star imposter offset 2.6, limit 2.5 arcsec",
             "idx": 4,
         },
-        {"text": "P2: 3.33 less than 4.0 for ER", "category": "warning"},
+        {"category": "warning", "text": "P2: 3.33 less than 4.0 for ER"},
         {
-            "text": "ER count of 9th (8.9 for -9.9C) mag guide stars 1.91 < 3.0",
             "category": "critical",
+            "text": "ER count of 9th (8.9 for -9.9C) mag guide stars 1.91 < 3.0",
         },
-        {"text": "ER with 6 guides but 8 were requested", "category": "caution"},
+        {"category": "critical", "text": "ER count of guide stars 5.00 < 6.0"},
+        {"category": "caution", "text": "ER with 5 guides but 8 were requested"},
     ]
 
     assert acar.roll_options is None
@@ -87,9 +88,10 @@ def test_review_catalog(proseco_agasc_1p7, tmpdir):
     msgs = acar.messages >= "critical"
     assert msgs == [
         {
-            "text": "ER count of 9th (8.9 for -9.9C) mag guide stars 1.91 < 3.0",
             "category": "critical",
-        }
+            "text": "ER count of 9th (8.9 for -9.9C) mag guide stars 1.91 < 3.0",
+        },
+        {"category": "critical", "text": "ER count of guide stars 5.00 < 6.0"},
     ]
 
     assert acar.review_status() == -1
@@ -336,16 +338,17 @@ def test_run_aca_review_function(proseco_agasc_1p7, tmpdir):
     assert exc is None
     assert acar.messages == [
         {
-            "text": "Guide star imposter offset 2.6, limit 2.5 arcsec",
             "category": "warning",
+            "text": "Guide star imposter offset 2.6, limit 2.5 arcsec",
             "idx": 4,
         },
-        {"text": "P2: 3.33 less than 4.0 for ER", "category": "warning"},
+        {"category": "warning", "text": "P2: 3.33 less than 4.0 for ER"},
         {
-            "text": "ER count of 9th (8.9 for -9.9C) mag guide stars 1.91 < 3.0",
             "category": "critical",
+            "text": "ER count of 9th (8.9 for -9.9C) mag guide stars 1.91 < 3.0",
         },
-        {"text": "ER with 6 guides but 8 were requested", "category": "caution"},
+        {"category": "critical", "text": "ER count of guide stars 5.00 < 6.0"},
+        {"category": "caution", "text": "ER with 5 guides but 8 were requested"},
     ]
 
     path = Path(str(tmpdir))
@@ -369,23 +372,24 @@ def test_run_aca_review_dyn_bgd_n_faint(proseco_agasc_1p7, tmpdir):
 
     assert exc is None
     assert acar.dyn_bgd_n_faint == 2
-    assert np.isclose(acar.guide_count, 6, atol=0.1)
+    assert np.isclose(acar.guide_count, 5, atol=0.1)
 
     # Assert same warnings as test_run_aca_review_function but with a different
     # guide count and new info message
     assert acar.messages == [
         {"text": "Using dyn_bgd_n_faint=2 (call_args val=0)", "category": "info"},
         {
-            "text": "Guide star imposter offset 2.6, limit 2.5 arcsec",
             "category": "warning",
+            "text": "Guide star imposter offset 2.6, limit 2.5 arcsec",
             "idx": 4,
         },
-        {"text": "P2: 3.33 less than 4.0 for ER", "category": "warning"},
+        {"category": "warning", "text": "P2: 3.33 less than 4.0 for ER"},
         {
-            "text": "ER count of 9th (8.9 for -9.9C) mag guide stars 1.91 < 3.0",
             "category": "critical",
+            "text": "ER count of 9th (8.9 for -9.9C) mag guide stars 1.91 < 3.0",
         },
-        {"text": "ER with 6 guides but 8 were requested", "category": "caution"},
+        {"category": "critical", "text": "ER count of guide stars 5.00 < 6.0"},
+        {"category": "caution", "text": "ER with 5 guides but 8 were requested"},
     ]
 
 
