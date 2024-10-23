@@ -376,7 +376,7 @@ def _run_aca_review(
             # Note that the obs{aca.obsid} is not flexible because it must match the
             # convention used in ACATable.make_report().  Oops.
             aca.preview_dir = Path(report_dir)
-            aca.obsid_dir = aca.preview_dir / f"obs{aca.obsid}"
+            aca.obsid_dir = aca.preview_dir / f"obs{aca.obsid:05}"
             aca.obsid_dir.mkdir(parents=True, exist_ok=True)
 
             aca.make_starcat_plot()
