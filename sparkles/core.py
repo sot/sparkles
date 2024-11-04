@@ -6,17 +6,20 @@ Preliminary review of ACA catalogs selected by proseco.
 
 import gzip
 import io
+import itertools
 import pickle
 import pprint
 import re
 import traceback
 from pathlib import Path
 
+import agasc
 import chandra_aca
 import numpy as np
 import proseco
 from astropy.table import Table
 from jinja2 import Template
+from proseco.catalog import ACATable
 from proseco.core import MetaAttribute
 
 from sparkles import checks
@@ -124,6 +127,11 @@ def main(sys_args=None):
         default=None,
         help="maximum number of roll options to return (default=10)",
     )
+    parser.add_argument(
+        "--update-mags",
+        action="store_true",
+        help="Update mag and mag_err from AGASC for all stars in the catalogs",
+    )
     args = parser.parse_args(sys_args)
 
     # Parse the roll_args from command line args, only handling non-None values
@@ -151,6 +159,7 @@ def main(sys_args=None):
         open_html=args.open_html,
         roll_args=roll_args,
         dyn_bgd_n_faint=args.dyn_bgd_n_faint,
+        update_mags=args.update_mags,
     )
 
 
@@ -169,6 +178,7 @@ def run_aca_review(
     open_html=False,
     context=None,
     raise_exc=True,
+    update_mags=False,
 ):
     """Do ACA load review based on proseco pickle file from ORviewer.
 
@@ -238,6 +248,7 @@ def run_aca_review(
     :param is_ORs: list of is_OR values (for roll options review page)
     :param context: initial context dict for HTML report
     :param raise_exc: if False then catch exception and return traceback (default=True)
+    :param update_mags: update mag and mag_err from AGASC for all stars in the catalogs
     :returns: exception message: str or None
 
     """
@@ -255,6 +266,7 @@ def run_aca_review(
             obsids=obsids,
             open_html=open_html,
             context=context,
+            update_mags=update_mags,
         )
     except Exception:
         if raise_exc:
@@ -280,9 +292,10 @@ def _run_aca_review(
     obsids=None,
     open_html=False,
     context=None,
+    update_mags=False,
 ):
     if acars is None:
-        acars, load_name = get_acas_from_pickle(load_name, loud)
+        acars, load_name = get_acas_from_pickle(load_name, loud, update_mags)
 
     if obsids:
         acars = [aca for aca in acars if aca.obsid in obsids]
@@ -498,7 +511,7 @@ def get_acas_dict_from_occweb(path):
     return acas_dict, Path(path).name
 
 
-def get_acas_from_pickle(load_name, loud=False):
+def get_acas_from_pickle(load_name, loud=False, update_mags=False):
     r"""Get dict of proseco ACATable pickles for ``load_name``
 
     ``load_name`` can be a full file name (ending in .pkl or .pkl.gz) or any of the
@@ -519,16 +532,49 @@ def get_acas_from_pickle(load_name, loud=False):
 
     :param load_name: load name
     :param loud: print processing information
+    :param update_mags: update mag and mag_err from AGASC for all stars in the catalogs
     """
     if load_name.startswith((r"\\noodle", "https://occweb")):
         acas_dict, path_name = get_acas_dict_from_occweb(load_name)
     else:
         acas_dict, path_name = get_acas_dict_from_local_file(load_name, loud)
 
+    if update_mags:
+        update_mags_from_agasc(acas_dict)
+
     acas = [
         ACAReviewTable(aca, obsid=obsid, loud=loud) for obsid, aca in acas_dict.items()
     ]
     return acas, path_name
+
+
+def update_mags_from_agasc(acas_dict: dict[ACATable]) -> None:
+    """Update catalogs in-place with MAG_ACA and MAG_ACA_ERR from AGASC.
+
+    Parameters
+    ----------
+    acas_dict : dict
+        Dictionary of ACATable objects keyed by obsid.
+    """
+    # Get all unique AGASC IDs from all catalogs
+    agasc_ids_list = []
+    for aca in acas_dict.values():
+        ok = np.isin(aca["type"], ["BOT", "GUI", "ACQ"])
+        agasc_ids_list.append(aca["id"][ok])
+    agasc_ids = np.unique(np.concatenate(agasc_ids_list))
+
+    stars = agasc.get_stars(agasc_ids)
+    stars.add_index("AGASC_ID")
+
+    # In-place update of mag and mag_err values in all catalogs
+    for aca in acas_dict.values():
+        for entry in aca:
+            if entry["type"] in ["BOT", "GUI", "ACQ"]:
+                entry["mag"] = stars.loc[entry["id"]]["MAG_ACA"]
+                # aca from proseco does not have mag_err, this is added later
+        for entry in itertools.chain(aca.acqs, aca.guides):
+            entry["mag"] = stars.loc[entry["id"]]["MAG_ACA"]
+            entry["mag_err"] = stars.loc[entry["id"]]["MAG_ACA_ERR"] / 100
 
 
 def get_summary_text(acas):
