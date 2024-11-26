@@ -65,7 +65,9 @@ def test_t_ccd_effective_message():
 
 
 def test_review_catalog(proseco_agasc_1p7, tmpdir):
-    aca = get_aca_catalog(**KWARGS_48464)
+    """Test review process and roll options work on reference obsid from KWARGS_48464.
+    Uses old dyn_bgd_n_faint=0 default."""
+    aca = get_aca_catalog(**KWARGS_48464, dyn_bgd_n_faint=0)
     acar = aca.get_review_table()
     acar.run_aca_review()
     assert acar.messages == [
@@ -268,6 +270,8 @@ def test_uniform_roll_options(proseco_agasc_1p7):
     the 'uniq_ids' algorithm and falling through to a 'uniform' search.
 
     See https://github.com/sot/sparkles/issues/138 for context.
+
+    Test uses old dyn_bgd_n_faint=0 default.
     """
     kwargs = {
         "att": [-0.25019352, -0.90540872, -0.21768747, 0.26504794],
@@ -284,7 +288,7 @@ def test_uniform_roll_options(proseco_agasc_1p7):
         "t_ccd_guide": -9.8,
     }
 
-    aca = get_aca_catalog(**kwargs)
+    aca = get_aca_catalog(**kwargs, dyn_bgd_n_faint=0)
     acar = aca.get_review_table()
     acar.run_aca_review(
         roll_level="critical", roll_args={"max_roll_dev": 2.5, "d_roll": 0.25}
@@ -329,7 +333,9 @@ def test_catch_exception_from_method():
 
 
 def test_run_aca_review_function(proseco_agasc_1p7, tmpdir):
-    aca = get_aca_catalog(**KWARGS_48464)
+    """Test the run_aca_review function.  Test uses old dyn_bgd_n_faint=0 default."""
+
+    aca = get_aca_catalog(**KWARGS_48464, dyn_bgd_n_faint=0)
     acar = aca.get_review_table()
     acars = [acar]
 
@@ -372,24 +378,31 @@ def test_run_aca_review_dyn_bgd_n_faint(proseco_agasc_1p7, tmpdir):
 
     assert exc is None
     assert acar.dyn_bgd_n_faint == 2
-    assert np.isclose(acar.guide_count, 5, atol=0.1)
+    assert np.isclose(acar.guide_count, 6.7, atol=0.1)
 
     # Assert same warnings as test_run_aca_review_function but with a different
     # guide count and new info message
     assert acar.messages == [
-        {"text": "Using dyn_bgd_n_faint=2 (call_args val=0)", "category": "info"},
         {
             "category": "warning",
             "text": "Guide star imposter offset 2.6, limit 2.5 arcsec",
             "idx": 4,
+        },
+        {
+            "category": "warning",
+            "text": "Guide star imposter offset 2.7, limit 2.5 arcsec",
+            "idx": 6,
+        },
+        {
+            "category": "warning",
+            "text": "Guide star imposter offset 2.7, limit 2.5 arcsec",
+            "idx": 8,
         },
         {"category": "warning", "text": "P2: 3.33 less than 4.0 for ER"},
         {
             "category": "critical",
             "text": "ER count of 9th (8.9 for -9.9C) mag guide stars 1.91 < 3.0",
         },
-        {"category": "critical", "text": "ER count of guide stars 5.00 < 6.0"},
-        {"category": "caution", "text": "ER with 5 guides but 8 were requested"},
     ]
 
 
