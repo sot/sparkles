@@ -21,6 +21,8 @@ from proseco import get_aca_catalog
 from proseco.characteristics import CCD
 from Quaternion import Quat
 
+from sparkles.aca_check_table import get_t_ccds_bonus
+
 
 def logical_intervals(vals, x=None):
     """Determine contiguous intervals during which ``vals`` is True.
@@ -350,7 +352,13 @@ class RollOptimizeMixin:
             return
 
         P2 = -np.log10(self.acqs.calc_p_safe())
-        n_stars = guide_count(self.guides["mag"], self.guides.t_ccd, self.is_ER)
+        t_ccds_bonus = get_t_ccds_bonus(
+            self.guides["mag"],
+            self.guides.t_ccd,
+            self.dyn_bgd_n_faint,
+            self.dyn_bgd_dt_ccd,
+        )
+        n_stars = guide_count(self.guides["mag"], t_ccds_bonus, self.is_ER)
 
         cand_idxs = self.get_candidate_better_stars()
         roll_intervals, self.roll_info = self.get_roll_intervals(
@@ -404,8 +412,14 @@ class RollOptimizeMixin:
             aca_rolled = get_aca_catalog(**kwargs)
 
             P2_rolled = -np.log10(aca_rolled.acqs.calc_p_safe())
+            t_ccds_bonus_rolled = get_t_ccds_bonus(
+                aca_rolled.guides["mag"],
+                aca_rolled.guides.t_ccd,
+                aca_rolled.dyn_bgd_n_faint,
+                aca_rolled.dyn_bgd_dt_ccd,
+            )
             n_stars_rolled = guide_count(
-                aca_rolled.guides["mag"], aca_rolled.guides.t_ccd, count_9th=self.is_ER
+                aca_rolled.guides["mag"], t_ccds_bonus_rolled, count_9th=self.is_ER
             )
 
             improvement = calc_improve_metric(n_stars, P2, n_stars_rolled, P2_rolled)

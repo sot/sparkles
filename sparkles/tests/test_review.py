@@ -264,6 +264,60 @@ def test_roll_options_with_monitor_star():
     acar.get_roll_options()
 
 
+def test_roll_options_use_dyn_bgd_n_faint():
+    """Test that the roll options use dyn_bgd_n_faint in the catalog
+    selection and the n_stars value.  This test uses an artificially large
+    dyn_bgd_t_ccd of -10 accentuate the differences."""
+
+    kwargs = {
+        "att": [-0.63787389, 0.07940607, -0.10873119, 0.75828036],
+        "date": "2024:316",
+        "detector": "ACIS-S",
+        "dither": (16, 16),
+        "focus_offset": 0,
+        "sim_offset": 0,
+        "man_angle": 5,
+        "n_acq": 8,
+        "n_fid": 3,
+        "n_guide": 5,
+        "obsid": 30580,
+        "t_ccd": -6.0,
+    }
+
+    aca1_n_faint = 0
+    aca1 = get_aca_catalog(**kwargs, dyn_bgd_n_faint=aca1_n_faint, dyn_bgd_dt_ccd=-10)
+    acar1 = aca1.get_review_table()
+    acar1.get_roll_options()
+
+    aca2_n_faint = 3
+    aca2 = get_aca_catalog(**kwargs, dyn_bgd_n_faint=aca2_n_faint, dyn_bgd_dt_ccd=-10)
+    acar2 = aca2.get_review_table()
+    acar2.get_roll_options()
+
+    assert acar1.dyn_bgd_n_faint == aca1_n_faint
+    assert acar2.dyn_bgd_n_faint == aca2_n_faint
+    for roll_option in acar1.roll_options:
+        assert roll_option["acar"].dyn_bgd_n_faint == aca1_n_faint
+    for roll_option in acar2.roll_options:
+        assert roll_option["acar"].dyn_bgd_n_faint == aca2_n_faint
+
+    aca1_n_stars = [roll_option["n_stars"] for roll_option in acar1.roll_options]
+    aca2_n_stars = [roll_option["n_stars"] for roll_option in acar2.roll_options]
+
+    # In these cases the roll options are the same.
+    assert len(aca1_n_stars) == len(aca2_n_stars)
+
+    # But the guide count of the last one is not.
+    assert np.allclose(
+        np.array(aca1_n_stars),
+        np.array([1.5302331230204111, 1.5302331230204111, 2.5306029287208744]),
+    )
+    assert np.allclose(
+        np.array(aca2_n_stars),
+        np.array([1.5302331230204111, 1.5302331230204111, 3.530615379948673]),
+    )
+
+
 def test_uniform_roll_options(proseco_agasc_1p7):
     """Use obsid 22508 as a test case for failing to find a roll option using
     the 'uniq_ids' algorithm and falling through to a 'uniform' search.
