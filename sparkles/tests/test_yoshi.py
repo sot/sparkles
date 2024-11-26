@@ -49,7 +49,7 @@ def test_run_one_yoshi(proseco_agasc_1p7):
 
     actual = run_one_yoshi(**request, dyn_bgd_n_faint=0)
 
-    for key in expected:
+    for key in expected:  # noqa: PLC0206 Extracting value from dictionary without calling `.items()`
         val = expected[key]
         val2 = actual[key]
         if isinstance(val, float):
