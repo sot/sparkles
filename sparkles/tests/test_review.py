@@ -30,6 +30,7 @@ KWARGS_48464 = {
     "focus_offset": 0,
     "t_ccd_acq": -9.943,
     "t_ccd_guide": -9.938,
+    "dyn_bgd_n_faint": 0,
 }
 
 
@@ -282,6 +283,7 @@ def test_uniform_roll_options(proseco_agasc_1p7):
         "sim_offset": 0,
         "t_ccd_acq": -9.8,
         "t_ccd_guide": -9.8,
+        "dyn_bgd_n_faint": 0,
     }
 
     aca = get_aca_catalog(**kwargs)

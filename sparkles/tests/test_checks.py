@@ -364,11 +364,12 @@ def test_guide_count_er5(aca_review_table):
 
 @pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_guide_count_or(aca_review_table):
-    """Test the check that an OR has enough fractional guide stars by guide_count"""
+    """Test the check that an OR has enough fractional guide stars by guide_count.
+    This test uses dyn_bgd_n_faint=0."""
     stars = StarsTable.empty()
     stars.add_fake_constellation(n_stars=5, mag=[7.0, 7.0, 10.3, 10.3, 10.3])
     aca = get_aca_catalog(
-        **mod_std_info(n_fid=3, n_guide=5, obsid=1),
+        **mod_std_info(n_fid=3, n_guide=5, obsid=1, dyn_bgd_n_faint=0),
         stars=stars,
         dark=DARK40,
         raise_exc=True,
@@ -426,13 +427,13 @@ def test_too_many_bright_stars(aca_review_table):
 @pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_low_guide_count(aca_review_table):
     """Test that a 3.5 to 4.0 guide_count observation gets a critical warning
-    on guide_count if man_angle_next > 5 (no creep-away)."""
+    on guide_count if man_angle_next > 5 (no creep-away). This test uses dyn_bgd_n_faint=0."""
     # Set a scenario with guide_count in the 3.5 to 4.0 range and confirm a
     # critical warning.
     stars = StarsTable.empty()
     stars.add_fake_constellation(n_stars=5, mag=[7.0, 7.0, 7.0, 10.2, 10.3])
     aca = get_aca_catalog(
-        **mod_std_info(n_fid=3, n_guide=5, obsid=1),
+        **mod_std_info(n_fid=3, n_guide=5, obsid=1, dyn_bgd_n_faint=0),
         stars=stars,
         dark=DARK40,
         raise_exc=True,
@@ -451,14 +452,16 @@ def test_low_guide_count(aca_review_table):
 @pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_low_guide_count_creep_away(aca_review_table):
     """Test that a 3.5 to 4.0 guide_count observation does not get a critical warning
-    on guide_count if man_angle_next <= 5 (creep-away)."""
+    on guide_count if man_angle_next <= 5 (creep-away).  This test uses dyn_bgd_n_faint=0."""
     # Set a scenario with guide_count in the 3.5 to 4.0 range but with
     # a creep away (maneuver angle <= 5), and confirm that is just a warning
     # (not critical).
     stars = StarsTable.empty()
     stars.add_fake_constellation(n_stars=5, mag=[7.0, 7.0, 7.0, 10.2, 10.3])
     aca = get_aca_catalog(
-        **mod_std_info(n_fid=3, n_guide=5, obsid=1, man_angle_next=5.0),
+        **mod_std_info(
+            n_fid=3, n_guide=5, obsid=1, man_angle_next=5.0, dyn_bgd_n_faint=0
+        ),
         stars=stars,
         dark=DARK40,
         raise_exc=True,
