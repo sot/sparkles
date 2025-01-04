@@ -5,7 +5,6 @@ Roll optimization during preliminary review of ACA catalogs.
 """
 
 import warnings
-from copy import deepcopy
 
 import numpy as np
 import ska_sun
@@ -367,8 +366,19 @@ class RollOptimizeMixin:
 
         att_targ = self.att_targ
 
-        # Special case, first roll option is self but with obsid set to roll
-        acar = deepcopy(self)
+        # Special case, first roll option is self but with obsid set to roll. Note that
+        # the "copy" from the line below is not a full deep copy of the table meta
+        # because it runs the __init__ method. This initializes the MetaAttributes to
+        # their default states instead of copying them. This is *required* for this code
+        # to work.
+        #
+        # As a development note, this used to be deepcopy(self), but in astropy 7.0 the
+        # implementation changed so that the meta dict was explicitly deepcopied after
+        # the __init__ call. This caused the MetaAttributes to be set to the original
+        # self values and the code to fail. The line below is the astropy 6.0 code for
+        # implementing deepcopy().
+        acar = self.copy(copy_data=True)
+
         check_catalog(acar)
         acar.is_roll_option = True
         roll_options = [
