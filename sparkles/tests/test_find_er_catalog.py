@@ -90,9 +90,9 @@ TEST_COLS = [
 def test_find_er_catalog_minus_2_pitch_bins(proseco_agasc_1p7, ACA, ATTS):
     # Try it all for the bad field near PKS 0023-26
     acar, att_opts = find_er_catalog(ACA, ATTS, alg="pitch_bins")
-    # import pprint; pprint.pprint(att_opts[TEST_COLS].pformat_all(), width=100)
+    # import pprint; pprint.pprint(att_opts[TEST_COLS].pformat(), width=100)
     assert acar is att_opts["acar"][8]
-    assert att_opts[TEST_COLS].pformat_all() == [
+    assert att_opts[TEST_COLS].pformat() == [
         "dpitch  dyaw count_9th count_10th count_all count_ok n_critical        att       ",
         "------ ----- --------- ---------- --------- -------- ---------- -----------------",
         " -0.01  3.10      4.18       6.00      5.65     True          2  7.66 -25.21 29.3",
@@ -112,9 +112,9 @@ def test_find_er_catalog_minus_2_pitch_bins(proseco_agasc_1p7, ACA, ATTS):
 
 def test_find_er_catalog_minus_2_count_all(proseco_agasc_1p7, ACA, ATTS):
     acar, att_opts = find_er_catalog(ACA, ATTS, alg="count_all")
-    # import pprint; pprint.pprint(att_opts[TEST_COLS].pformat_all(), width=100)
+    # import pprint; pprint.pprint(att_opts[TEST_COLS].pformat(), width=100)
     assert acar is att_opts["acar"][8]
-    assert att_opts[TEST_COLS].pformat_all() == [
+    assert att_opts[TEST_COLS].pformat() == [
         "dpitch  dyaw count_9th count_10th count_all count_ok n_critical        att       ",
         "------ ----- --------- ---------- --------- -------- ---------- -----------------",
         " -0.01  3.10      4.18       6.00      5.65     True         --  7.66 -25.21 29.3",
@@ -134,9 +134,9 @@ def test_find_er_catalog_minus_2_count_all(proseco_agasc_1p7, ACA, ATTS):
 
 def test_find_er_catalog_minus_2_input_order(proseco_agasc_1p7, ACA, ATTS):
     acar, att_opts = find_er_catalog(ACA, ATTS, alg="input_order")
-    # import pprint; pprint.pprint(att_opts[TEST_COLS].pformat_all(), width=100)
+    # import pprint; pprint.pprint(att_opts[TEST_COLS].pformat(), width=100)
     assert acar is att_opts["acar"][8]
-    assert att_opts[TEST_COLS].pformat_all() == [
+    assert att_opts[TEST_COLS].pformat() == [
         "dpitch  dyaw count_9th count_10th count_all count_ok n_critical        att       ",
         "------ ----- --------- ---------- --------- -------- ---------- -----------------",
         " -0.01  3.10      4.18       6.00      5.65     True          2  7.66 -25.21 29.3",
