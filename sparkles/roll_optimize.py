@@ -377,6 +377,11 @@ class RollOptimizeMixin:
         # the __init__ call. This caused the MetaAttributes to be set to the original
         # self values and the code to fail. The line below is the astropy 6.0 code for
         # implementing deepcopy().
+        #
+        # See also https://github.com/sot/sparkles/pull/220/files#r1903130172 for more
+        # discussion and some clarification (maybe). One idea is to make do
+        # deepcopy(self) and not re-run check_catalog(); OR, make a brand new catalog
+        # from self.call_args.
         acar = self.copy(copy_data=True)
 
         check_catalog(acar)
