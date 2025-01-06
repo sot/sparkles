@@ -171,4 +171,4 @@ def test_acar_from_ocat(proseco_agasc_1p7):
     ]
 
     cols = ("idx", "slot", "id", "type", "mag", "yang", "zang")
-    assert acar[cols].pformat_all() == exp
+    assert acar[cols].pformat() == exp
