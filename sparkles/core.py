@@ -867,7 +867,7 @@ class ACAReviewTable(ACACheckTable, RollOptimizeMixin):
                 ax.text(
                     star["row"] + 24,
                     star["col"],
-                    f'{star["mag"]:.2f}',
+                    f"{star['mag']:.2f}",
                     ha="left",
                     va="center",
                     fontsize="small",

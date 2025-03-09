@@ -56,7 +56,7 @@ def check_guide_overlap(acar: ACACheckTable) -> list[Message]:
         if np.abs(drow) <= 12 and np.abs(dcol) <= 12:
             msg = (
                 "Overlapping track index (within 12 pix) "
-                f'idx [{entry1["idx"]}] and idx [{entry2["idx"]}]'
+                f"idx [{entry1['idx']}] and idx [{entry2['idx']}]"
             )
             msgs += [Message("critical", msg)]
     return msgs
@@ -464,7 +464,7 @@ def check_bad_stars(entry: ACACatalogTableRow) -> list[Message]:
     """
     msgs = []
     if entry["id"] in ACA.bad_star_set:
-        msg = f'Star {entry["id"]} is in proseco bad star set'
+        msg = f"Star {entry['id']} is in proseco bad star set"
         msgs += [Message("critical", msg, idx=entry["idx"])]
     return msgs
 
@@ -486,8 +486,8 @@ def check_fid_spoiler_score(idx, fid) -> list[Message]:
 
     for spoiler in fid["spoilers"]:
         msg = (
-            f'Fid {fid_id} has {spoiler["warn"]} spoiler: star {spoiler["id"]} with'
-            f' mag {spoiler["mag"]:.2f}'
+            f"Fid {fid_id} has {spoiler['warn']} spoiler: star {spoiler['id']} with"
+            f" mag {spoiler['mag']:.2f}"
         )
         msgs += [Message(category_map[spoiler["warn"]], msg, idx=idx)]
     return msgs
