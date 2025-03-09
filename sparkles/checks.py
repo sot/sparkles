@@ -354,6 +354,28 @@ def check_dither(acar: ACACheckTable) -> list[Message]:
     return msgs
 
 
+def check_config_for_no_guide_dither(acar: ACACheckTable) -> list[Message]:
+    """Check special configurations for no guide dither."""
+    msgs = []
+
+    if acar.dither_guide.y < 1.0 and acar.dither_guide.z < 1.0:
+        if acar.dyn_bgd_n_faint > 0:
+            msgs += [
+                Message(
+                    "critical",
+                    "guide_dither < 1x1 arcsec and dyn_bgd_n_faint > 0",
+                )
+            ]
+        if acar.man_angle_next > CREEP_AWAY_THRESHOLD:
+            msgs += [
+                Message(
+                    "critical",
+                    f"guide_dither < 1x1 arcsec and man_angle_next > {CREEP_AWAY_THRESHOLD}",
+                )
+            ]
+    return msgs
+
+
 def check_pos_err_guide(acar: ACACheckTable, star: StarsTableRow) -> list[Message]:
     """Warn on stars with larger POS_ERR (warning at 1" critical at 2")"""
     msgs = []

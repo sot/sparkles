@@ -1019,6 +1019,9 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
 check_acq_p2 = checks.acar_check_wrapper(checks.check_acq_p2)
 check_bad_stars = checks.acar_check_wrapper(checks.check_bad_stars)
 check_dither = checks.acar_check_wrapper(checks.check_dither)
+check_config_for_no_guide_dither = checks.acar_check_wrapper(
+    checks.check_config_for_no_guide_dither
+)
 check_fid_count = checks.acar_check_wrapper(checks.check_fid_count)
 check_fid_spoiler_score = checks.acar_check_wrapper(checks.check_fid_spoiler_score)
 check_guide_count = checks.acar_check_wrapper(checks.check_guide_count)
