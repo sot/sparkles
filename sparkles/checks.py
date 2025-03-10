@@ -357,20 +357,19 @@ def check_dither(acar: ACACheckTable) -> list[Message]:
 def check_config_for_no_guide_dither(acar: ACACheckTable) -> list[Message]:
     """Check special configurations for no guide dither."""
     msgs = []
-
-    if acar.dither_guide.y < 1.0 and acar.dither_guide.z < 1.0:
+    if np.round(acar.dither_guide.y, 0) == 0 and np.round(acar.dither_guide.z, 0) == 0:
         if acar.dyn_bgd_n_faint > 0:
             msgs += [
                 Message(
                     "critical",
-                    "guide_dither < 1x1 arcsec and dyn_bgd_n_faint > 0",
+                    "guide_dither close to 0 arcsec and dyn_bgd_n_faint > 0",
                 )
             ]
         if acar.man_angle_next > CREEP_AWAY_THRESHOLD:
             msgs += [
                 Message(
                     "critical",
-                    f"guide_dither < 1x1 arcsec and man_angle_next > {CREEP_AWAY_THRESHOLD}",
+                    f"guide_dither close to 0 arcsec and man_angle_next > {CREEP_AWAY_THRESHOLD}",
                 )
             ]
     return msgs

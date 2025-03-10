@@ -507,13 +507,15 @@ def test_no_dither_setup(aca_review_table):
     """ """
     stars = StarsTable.empty()
     stars.add_fake_constellation(n_stars=5, mag=[7.0, 7.0, 7.0, 8.0, 9.0])
+    # Set up an observation with super-tiny dither but with
+    # dyn_bgd_n_faint at the 2 default and man_angle_next > 5
     aca = get_aca_catalog(
         **mod_std_info(
             n_fid=3,
             n_guide=5,
             obsid=1,
             dyn_bgd_n_faint=2,
-            dither=(0, 0),
+            dither=(0.2, 0),
             man_angle_next=20,
         ),
         stars=stars,
@@ -527,11 +529,11 @@ def test_no_dither_setup(aca_review_table):
     assert acar.messages == [
         {
             "category": "critical",
-            "text": "guide_dither < 1x1 arcsec and dyn_bgd_n_faint > 0",
+            "text": "guide_dither close to 0 arcsec and dyn_bgd_n_faint > 0",
         },
         {
             "category": "critical",
-            "text": "guide_dither < 1x1 arcsec and man_angle_next > 5.0",
+            "text": "guide_dither close to 0 arcsec and man_angle_next > 5.0",
         },
     ]
 
