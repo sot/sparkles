@@ -1068,6 +1068,7 @@ def check_catalog(acar: ACACheckTable) -> None:
     msgs += checks.check_acq_p2(acar)
     msgs += checks.check_guide_count(acar)
     msgs += checks.check_dither(acar)
+    msgs += checks.check_config_for_no_guide_dither(acar)
     msgs += checks.check_fid_count(acar)
     msgs += checks.check_include_exclude(acar)
 
