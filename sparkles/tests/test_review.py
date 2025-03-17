@@ -56,11 +56,11 @@ def test_t_ccd_effective_message():
         kwargs["t_ccd_acq"] + 1 + (kwargs["t_ccd_acq"] - ACA.aca_t_ccd_penalty_limit)
     )
     assert (
-        f'Predicted Guide CCD temperature (max): {kwargs["t_ccd_guide"]:.1f} '
+        f"Predicted Guide CCD temperature (max): {kwargs['t_ccd_guide']:.1f} "
         f'<span class="caution">(Effective : {eff_guide:.1f})</span>' in text
     )
     assert (
-        f'Predicted Acq CCD temperature (init) : {kwargs["t_ccd_acq"]:.1f} '
+        f"Predicted Acq CCD temperature (init) : {kwargs['t_ccd_acq']:.1f} "
         f'<span class="caution">(Effective : {eff_acq:.1f})</span>' in text
     )
 

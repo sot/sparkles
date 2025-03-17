@@ -867,7 +867,7 @@ class ACAReviewTable(ACACheckTable, RollOptimizeMixin):
                 ax.text(
                     star["row"] + 24,
                     star["col"],
-                    f'{star["mag"]:.2f}',
+                    f"{star['mag']:.2f}",
                     ha="left",
                     va="center",
                     fontsize="small",
@@ -1019,6 +1019,9 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
 check_acq_p2 = checks.acar_check_wrapper(checks.check_acq_p2)
 check_bad_stars = checks.acar_check_wrapper(checks.check_bad_stars)
 check_dither = checks.acar_check_wrapper(checks.check_dither)
+check_config_for_no_guide_dither = checks.acar_check_wrapper(
+    checks.check_config_for_no_guide_dither
+)
 check_fid_count = checks.acar_check_wrapper(checks.check_fid_count)
 check_fid_spoiler_score = checks.acar_check_wrapper(checks.check_fid_spoiler_score)
 check_guide_count = checks.acar_check_wrapper(checks.check_guide_count)
@@ -1065,6 +1068,7 @@ def check_catalog(acar: ACACheckTable) -> None:
     msgs += checks.check_acq_p2(acar)
     msgs += checks.check_guide_count(acar)
     msgs += checks.check_dither(acar)
+    msgs += checks.check_config_for_no_guide_dither(acar)
     msgs += checks.check_fid_count(acar)
     msgs += checks.check_include_exclude(acar)
 
