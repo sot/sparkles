@@ -428,7 +428,7 @@ def test_too_many_bright_stars(aca_review_table):
 @pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_low_guide_count(aca_review_table):
     """Test that a 3.5 to 4.0 guide_count observation gets a critical warning
-    on guide_count if man_angle_next > 5 (no creep-away). This test uses dyn_bgd_n_faint=0."""
+    on guide_count if man_angle_next > 3 (no creep-away). This test uses dyn_bgd_n_faint=0."""
     # Set a scenario with guide_count in the 3.5 to 4.0 range and confirm a
     # critical warning.
     stars = StarsTable.empty()
@@ -442,7 +442,7 @@ def test_low_guide_count(aca_review_table):
     acar = aca_review_table(aca)
     # Confirm the guide_count is in the range we want for the test to be valid
     assert acar.guide_count <= 4.0 and acar.guide_count > 3.5
-    assert acar.man_angle_next > 5
+    assert acar.man_angle_next > 3
     check_guide_count(acar)
     assert acar.messages == [
         {"text": "OR count of guide stars 3.65 < 4.0", "category": "critical"},
@@ -453,7 +453,7 @@ def test_low_guide_count(aca_review_table):
 @pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_low_guide_count_creep_away(aca_review_table):
     """Test that a 3.5 to 4.0 guide_count observation does not get a critical warning
-    on guide_count if man_angle_next <= 5 (creep-away).  This test uses dyn_bgd_n_faint=0."""
+    on guide_count if man_angle_next <= 3 (creep-away).  This test uses dyn_bgd_n_faint=0."""
     # Set a scenario with guide_count in the 3.5 to 4.0 range but with
     # a creep away (maneuver angle <= 5), and confirm that is just a warning
     # (not critical).
@@ -461,7 +461,7 @@ def test_low_guide_count_creep_away(aca_review_table):
     stars.add_fake_constellation(n_stars=5, mag=[7.0, 7.0, 7.0, 10.2, 10.3])
     aca = get_aca_catalog(
         **mod_std_info(
-            n_fid=3, n_guide=5, obsid=1, man_angle_next=5.0, dyn_bgd_n_faint=0
+            n_fid=3, n_guide=5, obsid=1, man_angle_next=3.0, dyn_bgd_n_faint=0
         ),
         stars=stars,
         dark=DARK40,
@@ -533,7 +533,7 @@ def test_no_dither_setup(aca_review_table):
         },
         {
             "category": "critical",
-            "text": "guide_dither close to 0 arcsec and man_angle_next > 5.0",
+            "text": "guide_dither close to 0 arcsec and man_angle_next > 3.0",
         },
     ]
 
@@ -936,7 +936,7 @@ def test_check_guide_geometry(aca_review_table):
     assert 'Guide indexes [4, 7, 8] clustered within 500" radius' in msg["text"]
 
     # Test for cluster of 3 500" rad stars in a 5 star case, but downgrade
-    # the warning for the case when the maneuver angle away is <= 5
+    # the warning for the case when the maneuver angle away is <= 3
     # (creep-away).
     stars = StarsTable.empty()
     size = 1200
@@ -945,7 +945,7 @@ def test_check_guide_geometry(aca_review_table):
     for y, z in zip(yangs, zangs):
         stars.add_fake_star(yang=y * size, zang=z * size, mag=7.0)
 
-    aca = get_aca_catalog(**STD_INFO, man_angle_next=5.0, stars=stars, dark=DARK40)
+    aca = get_aca_catalog(**STD_INFO, man_angle_next=3.0, stars=stars, dark=DARK40)
     acar = aca.get_review_table()
     check_guide_geometry(acar)
 

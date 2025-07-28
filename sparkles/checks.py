@@ -12,7 +12,7 @@ from sparkles.messages import Message
 
 # Observations with man_angle_next less than or equal to CREEP_AWAY_THRESHOLD
 # are considered "creep away" observations. CREEP_AWAY_THRESHOLD is in units of degrees.
-CREEP_AWAY_THRESHOLD = 5.0
+CREEP_AWAY_THRESHOLD = 3.0
 
 
 def acar_check_wrapper(func):
