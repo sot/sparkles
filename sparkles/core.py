@@ -1029,6 +1029,16 @@ check_guide_fid_position_on_ccd = checks.acar_check_wrapper(
     checks.check_guide_fid_position_on_ccd
 )
 check_guide_geometry = checks.acar_check_wrapper(checks.check_guide_geometry)
+check_run_jupiter_checks = checks.acar_check_wrapper(checks.check_run_jupiter_checks)
+check_jupiter_acq_spoilers = checks.acar_check_wrapper(
+    checks.check_jupiter_acq_spoilers
+)
+check_jupiter_track_spoilers = checks.acar_check_wrapper(
+    checks.check_jupiter_track_spoilers
+)
+check_jupiter_distribution = checks.acar_check_wrapper(
+    checks.check_jupiter_distribution
+)
 check_guide_is_candidate = checks.acar_check_wrapper(checks.check_guide_is_candidate)
 check_guide_overlap = checks.acar_check_wrapper(checks.check_guide_overlap)
 check_imposters_guide = checks.acar_check_wrapper(checks.check_imposters_guide)
@@ -1064,7 +1074,14 @@ def check_catalog(acar: ACACheckTable) -> None:
             msgs += checks.check_fid_spoiler_score(entry["idx"], fid)
 
     msgs += checks.check_guide_overlap(acar)
+
+    # If the target_name includes "jupiter" then check for Jupiter stars
+    # - otherwise check the guide geometry.
+    if acar.target_name is not None and "jupiter" in acar.target_name.lower():
+        msgs += checks.check_run_jupiter_checks(acar)
+
     msgs += checks.check_guide_geometry(acar)
+
     msgs += checks.check_acq_p2(acar)
     msgs += checks.check_guide_count(acar)
     msgs += checks.check_dither(acar)
