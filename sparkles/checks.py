@@ -84,14 +84,14 @@ def check_run_jupiter_checks(acar: ACACheckTable) -> list[Message]:
     """
     # First check for exclude dates
     if jupiter.date_is_excluded(acar.date):
-        return
+        return []
 
     # Get jupiter position
     jupiter_pos = jupiter.get_jupiter_position(
         date=acar.date, duration=acar.duration, att=acar.att
     )
     if jupiter_pos is None:
-        return
+        return []
 
     msgs = []
     msgs += check_jupiter_acq_spoilers(acar, jupiter_pos)
@@ -131,7 +131,7 @@ def check_jupiter_acq_spoilers(
 
     _, jcol = get_jupiter_acq_pos(acar.date, jupiter_pos)
     if jcol is None:
-        return
+        return []
 
     # For each acquisition box confirm a column spoiled by jupiter isn't in it
     for entry in acqs:
