@@ -82,21 +82,24 @@ def check_run_jupiter_checks(acar: ACACheckTable) -> list[Message]:
     list of Message
         List of messages from the jupiter checks.
     """
+    msgs = []
     # First check for exclude dates
     if jupiter.date_is_excluded(acar.date):
-        return []
+        return msgs
 
     # Get jupiter position
     jupiter_pos = jupiter.get_jupiter_position(
         date=acar.date, duration=acar.duration, att=acar.att
     )
     if jupiter_pos is None:
-        return []
+        msgs += [Message("critical", "No Jupiter position found")]
+        return msgs
 
-    msgs = []
     msgs += check_jupiter_acq_spoilers(acar, jupiter_pos)
     msgs += check_jupiter_track_spoilers(acar, jupiter_pos)
     msgs += check_jupiter_distribution(acar, jupiter_pos)
+
+    msgs += [Message("info", "Ran Jupiter checks")]
     return msgs
 
 
