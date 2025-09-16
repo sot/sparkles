@@ -56,7 +56,7 @@ def test_check_jupiter_acq_spoilers_fail(aca_review_table):
         **mod_std_info(detector="HRC-I"), duration=20000, stars=stars, dark=DARK40
     )
     acar = aca_review_table(aca)
-    jupiter_pos = Table(
+    acar.jupiter = Table(
         [
             {
                 "time": CxoTime(acar.date).secs,
@@ -65,7 +65,7 @@ def test_check_jupiter_acq_spoilers_fail(aca_review_table):
             }
         ]
     )
-    check_jupiter_acq_spoilers(acar, jupiter_pos)
+    check_jupiter_acq_spoilers(acar)
     assert acar.messages == [
         {
             "category": "critical",
@@ -88,8 +88,8 @@ def test_check_jupiter_acq_spoilers_none(aca_review_table):
         **mod_std_info(detector="HRC-I"), duration=20000, stars=stars, dark=DARK40
     )
     acar = aca_review_table(aca)
-    jupiter_pos = Table([{"time": CxoTime(acar.date).secs, "row": 0, "col": 100}])
-    check_jupiter_acq_spoilers(acar, jupiter_pos)
+    acar.jupiter = Table([{"time": CxoTime(acar.date).secs, "row": 0, "col": 100}])
+    check_jupiter_acq_spoilers(acar)
     assert acar.messages == []
 
 
@@ -102,8 +102,8 @@ def test_check_jupiter_track_spoilers_true(aca_review_table):
         **mod_std_info(detector="HRC-I"), duration=20000, stars=stars, dark=DARK40
     )
     acar = aca_review_table(aca)
-    jupiter_pos = Table([{"time": CxoTime(acar.date).secs, "row": 0, "col": 0}])
-    check_jupiter_track_spoilers(acar, jupiter_pos)
+    acar.jupiter = Table([{"time": CxoTime(acar.date).secs, "row": 0, "col": 0}])
+    check_jupiter_track_spoilers(acar)
     assert acar.messages == [
         {
             "category": "critical",
@@ -128,8 +128,8 @@ def test_check_jupiter_track_spoilers_false(aca_review_table):
     )
     acar = aca_review_table(aca)
     # For this test, move Jupiter so it doesn't spoil the stars
-    jupiter_pos = Table([{"time": CxoTime(acar.date).secs, "row": 40, "col": 50}])
-    check_jupiter_track_spoilers(acar, jupiter_pos)
+    acar.jupiter = Table([{"time": CxoTime(acar.date).secs, "row": 40, "col": 50}])
+    check_jupiter_track_spoilers(acar)
     assert acar.messages == []
 
 
@@ -144,8 +144,8 @@ def test_check_jupiter_distribution_fail(aca_review_table):
         **mod_std_info(detector="HRC-I"), duration=20000, stars=stars, dark=DARK40
     )
     acar = aca_review_table(aca)
-    jupiter_pos = Table([{"time": CxoTime(acar.date).secs, "row": 300, "col": 10}])
-    check_jupiter_distribution(acar, jupiter_pos)
+    acar.jupiter = Table([{"time": CxoTime(acar.date).secs, "row": 300, "col": 10}])
+    check_jupiter_distribution(acar)
     assert acar.messages == [
         {
             "category": "critical",
@@ -160,8 +160,8 @@ def test_check_jupiter_distribution_fine(aca_review_table):
     stars.add_fake_constellation(n_stars=3, mag=8.5)
     aca = get_aca_catalog(**STD_INFO, duration=20000, stars=stars, dark=DARK40)
     acar = aca_review_table(aca)
-    jupiter_pos = Table([{"time": CxoTime(acar.date).secs, "row": -300, "col": 10}])
-    check_jupiter_distribution(acar, jupiter_pos)
+    acar.jupiter = Table([{"time": CxoTime(acar.date).secs, "row": -300, "col": 10}])
+    check_jupiter_distribution(acar)
     assert acar.messages == []
 
 
@@ -173,7 +173,7 @@ def test_check_jupiter_distribution_cross(aca_review_table):
     aca = get_aca_catalog(**STD_INFO, duration=20000, stars=stars, dark=DARK40)
     acar = aca_review_table(aca)
     # And have Jupiter cross the center
-    jupiter_pos = Table(
+    acar.jupiter = Table(
         [
             {"time": CxoTime(acar.date).secs, "row": -300, "col": 10},
             {"time": CxoTime(acar.date).secs + 1000, "row": 300, "col": 10},
@@ -181,7 +181,7 @@ def test_check_jupiter_distribution_cross(aca_review_table):
     )
     # There is no way to satisfy the distribution requirement with 3 stars
     # and Jupiter crossing.
-    check_jupiter_distribution(acar, jupiter_pos)
+    check_jupiter_distribution(acar)
     assert acar.messages == [
         {
             "category": "critical",

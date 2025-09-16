@@ -1016,6 +1016,8 @@ Predicted Acq CCD temperature (init) : {self.t_ccd_acq:.1f}{t_ccd_eff_acq_msg}""
         return acar
 
 
+# TODO: are these definitions needed in core.py? I think they are just used in
+# testing because the original checks were written for ACAReviewTable.
 check_acq_p2 = checks.acar_check_wrapper(checks.check_acq_p2)
 check_bad_stars = checks.acar_check_wrapper(checks.check_bad_stars)
 check_dither = checks.acar_check_wrapper(checks.check_dither)
@@ -1074,13 +1076,8 @@ def check_catalog(acar: ACACheckTable) -> None:
             msgs += checks.check_fid_spoiler_score(entry["idx"], fid)
 
     msgs += checks.check_guide_overlap(acar)
-
-    # If the target_name includes "jupiter" then run jupiter checks.
-    if acar.target_name is not None and "jupiter" in acar.target_name.lower():
-        msgs += checks.check_run_jupiter_checks(acar)
-
+    msgs += checks.check_run_jupiter_checks(acar)
     msgs += checks.check_guide_geometry(acar)
-
     msgs += checks.check_acq_p2(acar)
     msgs += checks.check_guide_count(acar)
     msgs += checks.check_dither(acar)

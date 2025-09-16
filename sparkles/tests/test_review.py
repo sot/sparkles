@@ -75,7 +75,11 @@ def test_jupiter_not_present():
     acar.run_aca_review(make_html=False)
     # Confirm one of the messages is {'category': 'critical', 'text': 'No Jupiter position found'}
     assert any(
-        msg == {"category": "critical", "text": "No Jupiter position found"}
+        msg
+        == {
+            "category": "critical",
+            "text": "Jupiter not on CCD, expected for target 'NO JUPITER HERE'",
+        }
         for msg in acar.messages
     )
 
