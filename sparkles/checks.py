@@ -91,7 +91,7 @@ def check_run_jupiter_checks(acar: ACACheckTable) -> list[Message]:
     jupiter_pos = jupiter.get_jupiter_position(
         date=acar.date, duration=acar.duration, att=acar.att
     )
-    if jupiter_pos is None:
+    if len(jupiter_pos) == 0:
         msgs += [Message("critical", "No Jupiter position found")]
         return msgs
 
