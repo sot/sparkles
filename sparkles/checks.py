@@ -6,7 +6,6 @@ import numpy as np
 import proseco.characteristics as ACA
 from astropy.table import Table
 from chandra_aca.transform import mag_to_count_rate, snr_mag_for_t_ccd
-from proseco import jupiter
 from proseco.core import ACACatalogTableRow, StarsTableRow
 
 from sparkles.aca_check_table import ACACheckTable
@@ -83,6 +82,9 @@ def check_run_jupiter_checks(acar: ACACheckTable) -> list[Message]:
         List of messages from the jupiter checks.
     """
     msgs = []
+
+    from proseco import jupiter
+
     # First check for exclude dates
     if jupiter.date_is_excluded(acar.date):
         return msgs
@@ -125,12 +127,12 @@ def check_jupiter_acq_spoilers(
     list of Message
         List of messages from the jupiter acquisition box check.
     """
+    from proseco.jupiter import get_jupiter_acq_pos
+
     msgs = []
     ok = np.in1d(acar["type"], ("BOT", "ACQ"))
     acqs = acar[ok]
     pad = 15
-
-    from proseco.jupiter import get_jupiter_acq_pos
 
     _, jcol = get_jupiter_acq_pos(acar.date, jupiter_pos)
     if jcol is None:
@@ -171,10 +173,12 @@ def check_jupiter_track_spoilers(
     list of Message
         List of messages from the jupiter tracked star check.
     """
+    from proseco.jupiter import check_spoiled_by_jupiter
+
     msgs = []
     ok = np.in1d(acar["type"], ("GUI", "BOT", "FID"))
     guide_and_fid = acar[ok]
-    spoiled, _ = jupiter.check_spoiled_by_jupiter(guide_and_fid, jupiter_pos)
+    spoiled, _ = check_spoiled_by_jupiter(guide_and_fid, jupiter_pos)
     for row in acar[ok][spoiled]:
         msg = f"Jupiter spoils tracked star idx {row['idx']} id {row['id']}"
         msgs += [Message("critical", msg, idx=row["idx"])]
@@ -206,10 +210,12 @@ def check_jupiter_distribution(
     list of Message
         List of messages from the jupiter guide star distribution check.
     """
+    from proseco.jupiter import jupiter_distribution_check
+
     # Check that there are at least 2 guide stars in each quadrant of the ccd
     msgs = []
     ok = np.in1d(acar["type"], ("GUI", "BOT"))
-    if not jupiter.jupiter_distribution_check(acar[ok], jupiter_pos):
+    if not jupiter_distribution_check(acar[ok], jupiter_pos):
         msg = (
             "Jupiter guide star distribution check failed. "
             "Need 2 guide stars always opposite Jupiter."
