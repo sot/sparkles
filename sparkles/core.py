@@ -1075,8 +1075,7 @@ def check_catalog(acar: ACACheckTable) -> None:
 
     msgs += checks.check_guide_overlap(acar)
 
-    # If the target_name includes "jupiter" then check for Jupiter stars
-    # - otherwise check the guide geometry.
+    # If the target_name includes "jupiter" then run jupiter checks.
     if acar.target_name is not None and "jupiter" in acar.target_name.lower():
         msgs += checks.check_run_jupiter_checks(acar)
 
