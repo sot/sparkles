@@ -89,6 +89,9 @@ def check_run_jupiter_checks(acar: ACACheckTable) -> list[Message]:
     # First check for exclude dates when Jupiter is fainter than the Optically Bright
     # Object limit of -2.0 mag.
     if jupiter.date_is_excluded(acar.date):
+        msgs += [
+            Message("info", "Jupiter fainter than -2.0 mag - no Jupiter checks run")
+        ]
         return msgs
 
     msgs += check_jupiter_on_ccd(acar)
@@ -96,7 +99,7 @@ def check_run_jupiter_checks(acar: ACACheckTable) -> list[Message]:
     msgs += check_jupiter_track_spoilers(acar)
     msgs += check_jupiter_distribution(acar)
 
-    msgs += [Message("info", "Ran Jupiter checks")]
+    msgs += [Message("info", "Jupiter mag <= -2.0. Ran Partial OBO Mitigation checks.")]
     return msgs
 
 

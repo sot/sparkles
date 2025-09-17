@@ -60,7 +60,10 @@ def test_jupiter_present():
     aca = get_aca_catalog(**kwargs)
     acar = aca.get_review_table()
     acar.run_aca_review(make_html=False)
-    assert acar.messages[-1] == {"category": "info", "text": "Ran Jupiter checks"}
+    assert acar.messages[-1] == {
+        "category": "info",
+        "text": "Jupiter mag <= -2.0. Ran Partial OBO Mitigation checks.",
+    }
 
 
 def test_jupiter_not_present():
