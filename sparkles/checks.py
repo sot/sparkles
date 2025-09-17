@@ -62,6 +62,179 @@ def check_guide_overlap(acar: ACACheckTable) -> list[Message]:
     return msgs
 
 
+def check_run_jupiter_checks(acar: ACACheckTable) -> list[Message]:
+    """
+    Run jupiter checks.
+
+    This is a wrapper to run the jupiter checks.  It first checks if the date
+    is excluded from jupiter checks.  If not, it gets the jupiter position
+    and then runs the individual jupiter checks.
+
+    Parameters
+    ----------
+    acar : ACACheckTable
+        The ACA review table to check.
+
+    Returns
+    -------
+    list of Message
+        List of messages from the jupiter checks.
+    """
+    msgs = []
+    if "jupiter" not in acar.target_name.lower():
+        return msgs
+
+    from proseco import jupiter
+
+    # First check for exclude dates when Jupiter is fainter than the Optically Bright
+    # Object limit of -2.0 mag.
+    if jupiter.date_is_excluded(acar.date):
+        msgs += [
+            Message("info", "Jupiter fainter than -2.0 mag - no Jupiter checks run")
+        ]
+        return msgs
+
+    msgs += check_jupiter_on_ccd(acar)
+    msgs += check_jupiter_acq_spoilers(acar)
+    msgs += check_jupiter_track_spoilers(acar)
+    msgs += check_jupiter_distribution(acar)
+
+    msgs += [Message("info", "Jupiter mag <= -2.0. Ran Partial OBO Mitigation checks.")]
+    return msgs
+
+
+def check_jupiter_on_ccd(acar: ACACheckTable) -> list[Message]:
+    """
+    Check if Jupiter is on the CCD.
+
+    Parameters
+    ----------
+    acar : ACACheckTable
+        The ACA review table to check.
+
+    Returns
+    -------
+    list of Message
+        List of messages from the jupiter on CCD check.
+    """
+    msgs = []
+    if len(acar.jupiter) == 0:
+        msgs += [
+            Message(
+                "warning",
+                f"Jupiter not on CCD, expected for target '{acar.target_name}'",
+            )
+        ]
+    return msgs
+
+
+def check_jupiter_acq_spoilers(acar: ACACheckTable) -> list[Message]:
+    """
+    Check for columns spoiled by Jupiter in acquisition boxes.
+
+    This uses a 15 column pad around Jupiter.
+
+    It does not explicitly use an estimate of maneuver error.
+
+    Parameters
+    ----------
+    acar : ACACheckTable
+        The ACA review table to check.
+
+    Returns
+    -------
+    list of Message
+        List of messages from the jupiter acquisition box check.
+    """
+    from proseco.jupiter import get_jupiter_acq_pos
+
+    msgs = []
+    ok = np.in1d(acar["type"], ("BOT", "ACQ"))
+    acqs = acar[ok]
+    pad = 15
+
+    _, jcol = get_jupiter_acq_pos(acar.date, acar.jupiter)
+    if jcol is None:
+        return []
+
+    # For each acquisition box confirm a column spoiled by jupiter isn't in it
+    for entry in acqs:
+        col_min = entry["col"] - entry["halfw"] / 5
+        col_max = entry["col"] + entry["halfw"] / 5
+        in_box = (jcol + pad >= col_min) & (jcol - pad <= col_max)
+        if np.any(in_box):
+            msg = (
+                f"Jupiter column in acquisition box idx {entry['idx']} id {entry['id']}"
+                f" row {entry['row']:.1f} col {entry['col']:.1f}"
+            )
+            msgs += [Message("critical", msg, idx=entry["idx"])]
+    return msgs
+
+
+def check_jupiter_track_spoilers(acar: ACACheckTable) -> list[Message]:
+    """
+    Check for Jupiter spoiling stars or fids.
+
+    This uses proseco.jupiter.check_spoiled_by_jupiter to determine
+    if any tracked stars or fids are spoiled by Jupiter.
+
+    Parameters
+    ----------
+    acar : ACACheckTable
+        The ACA review table to check.
+
+    Returns
+    -------
+    list of Message
+        List of messages from the jupiter tracked star check.
+    """
+    from proseco.jupiter import check_spoiled_by_jupiter
+
+    msgs = []
+    ok = np.in1d(acar["type"], ("GUI", "BOT", "FID"))
+    guide_and_fid = acar[ok]
+    spoiled, _ = check_spoiled_by_jupiter(guide_and_fid, acar.jupiter)
+    for row in guide_and_fid[spoiled]:
+        msg = f"Jupiter spoils tracked star idx {row['idx']} id {row['id']}"
+        msgs += [Message("critical", msg, idx=row["idx"])]
+    return msgs
+
+
+def check_jupiter_distribution(acar: ACACheckTable) -> list[Message]:
+    """
+    Check for guide star distribution for Jupiter fields.
+
+    The guideline requires at least 2 guide stars on the CCD half opposite
+    Jupiter, one side of the CCD is positive in row and the other negative.
+    If the padded Jupiter crosses the row=0 line during the observation
+    then at least 2 guide stars are required on each side.
+
+    This uses proseco.jupiter.jupiter_distribution_check.
+
+    Parameters
+    ----------
+    acar : ACACheckTable
+        The ACA review table to check.
+
+    Returns
+    -------
+    list of Message
+        List of messages from the jupiter guide star distribution check.
+    """
+    from proseco.jupiter import jupiter_distribution_check
+
+    # Check that there are at least 2 guide stars in each quadrant of the ccd
+    msgs = []
+    ok = np.in1d(acar["type"], ("GUI", "BOT"))
+    if not jupiter_distribution_check(acar[ok], acar.jupiter):
+        msg = (
+            "Jupiter guide star distribution check failed. "
+            "Need 2 guide stars always opposite Jupiter."
+        )
+        msgs += [Message("critical", msg)]
+    return msgs
+
+
 def check_guide_geometry(acar: ACACheckTable) -> list[Message]:
     """Check for guide stars too tightly clustered.
 

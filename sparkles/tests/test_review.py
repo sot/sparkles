@@ -34,6 +34,59 @@ KWARGS_48464 = {
 }
 
 
+def test_jupiter_present():
+    """Test that Jupiter checks run nominally for an observation in 2025 with Jupiter
+    present and in target name"""
+    kwargs = {
+        "att": [0.47935711, 0.44950136, 0.68474659, 0.31509901],
+        "date": "2025:258:14:42:16.000",
+        "detector": "HRC-S",
+        "dither_acq": (20, 20),
+        "dither_guide": (20, 20),
+        "man_angle": 180,
+        "n_acq": 8,
+        "n_fid": 3,
+        "n_guide": 5,
+        "obsid": 29674,
+        "sim_offset": 0,
+        "focus_offset": 0,
+        "t_ccd_acq": -8.6,
+        "t_ccd_guide": -8.6,
+        "dyn_bgd_n_faint": 2,
+        # These last two kwargs are required for Jupiter checks
+        "target_name": "ALL ABOUT JUPITER",
+        "duration": 10000,
+    }
+    aca = get_aca_catalog(**kwargs)
+    acar = aca.get_review_table()
+    acar.run_aca_review(make_html=False)
+    assert acar.messages[-1] == {
+        "category": "info",
+        "text": "Jupiter mag <= -2.0. Ran Partial OBO Mitigation checks.",
+    }
+
+
+def test_jupiter_not_present():
+    kwargs = KWARGS_48464.copy()
+    # This target name "accidentally has jupiter in it"
+    kwargs["target_name"] = "NO JUPITER HERE"
+    kwargs["duration"] = 30000
+    kwargs["t_ccd_acq"] = -10
+    kwargs["t_ccd_guide"] = -10
+    aca = get_aca_catalog(**kwargs)
+    acar = aca.get_review_table()
+    acar.run_aca_review(make_html=False)
+    # Confirm one of the messages is {'category': 'warning', 'text': 'No Jupiter position found'}
+    assert any(
+        msg
+        == {
+            "category": "warning",
+            "text": "Jupiter not on CCD, expected for target 'NO JUPITER HERE'",
+        }
+        for msg in acar.messages
+    )
+
+
 def test_t_ccd_effective_message():
     """Test printing a message about effective guide and/or acq CCD temperature
     when it is different from the predicted temperature."""

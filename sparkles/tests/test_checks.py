@@ -6,7 +6,9 @@ import agasc
 import numpy as np
 import pytest
 import tables
+from astropy.table import Table
 from chandra_aca.transform import mag_to_count_rate
+from cxotime import CxoTime
 from packaging.version import Version
 from proseco import get_aca_catalog
 from proseco.characteristics import CCD, MonCoord, MonFunc
@@ -25,6 +27,9 @@ from sparkles.core import (
     check_guide_geometry,
     check_imposters_guide,
     check_include_exclude,
+    check_jupiter_acq_spoilers,
+    check_jupiter_distribution,
+    check_jupiter_track_spoilers,
     check_pos_err_guide,
     check_too_bright_guide,
 )
@@ -41,6 +46,139 @@ def test_check_slice_index():
         assert acar1.colnames == acar.colnames
         for name in acar1.colnames:
             assert np.all(acar1[name] == acar[name][item])
+
+
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
+def test_check_jupiter_acq_spoilers_fail(aca_review_table):
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=4, mag=8.5)
+    aca = get_aca_catalog(
+        **mod_std_info(detector="HRC-I"), duration=20000, stars=stars, dark=DARK40
+    )
+    acar = aca_review_table(aca)
+    acar.jupiter = Table(
+        [
+            {
+                "time": CxoTime(acar.date).secs,
+                "row": stars[0]["row"],
+                "col": stars[0]["col"],
+            }
+        ]
+    )
+    check_jupiter_acq_spoilers(acar)
+    assert acar.messages == [
+        {
+            "category": "critical",
+            "text": "Jupiter column in acquisition box idx 4 id 100 row -295.0 col 5.4",
+            "idx": 4,
+        },
+        {
+            "category": "critical",
+            "text": "Jupiter column in acquisition box idx 6 id 102 row 307.1 col 4.4",
+            "idx": 6,
+        },
+    ]
+
+
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
+def test_check_jupiter_acq_spoilers_none(aca_review_table):
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=4, mag=8.5)
+    aca = get_aca_catalog(
+        **mod_std_info(detector="HRC-I"), duration=20000, stars=stars, dark=DARK40
+    )
+    acar = aca_review_table(aca)
+    acar.jupiter = Table([{"time": CxoTime(acar.date).secs, "row": 0, "col": 100}])
+    check_jupiter_acq_spoilers(acar)
+    assert acar.messages == []
+
+
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
+@pytest.mark.parametrize("jupiter_col_offset", (-16, -14, 0, 14, 16))
+def test_check_jupiter_track_spoilers_true(aca_review_table, jupiter_col_offset):
+    stars = StarsTable.empty()
+    # The standard fake constellation puts two stars (id=100, 102) near column 5
+    stars.add_fake_constellation(n_stars=4, mag=8.5)
+    aca = get_aca_catalog(
+        **mod_std_info(detector="HRC-I"), duration=20000, stars=stars, dark=DARK40
+    )
+    acar = aca_review_table(aca)
+    acar.jupiter = Table(
+        [{"time": CxoTime(acar.date).secs, "row": 0, "col": jupiter_col_offset + 5}]
+    )
+    check_jupiter_track_spoilers(acar)
+    exp_messages = (
+        []
+        if abs(jupiter_col_offset) > 15
+        else [
+            {
+                "category": "critical",
+                "text": "Jupiter spoils tracked star idx 4 id 100",
+                "idx": 4,
+            },
+            {
+                "category": "critical",
+                "text": "Jupiter spoils tracked star idx 6 id 102",
+                "idx": 6,
+            },
+        ]
+    )
+    assert acar.messages == exp_messages
+
+
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
+@pytest.mark.parametrize("jupiter_row", [-300, 300])
+def test_check_jupiter_distribution(aca_review_table, jupiter_row):
+    stars = StarsTable.empty()
+    # This puts 2 stars on the same side as Jupiter and one on the other.
+    stars.add_fake_star(mag=8.5, row=200, col=200)
+    stars.add_fake_star(mag=8.5, row=400, col=100)
+    stars.add_fake_star(mag=8.5, row=-300, col=100)
+    aca = get_aca_catalog(
+        **mod_std_info(detector="HRC-I"), duration=20000, stars=stars, dark=DARK40
+    )
+    acar = aca_review_table(aca)
+    acar.jupiter = Table(
+        [{"time": CxoTime(acar.date).secs, "row": jupiter_row, "col": 10}]
+    )
+    check_jupiter_distribution(acar)
+    exp = (
+        []
+        if jupiter_row < 0
+        else [
+            {
+                "category": "critical",
+                "text": "Jupiter guide star distribution check failed. "
+                "Need 2 guide stars always opposite Jupiter.",
+            }
+        ]
+    )
+    assert acar.messages == exp
+
+
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
+def test_check_jupiter_distribution_cross(aca_review_table):
+    stars = StarsTable.empty()
+    # Make a table with 3 stars
+    stars.add_fake_constellation(n_stars=3, mag=8.5)
+    aca = get_aca_catalog(**STD_INFO, duration=20000, stars=stars, dark=DARK40)
+    acar = aca_review_table(aca)
+    # And have Jupiter cross the center
+    acar.jupiter = Table(
+        [
+            {"time": CxoTime(acar.date).secs, "row": -0.1, "col": -10},
+            {"time": CxoTime(acar.date).secs + 1000, "row": 0.1, "col": 10},
+        ]
+    )
+    # There is no way to satisfy the distribution requirement with 3 stars
+    # and Jupiter crossing.
+    check_jupiter_distribution(acar)
+    assert acar.messages == [
+        {
+            "category": "critical",
+            "text": "Jupiter guide star distribution check failed. Need 2 guide stars always opposite Jupiter.",
+        }
+    ]
 
 
 @pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
@@ -946,7 +1084,7 @@ def test_check_guide_geometry(aca_review_table):
         stars.add_fake_star(yang=y * size, zang=z * size, mag=7.0)
 
     aca = get_aca_catalog(**STD_INFO, man_angle_next=3.0, stars=stars, dark=DARK40)
-    acar = aca.get_review_table()
+    acar = aca_review_table(aca)
     check_guide_geometry(acar)
 
     assert len(acar.messages) == 1
