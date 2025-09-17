@@ -118,7 +118,7 @@ def check_jupiter_on_ccd(acar: ACACheckTable) -> list[Message]:
     if len(acar.jupiter) == 0:
         msgs += [
             Message(
-                "critical",
+                "warning",
                 f"Jupiter not on CCD, expected for target '{acar.target_name}'",
             )
         ]
