@@ -273,7 +273,7 @@ def check_guide_geometry(acar: ACACheckTable) -> list[Message]:
                 break
         else:
             # Every distance was too small, issue a warning.
-            cat_idxs = [idx + 1 for idx in idxs]
+            cat_idxs = [int(idx + 1) for idx in idxs]
             msg = f'Guide indexes {cat_idxs} clustered within {min_dist}" radius'
 
             if acar.man_angle_next > CREEP_AWAY_THRESHOLD:
