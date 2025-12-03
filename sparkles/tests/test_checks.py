@@ -939,6 +939,11 @@ def test_bad_star_set(aca_review_table):
     check_catalog(acar)
     assert acar.messages == [
         {
+            "text": f"Guide star {bad_id} does not meet guide candidate criteria",
+            "category": "critical",
+            "idx": 5,
+        },
+        {
             "text": f"Star {bad_id} is in proseco bad star set",
             "category": "critical",
             "idx": 5,
