@@ -46,7 +46,7 @@ def check_guide_overlap(acar: ACACheckTable) -> list[Message]:
     Overlap is defined as within 12 pixels.
     """
     msgs = []
-    ok = np.in1d(acar["type"], ("GUI", "BOT", "FID", "MON"))
+    ok = np.isin(acar["type"], ("GUI", "BOT", "FID", "MON"))
     idxs = np.flatnonzero(ok)
     for idx1, idx2 in combinations(idxs, 2):
         entry1 = acar[idx1]
@@ -149,7 +149,7 @@ def check_jupiter_acq_spoilers(acar: ACACheckTable) -> list[Message]:
     from proseco.jupiter import get_jupiter_acq_pos
 
     msgs = []
-    ok = np.in1d(acar["type"], ("BOT", "ACQ"))
+    ok = np.isin(acar["type"], ("BOT", "ACQ"))
     acqs = acar[ok]
     pad = 15
 
@@ -191,7 +191,7 @@ def check_jupiter_track_spoilers(acar: ACACheckTable) -> list[Message]:
     from proseco.jupiter import check_spoiled_by_jupiter
 
     msgs = []
-    ok = np.in1d(acar["type"], ("GUI", "BOT", "FID"))
+    ok = np.isin(acar["type"], ("GUI", "BOT", "FID"))
     guide_and_fid = acar[ok]
     spoiled, _ = check_spoiled_by_jupiter(guide_and_fid, acar.jupiter)
     for row in guide_and_fid[spoiled]:
@@ -225,7 +225,7 @@ def check_jupiter_distribution(acar: ACACheckTable) -> list[Message]:
 
     # Check that there are at least 2 guide stars in each quadrant of the ccd
     msgs = []
-    ok = np.in1d(acar["type"], ("GUI", "BOT"))
+    ok = np.isin(acar["type"], ("GUI", "BOT"))
     if not jupiter_distribution_check(acar[ok], acar.jupiter):
         msg = (
             "Jupiter guide star distribution check failed. "
@@ -249,7 +249,7 @@ def check_guide_geometry(acar: ACACheckTable) -> list[Message]:
 
     """
     msgs = []
-    ok = np.in1d(acar["type"], ("GUI", "BOT"))
+    ok = np.isin(acar["type"], ("GUI", "BOT"))
     guide_idxs = np.flatnonzero(ok)
     n_guide = len(guide_idxs)
 

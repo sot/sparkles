@@ -161,7 +161,7 @@ class RollOptimizeMixin:
         acqs.meta.clear()
 
         # Mask for guide star IDs that are also in acqs
-        overlap = np.in1d(self.guides["id"], acqs["id"])
+        overlap = np.isin(self.guides["id"], acqs["id"])
         guides = Table(self.guides[cols][~overlap])
         guides.meta.clear()
         cands = vstack([acqs, guides, self.stars[cols][cand_idxs]])
