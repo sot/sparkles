@@ -175,6 +175,101 @@ def test_review_catalog(proseco_agasc_1p7, tmpdir):
     assert (obspath / "rolls" / "index.html").exists()
 
 
+def test_review_mars():
+    kwargs = {
+        "obsid": 22688,
+        "att": [-0.48255572, -0.10809006, 0.10760397, 0.86248357],
+        "man_angle": 90,
+        "date": "2020:299:15:45:57.000",
+        "t_ccd": -10,
+        "dither": (20.0016, 20.0016),
+        "detector": "HRC-I",
+        "sim_offset": 0,
+        "focus_offset": 0,
+        "n_acq": 8,
+        "n_guide": 5,
+        "n_fid": 3,
+        "target_name": "Mars",
+    }
+    aca = get_aca_catalog(**kwargs)
+    acar = aca.get_review_table()
+    acar.run_aca_review()
+    assert acar.messages == [
+        {
+            "category": "info",
+            "text": "Mars mag <= -2.0. Ran Partial OBO Mitigation checks.",
+        }
+    ]
+
+
+def test_review_venus():
+    kwargs = {
+        "obsid": 16500,
+        "att": [-0.39679561, 0.60054118, -0.33972900, 0.60538230],
+        "man_angle": 90,
+        "date": "2013:312:09:00:13.000",
+        "t_ccd": -10,
+        "dither": (7.9992, 7.9992),
+        "detector": "ACIS-I",
+        "sim_offset": 0,
+        "focus_offset": 0,
+        "n_acq": 8,
+        "n_guide": 6,
+        "n_fid": 2,
+        "include_ids_fid": [4, 6],
+        "target_name": "Venus",
+    }
+    aca = get_aca_catalog(**kwargs)
+    acar = aca.get_review_table()
+    acar.run_aca_review()
+    assert acar.messages == [
+        {
+            "category": "critical",
+            "text": "Bright object tracks too close to CCD boundary row=0.",
+        },
+        {"category": "critical", "text": "Full mitigation OBO checks failed."},
+        {
+            "category": "info",
+            "text": "Venus mag <= -2.9. Ran Full OBO Mitigation checks.",
+        },
+        {"category": "caution", "text": "OR with 6 guides requested but 5 is typical"},
+        {"category": "caution", "text": "OR requested 2 fids but 3 is typical"},
+        {"category": "info", "text": "included fid ID(s): [4, 6]"},
+    ]
+
+
+def test_review_saturn():
+    kwargs = {
+        "obsid": 24847,
+        "att": [-0.46938362, 0.43566643, -0.28160247, 0.71454449],
+        "man_angle": 90,
+        "date": "2020:328:22:44:10.000",
+        "t_ccd": -10,
+        "dither": (20.0016, 20.0016),
+        "detector": "HRC-I",
+        "sim_offset": 0,
+        "focus_offset": 0,
+        "n_acq": 8,
+        "n_guide": 5,
+        "n_fid": 3,
+        "target_name": "Mystery",
+    }
+    aca = get_aca_catalog(**kwargs)
+    acar = aca.get_review_table()
+    acar.run_aca_review()
+    assert acar.messages == [
+        {
+            "category": "warning",
+            "text": "Fid 3 has yellow spoiler: star 829031248 with mag 11.50",
+            "idx": 2,
+        },
+        {
+            "category": "info",
+            "text": "Bright object alert: Saturn on CCD but not in target name\n",
+        },
+    ]
+
+
 def test_review_roll_options():
     """
     Test that the 'acar' key in the roll_option dict is an ACAReviewTable

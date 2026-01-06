@@ -119,14 +119,18 @@ def check_planets(acar: ACACheckTable) -> list[Message]:
             continue
 
         # If there is any kind of bright object but it isn't the target, warn
-        if (
-            min_state["label"]
-            in ["partial mitigation", "full mitigation", "instrument notify"]
-            and planet not in acar.target_name.lower()
-        ):
+        if planet not in acar.target_name.lower():
+            if min_state["label"] in [
+                "partial mitigation",
+                "full mitigation",
+                "instrument_notify",
+            ]:
+                warning_level = "warning"
+            elif min_state["label"] == "no action":
+                warning_level = "info"
             msgs += [
                 Message(
-                    "warning",
+                    warning_level,
                     f"Bright object alert: {planet.title()} on CCD but not in target name\n",
                 )
             ]
