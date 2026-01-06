@@ -81,7 +81,7 @@ def test_jupiter_not_present():
         msg
         == {
             "category": "warning",
-            "text": "Jupiter not on CCD, expected for target 'NO JUPITER HERE'",
+            "text": "Jupiter in target name 'NO JUPITER HERE' but not on CCD.",
         }
         for msg in acar.messages
     )

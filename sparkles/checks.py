@@ -67,10 +67,15 @@ from proseco.bright_object import check_for_close_planets
 
 def check_planets(acar: ACACheckTable) -> list[Message]:
     import astropy.units as u
+    from cxotime import CxoTime
+    from chandra_aca.planets import BRIGHT_PLANET_LIST
 
     msgs = []
     duration = acar.duration if acar.duration is not None else 0.0
     planets = check_for_close_planets(acar.date, duration, acar.att)
+
+    planets_on_ccd = {}
+
     for planet in planets:
         # If the table is empty, just skip
         if len(planets[planet]) == 0:
@@ -82,30 +87,30 @@ def check_planets(acar: ACACheckTable) -> list[Message]:
         )
 
         mag_states = get_planet_mag_states(
-            planet, acar.date, acar.date + duration * u.s
+            planet, acar.date, CxoTime(acar.date) + duration * u.s
         )
         # min/brightest mag state
         min_state_idx = np.argmin(mag_states["mag_start"])
         min_state = mag_states[min_state_idx]
 
-        if np.all(mag_states["label"] == "no action"):
-            continue
-
         planet_pos = get_planet_chandra_ccd_position(
             planet,
             acar.date,
-            acar.duration,
+            duration,
             acar.att,
         )
 
         # If planet is within 2 degrees but not on CCD, that's a critical
         if len(planet_pos) == 0:
-            msgs += [
-                Message(
-                    "critical", f"{planet.capitalize()} within 2 deg but not on CCD."
-                )
-            ]
+            if not np.all(mag_states["label"] == "no action"):
+                msgs += [
+                    Message(
+                        "critical", f"{planet.capitalize()} within 2 deg but not on CCD."
+                    )
+                ]
             continue
+        else:
+            planets_on_ccd[planet] = True
 
         # If this is just too bright that is also critical
         if min_state["label"] == "obo too bright":
@@ -134,6 +139,15 @@ def check_planets(acar: ACACheckTable) -> list[Message]:
                 planet=planet,
                 planet_pos=planet_pos,
             )
+
+    for planet in BRIGHT_PLANET_LIST:
+        if planet.lower() in acar.target_name.lower() and planet not in planets_on_ccd:
+            msgs += [
+                Message(
+                    "warning",
+                    f"{planet.capitalize()} in target name '{acar.target_name}' but not on CCD.",
+                )
+            ]
     return msgs
 
 
@@ -147,14 +161,14 @@ def check_run_obo_checks(
         msgs += check_full_obo_distribution(acar, planet_pos)
         msgs += [
             Message(
-                "info", "Bright object mag <= -2.9. Ran Full OBO Mitigation checks."
+                "info", f"{planet.capitalize()} mag <= -2.9. Ran Full OBO Mitigation checks."
             )
         ]
     else:
         msgs += check_partial_obo_distribution(acar, planet_pos)
         msgs += [
             Message(
-                "info", "Bright object mag <= -2.0. Ran Partial OBO Mitigation checks."
+                "info", f"{planet.capitalize()} mag <= -2.0. Ran Partial OBO Mitigation checks."
             )
         ]
     return msgs
