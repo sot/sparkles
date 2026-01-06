@@ -76,7 +76,26 @@ def test_venus_bad():
         kwargs_raw["att"],
     )
     check_run_obo_checks(acar, mitigation="full", planet="venus", planet_pos=pos)
-    assert acar.messages == [{'category': 'critical', 'text': 'Need 5 guide stars on each side of CCD opposite bright object.'}, {'category': 'critical', 'text': 'Need 2 fid lights on each side of CCD opposite bright object.'}, {'category': 'critical', 'text': 'Bright object tracks too close to CCD boundary row=0.'}, {'category': 'critical', 'text': 'Need at least 6 guide stars in the catalog.'}, {'category': 'critical', 'text': 'Full mitigation OBO checks failed.'}, {'category': 'info', 'text': 'Venus mag <= -2.9. Ran Full OBO Mitigation checks.'}]
+    assert acar.messages == [
+        {
+            "category": "critical",
+            "text": "Need 5 guide stars on each side of CCD opposite bright object.",
+        },
+        {
+            "category": "critical",
+            "text": "Need 2 fid lights on each side of CCD opposite bright object.",
+        },
+        {
+            "category": "critical",
+            "text": "Bright object tracks too close to CCD boundary row=0.",
+        },
+        {"category": "critical", "text": "Need at least 6 guide stars in the catalog."},
+        {"category": "critical", "text": "Full mitigation OBO checks failed."},
+        {
+            "category": "info",
+            "text": "Venus mag <= -2.9. Ran Full OBO Mitigation checks.",
+        },
+    ]
 
 
 def test_venus_good():
@@ -107,7 +126,12 @@ def test_venus_good():
     aca2 = get_aca_catalog(**kwargs_mod)
     acar2 = aca2.get_review_table()
     check_run_obo_checks(acar2, mitigation="full", planet="venus", planet_pos=pos2)
-    assert acar2.messages == [{'category': 'info', 'text': 'Venus mag <= -2.9. Ran Full OBO Mitigation checks.'}]
+    assert acar2.messages == [
+        {
+            "category": "info",
+            "text": "Venus mag <= -2.9. Ran Full OBO Mitigation checks.",
+        }
+    ]
 
 
 @pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))

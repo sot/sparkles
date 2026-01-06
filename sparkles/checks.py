@@ -67,8 +67,8 @@ from proseco.bright_object import check_for_close_planets
 
 def check_planets(acar: ACACheckTable) -> list[Message]:
     import astropy.units as u
-    from cxotime import CxoTime
     from chandra_aca.planets import BRIGHT_PLANET_LIST
+    from cxotime import CxoTime
 
     msgs = []
     duration = acar.duration if acar.duration is not None else 0.0
@@ -105,7 +105,8 @@ def check_planets(acar: ACACheckTable) -> list[Message]:
             if not np.all(mag_states["label"] == "no action"):
                 msgs += [
                     Message(
-                        "critical", f"{planet.capitalize()} within 2 deg but not on CCD."
+                        "critical",
+                        f"{planet.capitalize()} within 2 deg but not on CCD.",
                     )
                 ]
             continue
@@ -161,14 +162,16 @@ def check_run_obo_checks(
         msgs += check_full_obo_distribution(acar, planet_pos)
         msgs += [
             Message(
-                "info", f"{planet.capitalize()} mag <= -2.9. Ran Full OBO Mitigation checks."
+                "info",
+                f"{planet.capitalize()} mag <= -2.9. Ran Full OBO Mitigation checks.",
             )
         ]
     else:
         msgs += check_partial_obo_distribution(acar, planet_pos)
         msgs += [
             Message(
-                "info", f"{planet.capitalize()} mag <= -2.0. Ran Partial OBO Mitigation checks."
+                "info",
+                f"{planet.capitalize()} mag <= -2.0. Ran Partial OBO Mitigation checks.",
             )
         ]
     return msgs
