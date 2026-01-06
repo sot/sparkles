@@ -1032,12 +1032,8 @@ check_guide_fid_position_on_ccd = checks.acar_check_wrapper(
 )
 check_guide_geometry = checks.acar_check_wrapper(checks.check_guide_geometry)
 check_run_obo_checks = checks.acar_check_wrapper(checks.check_run_obo_checks)
-check_obo_acq_spoilers = checks.acar_check_wrapper(
-    checks.check_obo_acq_spoilers
-)
-check_obo_track_spoilers = checks.acar_check_wrapper(
-    checks.check_obo_track_spoilers
-)
+check_obo_acq_spoilers = checks.acar_check_wrapper(checks.check_obo_acq_spoilers)
+check_obo_track_spoilers = checks.acar_check_wrapper(checks.check_obo_track_spoilers)
 check_partial_obo_distribution = checks.acar_check_wrapper(
     checks.check_partial_obo_distribution
 )
@@ -1078,7 +1074,6 @@ def check_catalog(acar: ACACheckTable) -> None:
         if is_fid:
             fid = acar.fids.get_id(entry["id"])
             msgs += checks.check_fid_spoiler_score(entry["idx"], fid)
-
 
     msgs += checks.check_guide_overlap(acar)
 
