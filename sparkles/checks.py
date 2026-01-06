@@ -62,73 +62,83 @@ def check_guide_overlap(acar: ACACheckTable) -> list[Message]:
     return msgs
 
 
-def check_run_jupiter_checks(acar: ACACheckTable) -> list[Message]:
-    """
-    Run jupiter checks.
+from proseco.bright_object import check_for_close_planets
 
-    This is a wrapper to run the jupiter checks.  It first checks if the date
-    is excluded from jupiter checks.  If not, it gets the jupiter position
-    and then runs the individual jupiter checks.
 
-    Parameters
-    ----------
-    acar : ACACheckTable
-        The ACA review table to check.
-
-    Returns
-    -------
-    list of Message
-        List of messages from the jupiter checks.
-    """
+def check_planets(acar: ACACheckTable) -> list[Message]:
+    import astropy.units as u
     msgs = []
-    if "jupiter" not in acar.target_name.lower():
-        return msgs
+    duration = acar.duration if acar.duration is not None else 0.0
+    planets = check_for_close_planets(acar.date, duration, acar.att)
+    for planet in planets:
+        # If the table is empty, just skip
+        if len(planets[planet]) == 0:
+            continue
 
-    from proseco import jupiter
+        from chandra_aca.planets import (get_planet_chandra_ccd_position,
+                                                get_planet_mag_states)
+        mag_states = get_planet_mag_states(
+            planet,
+            acar.date,
+            acar.date + duration * u.s)
+        # min/brightest mag state
+        min_state_idx = np.argmin(mag_states["mag_start"])
+        min_state = mag_states[min_state_idx]
 
-    # First check for exclude dates when Jupiter is fainter than the Optically Bright
-    # Object limit of -2.0 mag.
-    if jupiter.date_is_excluded(acar.date):
-        msgs += [
-            Message("info", "Jupiter fainter than -2.0 mag - no Jupiter checks run")
-        ]
-        return msgs
+        if np.all(mag_states["label"] == "no action"):
+            continue
 
-    msgs += check_jupiter_on_ccd(acar)
-    msgs += check_jupiter_acq_spoilers(acar)
-    msgs += check_jupiter_track_spoilers(acar)
-    msgs += check_jupiter_distribution(acar)
+        planet_pos = get_planet_chandra_ccd_position(
+            planet,
+            acar.date,
+            acar.duration,
+            acar.att,
+        )
 
-    msgs += [Message("info", "Jupiter mag <= -2.0. Ran Partial OBO Mitigation checks.")]
+        # If planet is within 2 degrees but not on CCD, that's a critical
+        if len(planet_pos) == 0:
+            msgs += [Message("critical",
+                                f"{planet.capitalize()} within 2 deg but not on CCD.")]
+            continue
+
+        # If this is just too bright that is also critical
+        if min_state["label"] == "obo too bright":
+            msgs += [Message("critical",
+                                f"{planet.capitalize()} too bright.")]
+            continue
+
+        # If there is any kind of bright object but it isn't the target, warn
+        if min_state["label"] in ["partial mitigation", "full mitigation", "instrument notify"] and planet not in acar.target_name.lower():
+            msgs += [Message("warning",
+                             f"Bright object alert: {planet.title()} on CCD but not in target name\n"
+                            )]
+
+        # And skip the rest of the checks unless in a mitigation state
+        if min_state["label"] in ["partial mitigation", "full mitigation"]:
+            mitigation = "full" if min_state["label"].startswith("full") else "partial"
+            msgs += checks.check_run_obo_checks(acar, mitigation=mitigation,
+                                                planet=planet,
+                                                planet_pos=planet_pos,
+                                                )
     return msgs
 
 
-def check_jupiter_on_ccd(acar: ACACheckTable) -> list[Message]:
-    """
-    Check if Jupiter is on the CCD.
 
-    Parameters
-    ----------
-    acar : ACACheckTable
-        The ACA review table to check.
-
-    Returns
-    -------
-    list of Message
-        List of messages from the jupiter on CCD check.
-    """
+def check_run_obo_checks(acar: ACACheckTable, mitigation="partial",
+                         planet=None, planet_pos=None) -> list[Message]:
     msgs = []
-    if len(acar.jupiter) == 0:
-        msgs += [
-            Message(
-                "warning",
-                f"Jupiter not on CCD, expected for target '{acar.target_name}'",
-            )
-        ]
+    msgs += check_obo_acq_spoilers(acar, planet, planet_pos)
+    msgs += check_obo_track_spoilers(acar, planet, planet_pos)
+    if mitigation == "full":
+        msgs += check_full_obo_distribution(acar, planet_pos)
+        msgs += [Message("info", "Bright object mag <= -2.9. Ran Full OBO Mitigation checks.")]
+    else:
+        msgs += check_partial_obo_distribution(acar, planet_pos)
+        msgs += [Message("info", "Bright object mag <= -2.0. Ran Partial OBO Mitigation checks.")]
     return msgs
 
 
-def check_jupiter_acq_spoilers(acar: ACACheckTable) -> list[Message]:
+def check_obo_acq_spoilers(acar: ACACheckTable, planet=None, planet_pos=None) -> list[Message]:
     """
     Check for columns spoiled by Jupiter in acquisition boxes.
 
@@ -146,14 +156,14 @@ def check_jupiter_acq_spoilers(acar: ACACheckTable) -> list[Message]:
     list of Message
         List of messages from the jupiter acquisition box check.
     """
-    from proseco.jupiter import get_jupiter_acq_pos
+    from proseco.bright_object import get_bright_object_acq_pos
 
     msgs = []
     ok = np.isin(acar["type"], ("BOT", "ACQ"))
     acqs = acar[ok]
     pad = 15
 
-    _, jcol = get_jupiter_acq_pos(acar.date, acar.jupiter)
+    _, jcol = get_bright_object_acq_pos(acar.date, planet_pos)
     if jcol is None:
         return []
 
@@ -164,14 +174,14 @@ def check_jupiter_acq_spoilers(acar: ACACheckTable) -> list[Message]:
         in_box = (jcol + pad >= col_min) & (jcol - pad <= col_max)
         if np.any(in_box):
             msg = (
-                f"Jupiter column in acquisition box idx {entry['idx']} id {entry['id']}"
+                f"{planet} column in acquisition box idx {entry['idx']} id {entry['id']}"
                 f" row {entry['row']:.1f} col {entry['col']:.1f}"
             )
             msgs += [Message("critical", msg, idx=entry["idx"])]
     return msgs
 
 
-def check_jupiter_track_spoilers(acar: ACACheckTable) -> list[Message]:
+def check_obo_track_spoilers(acar: ACACheckTable, planet=None, planet_pos=None) -> list[Message]:
     """
     Check for Jupiter spoiling stars or fids.
 
@@ -188,28 +198,28 @@ def check_jupiter_track_spoilers(acar: ACACheckTable) -> list[Message]:
     list of Message
         List of messages from the jupiter tracked star check.
     """
-    from proseco.jupiter import check_spoiled_by_jupiter
+    from proseco.bright_object import check_spoiled_by_bright_object
 
     msgs = []
     ok = np.isin(acar["type"], ("GUI", "BOT", "FID"))
     guide_and_fid = acar[ok]
-    spoiled, _ = check_spoiled_by_jupiter(guide_and_fid, acar.jupiter)
+    spoiled, _ = check_spoiled_by_bright_object(guide_and_fid, planet_pos)
     for row in guide_and_fid[spoiled]:
-        msg = f"Jupiter spoils tracked star idx {row['idx']} id {row['id']}"
+        msg = f"{planet} spoils tracked star idx {row['idx']} id {row['id']}"
         msgs += [Message("critical", msg, idx=row["idx"])]
     return msgs
 
 
-def check_jupiter_distribution(acar: ACACheckTable) -> list[Message]:
+def check_partial_obo_distribution(acar: ACACheckTable, planet_pos=None) -> list[Message]:
     """
     Check for guide star distribution for Jupiter fields.
 
     The guideline requires at least 2 guide stars on the CCD half opposite
-    Jupiter, one side of the CCD is positive in row and the other negative.
-    If the padded Jupiter crosses the row=0 line during the observation
+    the bright object, one side of the CCD is positive in row and the other negative.
+    If the padded bright object crosses the row=0 line during the observation
     then at least 2 guide stars are required on each side.
 
-    This uses proseco.jupiter.jupiter_distribution_check.
+    This uses proseco.bright_object.bright_object_distribution_check.
 
     Parameters
     ----------
@@ -221,17 +231,81 @@ def check_jupiter_distribution(acar: ACACheckTable) -> list[Message]:
     list of Message
         List of messages from the jupiter guide star distribution check.
     """
-    from proseco.jupiter import jupiter_distribution_check
+    from proseco.bright_object import bright_object_distribution_check
 
     # Check that there are at least 2 guide stars in each quadrant of the ccd
     msgs = []
     ok = np.isin(acar["type"], ("GUI", "BOT"))
-    if not jupiter_distribution_check(acar[ok], acar.jupiter):
+    if not bright_object_distribution_check(acar[ok], planet_pos):
         msg = (
-            "Jupiter guide star distribution check failed. "
-            "Need 2 guide stars always opposite Jupiter."
+            "Partial OBO guide star distribution check failed. "
+            "Need 2 guide stars always opposite bright object."
         )
         msgs += [Message("critical", msg)]
+    return msgs
+
+
+def check_full_obo_distribution(acar: ACACheckTable, planet_pos=None,
+                                dither=20, bright_object_size = 4.5) -> list[Message]:
+
+    # This function is in sparkles instead of proseco because we do not expect
+    # to actually need full OBO checks in star selection.
+    msgs = []
+    if planet_pos is None or len(planet_pos) == 0:
+        return msgs
+
+    overall_check = True
+
+    guide_stars = acar[np.isin(acar["type"], ("GUI", "BOT"))]
+    fids = acar[np.isin(acar["type"], ("FID"))]
+
+    # It looks like jupiter ang diam goes from 30 to 45 arcsec
+    # so use 45 / 2 = 22.5 arcsec radius -> 4.5 pixels
+    # and add a 4 pixel dither pad corresponding to the 20 arcsec HRC pattern
+    dither_pix = dither / 5. # pixels
+    sign_max = np.sign(np.max(planet_pos["row"] + bright_object_size + dither_pix))
+    sign_min = np.sign(np.min(planet_pos["row"] - bright_object_size - dither_pix))
+    five_guide_opposite = (np.count_nonzero(np.sign(guide_stars["row"]) != sign_max) >= 5) and (
+        np.count_nonzero(np.sign(guide_stars["row"]) != sign_min) >= 5
+    )
+
+    two_fids_opposite = (np.count_nonzero(np.sign(fids["row"]) != sign_max) >= 2) and (
+        np.count_nonzero(np.sign(fids["row"]) != sign_min) >= 2)
+
+    # obo never within 2 arcmin of ccd boundary row=0
+    # 2 arcmin = 120 arcsec = 24 pixels
+    obo_not_near_boundary = (np.all(np.abs(planet_pos["row"] + bright_object_size + dither_pix) > 24) and
+                         np.all(np.abs(planet_pos["row"] - bright_object_size - dither_pix) > 24))
+    # Has 6 guide stars
+    has_6_guides = np.isin(acar["type"], ("GUI", "BOT")).sum() >= 6
+
+    # Has two fid lights
+    has_2_fids = np.isin(acar["type"], ("FID")).sum() >= 2
+
+    if not five_guide_opposite:
+        overall_check = False
+        msgs += [Message("critical",
+            "Need 5 guide stars on each side of CCD opposite bright object.")]
+    if not two_fids_opposite:
+        overall_check = False
+        msgs += [Message("critical",
+            "Need 2 fid lights on each side of CCD opposite bright object.")]
+    if not obo_not_near_boundary:
+        overall_check = False
+        msgs += [Message("critical",
+            "Bright object tracks too close to CCD boundary row=0.")]
+    if not has_6_guides:
+        overall_check = False
+        msgs += [Message("critical",
+            "Need at least 6 guide stars in the catalog.")]
+    if np.isin(acar["type"], "FID").any() and not has_2_fids:
+        overall_check = False
+        msgs += [Message("critical",
+            "Need at least 2 fid lights in the catalog.")]
+
+    if not overall_check:
+        msgs += [Message("critical", "Full mitigation OBO checks failed.")]
+
     return msgs
 
 
