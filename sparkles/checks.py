@@ -123,7 +123,7 @@ def check_planets(acar: ACACheckTable) -> list[Message]:
             if min_state["label"] in [
                 "partial mitigation",
                 "full mitigation",
-                "instrument_notify",
+                "instrument notify",
             ]:
                 warning_level = "warning"
             elif min_state["label"] == "no action":
@@ -185,9 +185,9 @@ def check_obo_acq_spoilers(
     acar: ACACheckTable, planet=None, planet_pos=None
 ) -> list[Message]:
     """
-    Check for columns spoiled by Jupiter in acquisition boxes.
+    Check for columns spoiled by a bright object in acquisition boxes.
 
-    This uses a 15 column pad around Jupiter.
+    This uses a 15 column pad around the bright object.
 
     It does not explicitly use an estimate of maneuver error.
 
@@ -195,11 +195,15 @@ def check_obo_acq_spoilers(
     ----------
     acar : ACACheckTable
         The ACA review table to check.
+    planet : str, optional
+        Planet name (lowercase)
+    planet_pos : Table, optional
+        Bright object position table
 
     Returns
     -------
     list of Message
-        List of messages from the jupiter acquisition box check.
+        List of messages from the bright object acquisition box check.
     """
     from proseco.bright_object import get_bright_object_acq_pos
 
@@ -219,7 +223,7 @@ def check_obo_acq_spoilers(
         in_box = (jcol + pad >= col_min) & (jcol - pad <= col_max)
         if np.any(in_box):
             msg = (
-                f"{planet} column in acquisition box idx {entry['idx']} id {entry['id']}"
+                f"{planet.capitalize()} column in acquisition box idx {entry['idx']} id {entry['id']}"
                 f" row {entry['row']:.1f} col {entry['col']:.1f}"
             )
             msgs += [Message("critical", msg, idx=entry["idx"])]
@@ -230,20 +234,24 @@ def check_obo_track_spoilers(
     acar: ACACheckTable, planet=None, planet_pos=None
 ) -> list[Message]:
     """
-    Check for Jupiter spoiling stars or fids.
+    Check for bright object spoiling stars or fids.
 
-    This uses proseco.jupiter.check_spoiled_by_jupiter to determine
-    if any tracked stars or fids are spoiled by Jupiter.
+    This uses proseco.bright_object.check_spoiled_by_bright_object to determine
+    if any tracked stars or fids are spoiled by the bright object.
 
     Parameters
     ----------
     acar : ACACheckTable
         The ACA review table to check.
+    planet : str, optional
+        Planet name (lowercase)
+    planet_pos : Table, optional
+        Bright object position table
 
     Returns
     -------
     list of Message
-        List of messages from the jupiter tracked star check.
+        List of messages from the bright object tracked star check.
     """
     from proseco.bright_object import check_spoiled_by_bright_object
 
@@ -261,7 +269,7 @@ def check_partial_obo_distribution(
     acar: ACACheckTable, planet_pos=None
 ) -> list[Message]:
     """
-    Check for guide star distribution for Jupiter fields.
+    Check for guide star distribution for bright object fields.
 
     The guideline requires at least 2 guide stars on the CCD half opposite
     the bright object, one side of the CCD is positive in row and the other negative.
@@ -274,11 +282,13 @@ def check_partial_obo_distribution(
     ----------
     acar : ACACheckTable
         The ACA review table to check.
+    planet_pos : Table, optional
+        Bright object position table
 
     Returns
     -------
     list of Message
-        List of messages from the jupiter guide star distribution check.
+        List of messages from the bright object guide star distribution check.
     """
     from proseco.bright_object import bright_object_distribution_check
 
