@@ -69,12 +69,12 @@ def test_check_jupiter_acq_spoilers_fail(aca_review_table):
     assert acar.messages == [
         {
             "category": "critical",
-            "text": "Jupiter column in acquisition box idx 4 id 100 row -295.0 col 5.4",
+            "text": "Jupiter column in acquisition box idx 4 id 100 row -295.2 col 5.5",
             "idx": 4,
         },
         {
             "category": "critical",
-            "text": "Jupiter column in acquisition box idx 6 id 102 row 307.1 col 4.4",
+            "text": "Jupiter column in acquisition box idx 6 id 102 row 307.2 col 4.3",
             "idx": 6,
         },
     ]

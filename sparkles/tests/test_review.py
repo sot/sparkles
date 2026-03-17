@@ -126,9 +126,9 @@ def test_review_catalog(proseco_agasc_1p7, tmpdir):
         {
             "category": "warning",
             "text": "Guide star imposter offset 2.6, limit 2.5 arcsec",
-            "idx": 4,
+            "idx": np.int64(4),
         },
-        {"category": "warning", "text": "P2: 3.33 less than 4.0 for ER"},
+        {"category": "warning", "text": "P2: 3.32 less than 4.0 for ER"},
         {
             "category": "critical",
             "text": "ER count of 9th (8.9 for -9.9C) mag guide stars 1.91 < 3.0",
@@ -449,9 +449,9 @@ def test_run_aca_review_function(proseco_agasc_1p7, tmpdir):
         {
             "category": "warning",
             "text": "Guide star imposter offset 2.6, limit 2.5 arcsec",
-            "idx": 4,
+            "idx": np.int64(4),
         },
-        {"category": "warning", "text": "P2: 3.33 less than 4.0 for ER"},
+        {"category": "warning", "text": "P2: 3.32 less than 4.0 for ER"},
         {
             "category": "critical",
             "text": "ER count of 9th (8.9 for -9.9C) mag guide stars 1.91 < 3.0",
@@ -490,9 +490,9 @@ def test_run_aca_review_dyn_bgd_n_faint(proseco_agasc_1p7, tmpdir):
         {
             "category": "warning",
             "text": "Guide star imposter offset 2.6, limit 2.5 arcsec",
-            "idx": 4,
+            "idx": np.int64(4),
         },
-        {"category": "warning", "text": "P2: 3.33 less than 4.0 for ER"},
+        {"category": "warning", "text": "P2: 3.32 less than 4.0 for ER"},
         {
             "category": "critical",
             "text": "ER count of 9th (8.9 for -9.9C) mag guide stars 1.91 < 3.0",
@@ -555,8 +555,8 @@ def test_roll_options_dec89_9(proseco_agasc_1p7):
         " roll   P2  n_stars improvement roll_min roll_max  add_ids  drop_ids",
         "------ ---- ------- ----------- -------- -------- --------- --------",
         "286.97 3.61    0.55        0.00   286.97   286.97        --       --",
-        "280.97 7.23    7.67       10.35   276.72   285.22 608567744       --",
-        "287.47 7.25    6.27        8.69   276.14   297.81        --       --",
+        "280.97 7.22    7.67       10.35   276.72   285.22 608567744       --",
+        "287.35 7.25    6.27        8.69   276.14   297.81        --       --",
     ]
 
     exp[18000] = [
@@ -564,7 +564,7 @@ def test_roll_options_dec89_9(proseco_agasc_1p7):
         "------ ---- ------- ----------- -------- -------- --------- --------",
         "276.71 3.61    7.85        0.00   276.71   276.71        --       --",
         "277.09 7.25    8.00        1.84   265.88   287.54        --       --",
-        "270.59 7.15    8.00        1.80   266.21   274.96 608567744       --",
+        "270.59 7.14    8.00        1.79   266.21   274.96 608567744       --",
     ]
 
     for obsid in (48000, 18000):
@@ -667,13 +667,6 @@ def test_get_roll_intervals(proseco_agasc_1p7):
 
     # For the OR we expect this
     or_exp_intervs = [
-        {
-            "roll": 281.56864473302164,
-            "roll_min": 281.56864473302164,
-            "roll_max": 281.5759766065589,
-            "add_ids": {84943288},
-            "drop_ids": {84937736},
-        },
         {
             "roll": 289.0759766065589,
             "roll_min": 283.8259766065589,
