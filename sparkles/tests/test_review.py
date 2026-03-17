@@ -126,7 +126,7 @@ def test_review_catalog(proseco_agasc_1p7, tmpdir):
         {
             "category": "warning",
             "text": "Guide star imposter offset 2.6, limit 2.5 arcsec",
-            "idx": np.int64(4),
+            "idx": 4,
         },
         {"category": "warning", "text": "P2: 3.32 less than 4.0 for ER"},
         {
@@ -449,7 +449,7 @@ def test_run_aca_review_function(proseco_agasc_1p7, tmpdir):
         {
             "category": "warning",
             "text": "Guide star imposter offset 2.6, limit 2.5 arcsec",
-            "idx": np.int64(4),
+            "idx": 4,
         },
         {"category": "warning", "text": "P2: 3.32 less than 4.0 for ER"},
         {
@@ -490,7 +490,7 @@ def test_run_aca_review_dyn_bgd_n_faint(proseco_agasc_1p7, tmpdir):
         {
             "category": "warning",
             "text": "Guide star imposter offset 2.6, limit 2.5 arcsec",
-            "idx": np.int64(4),
+            "idx": 4,
         },
         {"category": "warning", "text": "P2: 3.32 less than 4.0 for ER"},
         {
