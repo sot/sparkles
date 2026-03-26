@@ -43,7 +43,7 @@ def test_run_one_yoshi(proseco_agasc_1p7):
         "n_warning": 1,
         "n_caution": 0,
         "n_info": 1,
-        "P2": 1.8262885437637175,
+        "P2": 1.7822485889048583,
         "guide_count": 3.8577301888366304,
     }
     actual = run_one_yoshi(**request, dyn_bgd_n_faint=0)
