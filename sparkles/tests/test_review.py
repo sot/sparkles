@@ -238,6 +238,50 @@ def test_review_venus():
     ]
 
 
+def test_review_venus_fixed():
+    kwargs = {
+        "obsid": -200,
+        "att": [-0.49877014, -0.29681368, 0.20445036, 0.78824491],
+        "duration": 5000,
+        "man_angle": 90,
+        "date": "2026:100:00:00:10.000",
+        "t_ccd": -10,
+        "dither": (16, 16),
+        "detector": "ACIS-I",
+        "sim_offset": 0,
+        "focus_offset": 0,
+        "n_acq": 8,
+        "n_guide": 6,
+        "include_ids_guide": [
+            84545472,
+            159396848,
+            159397320,
+            84541632,
+            160313992,
+            84543464,
+        ],
+        "n_fid": 2,
+        "include_ids_fid": [4, 6],
+        "target_name": "Venus",
+    }
+    aca = get_aca_catalog(**kwargs)
+    acar = aca.get_review_table()
+    acar.run_aca_review()
+    assert acar.messages == [
+        {
+            "category": "info",
+            "text": "Venus mag <= -2.9. Ran Full OBO Mitigation checks.",
+        },
+        {"category": "caution", "text": "OR with 6 guides requested but 5 is typical"},
+        {"category": "caution", "text": "OR requested 2 fids but 3 is typical"},
+        {
+            "category": "info",
+            "text": "included guide ID(s): [84545472, 159396848, 159397320, 84541632, 160313992, 84543464]",
+        },
+        {"category": "info", "text": "included fid ID(s): [4, 6]"},
+    ]
+
+
 def test_review_saturn():
     kwargs = {
         "obsid": 24847,
