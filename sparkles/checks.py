@@ -80,6 +80,8 @@ def check_planets(acar: ACACheckTable) -> list[Message]:
 
     msgs = []
     duration = acar.duration if acar.duration is not None else 0.0
+    target_name = str(getattr(acar, "target_name", "") or "")
+    target_name_lower = target_name.lower()
     planets = check_for_close_planets(acar.date, duration, acar.att)
 
     planets_on_ccd = {}
@@ -123,7 +125,7 @@ def check_planets(acar: ACACheckTable) -> list[Message]:
             continue
 
         # If there is any kind of bright object but it isn't the target, warn
-        if planet not in acar.target_name.lower():
+        if planet not in target_name_lower:
             if min_state["label"] in [
                 "partial mitigation",
                 "full mitigation",
@@ -154,11 +156,11 @@ def check_planets(acar: ACACheckTable) -> list[Message]:
             )
 
     for planet in BRIGHT_PLANETS:
-        if planet.lower() in acar.target_name.lower() and planet not in planets_on_ccd:
+        if planet.lower() in target_name_lower and planet not in planets_on_ccd:
             msgs += [
                 Message(
                     "warning",
-                    f"{planet.capitalize()} in target name '{acar.target_name}' but not on CCD.",
+                    f"{planet.capitalize()} in target name '{target_name}' but not on CCD.",
                 )
             ]
     return msgs
@@ -282,7 +284,7 @@ def check_obo_track_spoilers(
     guide_and_fid = acar[ok]
     spoiled, _ = check_spoiled_by_bright_object(guide_and_fid, planet_pos)
     for row in guide_and_fid[spoiled]:
-        msg = f"{planet} spoils tracked star idx {row['idx']} id {row['id']}"
+        msg = f"{planet.capitalize()}. spoils tracked star idx {row['idx']} id {row['id']}"
         msgs += [Message("critical", msg, idx=row["idx"])]
     return msgs
 
