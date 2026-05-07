@@ -3,23 +3,22 @@ import functools
 from itertools import combinations
 
 import astropy.units as u
-from cxotime import CxoTime
-from chandra_aca.planets import BRIGHT_PLANETS
+import numpy as np
+import proseco.characteristics as ACA
 from chandra_aca.planets import (
+    BRIGHT_PLANETS,
     get_planet_chandra_ccd_position,
     get_planet_mag_states,
 )
-import numpy as np
-import proseco.characteristics as ACA
 from chandra_aca.transform import mag_to_count_rate, snr_mag_for_t_ccd
-from proseco.core import ACACatalogTableRow, StarsTableRow
+from cxotime import CxoTime
 from proseco.bright_object import (
-    get_bright_object_acq_pos,
+    bright_object_distribution_check,
     check_for_close_planets,
     check_spoiled_by_bright_object,
-    bright_object_distribution_check
+    get_bright_object_acq_pos,
 )
-
+from proseco.core import ACACatalogTableRow, StarsTableRow
 
 from sparkles.aca_check_table import ACACheckTable
 from sparkles.messages import Message

@@ -18,6 +18,7 @@ from proseco.tests.test_common import DARK40, STD_INFO, mod_std_info
 from Quaternion import Quat
 
 from sparkles import ACAReviewTable, get_t_ccds_bonus
+from sparkles import checks as sparkle_checks
 from sparkles.aca_check_table import ACACheckTable
 from sparkles.core import (
     check_acq_p2,
@@ -79,11 +80,11 @@ def test_venus_bad():
     assert acar.messages == [
         {
             "category": "critical",
-            "text": "Need 5 guide stars on each side of CCD opposite bright object.",
+            "text": "Need 5 guide stars on side of CCD opposite bright object.",
         },
         {
             "category": "critical",
-            "text": "Need 2 fid lights on each side of CCD opposite bright object.",
+            "text": "Need 2 fid lights on side of CCD opposite bright object.",
         },
         {
             "category": "critical",
@@ -132,6 +133,56 @@ def test_venus_good():
             "text": "Venus mag <= -2.9. Ran Full OBO Mitigation checks.",
         }
     ]
+
+
+def test_check_planets_instrument_notify_runs_spoiler_checks(monkeypatch):
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=4, mag=8.5)
+    aca = get_aca_catalog(
+        **mod_std_info(detector="HRC-I"), duration=20000, stars=stars, dark=DARK40
+    )
+    acar = aca.get_review_table()
+
+    planet_pos = Table(
+        [{"time": CxoTime(acar.date).secs, "row": stars[0]["row"], "col": stars[0]["col"]}]
+    )
+
+    def fake_check_for_close_planets(date, duration, att):
+        return {"mars": planet_pos}
+
+    def fake_get_planet_mag_states(planet, start, stop):
+        return Table(
+            {
+                "label": ["instrument notify"],
+                "mag_start": [-1.9],
+                "mag_stop": [-1.0],
+            }
+        )
+
+    def fake_get_planet_chandra_ccd_position(
+        planet, date, duration, att, ephem_source="cxc"
+    ):
+        assert ephem_source == "stk"
+        return planet_pos
+
+    monkeypatch.setattr(
+        sparkle_checks, "check_for_close_planets", fake_check_for_close_planets
+    )
+    monkeypatch.setattr(
+        "chandra_aca.planets.get_planet_mag_states", fake_get_planet_mag_states
+    )
+    monkeypatch.setattr(
+        "chandra_aca.planets.get_planet_chandra_ccd_position",
+        fake_get_planet_chandra_ccd_position,
+    )
+
+    msgs = sparkle_checks.check_planets(acar)
+    msg_texts = [msg.text for msg in msgs]
+
+    assert any("Mars column in acquisition box" in text for text in msg_texts)
+    assert any("mars spoils tracked star" in text for text in msg_texts)
+    assert not any("Ran Partial OBO Mitigation checks." in text for text in msg_texts)
+    assert not any("Ran Full OBO Mitigation checks." in text for text in msg_texts)
 
 
 @pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
