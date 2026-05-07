@@ -2,10 +2,24 @@
 import functools
 from itertools import combinations
 
+import astropy.units as u
+from cxotime import CxoTime
+from chandra_aca.planets import BRIGHT_PLANETS
+from chandra_aca.planets import (
+    get_planet_chandra_ccd_position,
+    get_planet_mag_states,
+)
 import numpy as np
 import proseco.characteristics as ACA
 from chandra_aca.transform import mag_to_count_rate, snr_mag_for_t_ccd
 from proseco.core import ACACatalogTableRow, StarsTableRow
+from proseco.bright_object import (
+    get_bright_object_acq_pos,
+    check_for_close_planets,
+    check_spoiled_by_bright_object,
+    bright_object_distribution_check
+)
+
 
 from sparkles.aca_check_table import ACACheckTable
 from sparkles.messages import Message
@@ -62,13 +76,8 @@ def check_guide_overlap(acar: ACACheckTable) -> list[Message]:
     return msgs
 
 
-from proseco.bright_object import check_for_close_planets
-
-
 def check_planets(acar: ACACheckTable) -> list[Message]:
-    import astropy.units as u
-    from chandra_aca.planets import BRIGHT_PLANET_LIST
-    from cxotime import CxoTime
+    """Check for planets on the CCD and run appropriate checks."""
 
     msgs = []
     duration = acar.duration if acar.duration is not None else 0.0
@@ -80,11 +89,6 @@ def check_planets(acar: ACACheckTable) -> list[Message]:
         # If the table is empty, just skip
         if len(planets[planet]) == 0:
             continue
-
-        from chandra_aca.planets import (
-            get_planet_chandra_ccd_position,
-            get_planet_mag_states,
-        )
 
         mag_states = get_planet_mag_states(
             planet, acar.date, CxoTime(acar.date) + duration * u.s
@@ -98,6 +102,7 @@ def check_planets(acar: ACACheckTable) -> list[Message]:
             acar.date,
             duration,
             acar.att,
+            ephem_source="stk",
         )
 
         # If planet is within 2 degrees but not on CCD, that's a critical
@@ -135,17 +140,21 @@ def check_planets(acar: ACACheckTable) -> list[Message]:
                 )
             ]
 
-        # And skip the rest of the checks unless in a mitigation state
+        # Run direct spoiler checks for any planet on CCD, even if the
+        # current magnitude does not require full or partial mitigation.
+        msgs += check_obo_spoilers(acar, planet=planet, planet_pos=planet_pos)
+
+        # Distribution checks apply only in explicit mitigation states.
         if min_state["label"] in ["partial mitigation", "full mitigation"]:
             mitigation = "full" if min_state["label"].startswith("full") else "partial"
-            msgs += check_run_obo_checks(
+            msgs += check_run_obo_distribution_checks(
                 acar,
                 mitigation=mitigation,
                 planet=planet,
                 planet_pos=planet_pos,
             )
 
-    for planet in BRIGHT_PLANET_LIST:
+    for planet in BRIGHT_PLANETS:
         if planet.lower() in acar.target_name.lower() and planet not in planets_on_ccd:
             msgs += [
                 Message(
@@ -156,12 +165,17 @@ def check_planets(acar: ACACheckTable) -> list[Message]:
     return msgs
 
 
-def check_run_obo_checks(
-    acar: ACACheckTable, mitigation="partial", planet=None, planet_pos=None
-) -> list[Message]:
+def check_obo_spoilers(acar: ACACheckTable, planet=None, planet_pos=None) -> list[Message]:
     msgs = []
     msgs += check_obo_acq_spoilers(acar, planet, planet_pos)
     msgs += check_obo_track_spoilers(acar, planet, planet_pos)
+    return msgs
+
+
+def check_run_obo_distribution_checks(
+    acar: ACACheckTable, mitigation="partial", planet=None, planet_pos=None
+) -> list[Message]:
+    msgs = []
     if mitigation == "full":
         msgs += check_full_obo_distribution(acar, planet_pos)
         msgs += [
@@ -178,6 +192,16 @@ def check_run_obo_checks(
                 f"{planet.capitalize()} mag <= -2.0. Ran Partial OBO Mitigation checks.",
             )
         ]
+    return msgs
+
+
+def check_run_obo_checks(
+    acar: ACACheckTable, mitigation="partial", planet=None, planet_pos=None
+) -> list[Message]:
+    msgs = check_obo_spoilers(acar, planet, planet_pos)
+    msgs += check_run_obo_distribution_checks(
+        acar, mitigation=mitigation, planet=planet, planet_pos=planet_pos
+    )
     return msgs
 
 
@@ -205,8 +229,6 @@ def check_obo_acq_spoilers(
     list of Message
         List of messages from the bright object acquisition box check.
     """
-    from proseco.bright_object import get_bright_object_acq_pos
-
     msgs = []
     ok = np.isin(acar["type"], ("BOT", "ACQ"))
     acqs = acar[ok]
@@ -223,8 +245,9 @@ def check_obo_acq_spoilers(
         in_box = (jcol + pad >= col_min) & (jcol - pad <= col_max)
         if np.any(in_box):
             msg = (
-                f"{planet.capitalize()} column in acquisition box idx {entry['idx']} id {entry['id']}"
-                f" row {entry['row']:.1f} col {entry['col']:.1f}"
+                f"{planet.capitalize()} column in acquisition box idx "
+                f"{entry['idx']} id {entry['id']} "
+                f"row {entry['row']:.1f} col {entry['col']:.1f}"
             )
             msgs += [Message("critical", msg, idx=entry["idx"])]
     return msgs
@@ -253,8 +276,6 @@ def check_obo_track_spoilers(
     list of Message
         List of messages from the bright object tracked star check.
     """
-    from proseco.bright_object import check_spoiled_by_bright_object
-
     msgs = []
     ok = np.isin(acar["type"], ("GUI", "BOT", "FID"))
     guide_and_fid = acar[ok]
@@ -290,8 +311,6 @@ def check_partial_obo_distribution(
     list of Message
         List of messages from the bright object guide star distribution check.
     """
-    from proseco.bright_object import bright_object_distribution_check
-
     # Check that there are at least 2 guide stars in each quadrant of the ccd
     msgs = []
     ok = np.isin(acar["type"], ("GUI", "BOT"))
@@ -348,7 +367,7 @@ def check_full_obo_distribution(
         msgs += [
             Message(
                 "critical",
-                "Need 5 guide stars on each side of CCD opposite bright object.",
+                "Need 5 guide stars on side of CCD opposite bright object.",
             )
         ]
     if not two_fids_opposite:
@@ -356,7 +375,7 @@ def check_full_obo_distribution(
         msgs += [
             Message(
                 "critical",
-                "Need 2 fid lights on each side of CCD opposite bright object.",
+                "Need 2 fid lights on side of CCD opposite bright object.",
             )
         ]
     if not obo_not_near_boundary:
