@@ -164,7 +164,9 @@ def check_planets(acar: ACACheckTable) -> list[Message]:
     return msgs
 
 
-def check_obo_spoilers(acar: ACACheckTable, planet=None, planet_pos=None) -> list[Message]:
+def check_obo_spoilers(
+    acar: ACACheckTable, planet=None, planet_pos=None
+) -> list[Message]:
     msgs = []
     msgs += check_obo_acq_spoilers(acar, planet, planet_pos)
     msgs += check_obo_track_spoilers(acar, planet, planet_pos)
