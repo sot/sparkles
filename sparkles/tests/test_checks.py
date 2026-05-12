@@ -144,7 +144,13 @@ def test_check_planets_instrument_notify_runs_spoiler_checks(monkeypatch):
     acar = aca.get_review_table()
 
     planet_pos = Table(
-        [{"time": CxoTime(acar.date).secs, "row": stars[0]["row"], "col": stars[0]["col"]}]
+        [
+            {
+                "time": CxoTime(acar.date).secs,
+                "row": stars[0]["row"],
+                "col": stars[0]["col"],
+            }
+        ]
     )
 
     def fake_check_for_close_planets(date, duration, att):
@@ -168,11 +174,10 @@ def test_check_planets_instrument_notify_runs_spoiler_checks(monkeypatch):
     monkeypatch.setattr(
         sparkle_checks, "check_for_close_planets", fake_check_for_close_planets
     )
+    monkeypatch.setattr(sparkle_checks, "get_planet_mag_states", fake_get_planet_mag_states)
     monkeypatch.setattr(
-        "chandra_aca.planets.get_planet_mag_states", fake_get_planet_mag_states
-    )
-    monkeypatch.setattr(
-        "chandra_aca.planets.get_planet_chandra_ccd_position",
+        sparkle_checks,
+        "get_planet_chandra_ccd_position",
         fake_get_planet_chandra_ccd_position,
     )
 
@@ -180,9 +185,24 @@ def test_check_planets_instrument_notify_runs_spoiler_checks(monkeypatch):
     msg_texts = [msg.text for msg in msgs]
 
     assert any("Mars column in acquisition box" in text for text in msg_texts)
-    assert any("mars spoils tracked star" in text for text in msg_texts)
+    assert any("Mars spoils tracked star" in text for text in msg_texts)
     assert not any("Ran Partial OBO Mitigation checks." in text for text in msg_texts)
     assert not any("Ran Full OBO Mitigation checks." in text for text in msg_texts)
+
+
+def test_check_planets_handles_none_target_name(monkeypatch):
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=4, mag=8.5)
+    aca = get_aca_catalog(
+        **mod_std_info(detector="HRC-I"), duration=20000, stars=stars, dark=DARK40
+    )
+    acar = aca.get_review_table()
+    acar.target_name = None
+
+    monkeypatch.setattr(sparkle_checks, "check_for_close_planets", lambda *args: {})
+
+    msgs = sparkle_checks.check_planets(acar)
+    assert msgs == []
 
 
 @pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
@@ -256,12 +276,12 @@ def test_check_jupiter_track_spoilers_true(aca_review_table, jupiter_col_offset)
         else [
             {
                 "category": "critical",
-                "text": "jupiter spoils tracked star idx 4 id 100",
+                "text": "Jupiter spoils tracked star idx 4 id 100",
                 "idx": 4,
             },
             {
                 "category": "critical",
-                "text": "jupiter spoils tracked star idx 6 id 102",
+                "text": "Jupiter spoils tracked star idx 6 id 102",
                 "idx": 6,
             },
         ]
