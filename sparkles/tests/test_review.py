@@ -220,7 +220,10 @@ def test_review_venus():
         "target_name": "Venus",
     }
     aca = get_aca_catalog(**kwargs)
-    acar = aca.get_review_table()
+
+    # Run this one from the pkl to confirm the mitigation data is working
+    aca2 = pickle.loads(pickle.dumps(aca))
+    acar = aca2.get_review_table()
     acar.run_aca_review()
     assert acar.messages == [
         {
