@@ -174,7 +174,9 @@ def test_check_planets_instrument_notify_runs_spoiler_checks(monkeypatch):
     monkeypatch.setattr(
         sparkle_checks, "check_for_close_planets", fake_check_for_close_planets
     )
-    monkeypatch.setattr(sparkle_checks, "get_planet_mag_states", fake_get_planet_mag_states)
+    monkeypatch.setattr(
+        sparkle_checks, "get_planet_mag_states", fake_get_planet_mag_states
+    )
     monkeypatch.setattr(
         sparkle_checks,
         "get_planet_chandra_ccd_position",
@@ -344,7 +346,11 @@ def test_check_jupiter_distribution_cross(aca_review_table):
         {
             "category": "critical",
             "text": "Partial OBO guide star distribution check failed. Need 2 guide stars always opposite bright object.",
-        }
+        },
+        {
+            "category": "info",
+            "text": "Bright object extent crosses midline. 2 guide stars on each side of CCD are required.",
+        },
     ]
 
 

@@ -319,12 +319,25 @@ def check_partial_obo_distribution(
     # Check that there are at least 2 guide stars in each quadrant of the ccd
     msgs = []
     ok = np.isin(acar["type"], ("GUI", "BOT"))
-    if not bright_object_distribution_check(acar[ok], planet_pos):
+    distribution_ok, crosses_midline = bright_object_distribution_check(
+        acar[ok], planet_pos
+    )
+    if not distribution_ok:
         msg = (
             "Partial OBO guide star distribution check failed. "
             "Need 2 guide stars always opposite bright object."
         )
         msgs += [Message("critical", msg)]
+
+        if crosses_midline:
+            msgs += [
+                Message(
+                    "info",
+                    "Bright object extent crosses midline. "
+                    "2 guide stars on each side of CCD are required.",
+                )
+            ]
+
     return msgs
 
 
