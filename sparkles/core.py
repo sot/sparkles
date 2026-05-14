@@ -1037,10 +1037,6 @@ check_obo_track_spoilers = checks.acar_check_wrapper(checks.check_obo_track_spoi
 check_partial_obo_distribution = checks.acar_check_wrapper(
     checks.check_partial_obo_distribution
 )
-# Backward compatibility aliases
-check_jupiter_acq_spoilers = check_obo_acq_spoilers
-check_jupiter_track_spoilers = check_obo_track_spoilers
-check_jupiter_distribution = check_partial_obo_distribution
 check_guide_is_candidate = checks.acar_check_wrapper(checks.check_guide_is_candidate)
 check_guide_overlap = checks.acar_check_wrapper(checks.check_guide_overlap)
 check_imposters_guide = checks.acar_check_wrapper(checks.check_imposters_guide)
