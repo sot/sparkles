@@ -7,7 +7,6 @@ import numpy as np
 import proseco.characteristics as ACA
 from chandra_aca.planets import (
     BRIGHT_PLANETS,
-    get_planet_chandra_ccd_position,
     get_planet_mag_states,
 )
 from chandra_aca.transform import mag_to_count_rate, snr_mag_for_t_ccd
@@ -78,7 +77,14 @@ def check_guide_overlap(acar: ACACheckTable) -> list[Message]:
 def check_planets(acar: ACACheckTable) -> list[Message]:
     """Check for planets on the CCD and run appropriate checks."""
 
+    return get_planet_check_data(acar)["messages"]
+
+
+def get_planet_check_data(acar: ACACheckTable) -> dict:
+    """Get planet check messages and derived mitigation flags for a catalog."""
+
     msgs = []
+    planet_full_mitigation = False
     duration = acar.duration if acar.duration is not None else 0.0
     target_name = str(getattr(acar, "target_name", "") or "")
     target_name_lower = target_name.lower()
@@ -87,10 +93,7 @@ def check_planets(acar: ACACheckTable) -> list[Message]:
     planets_on_ccd = {}
 
     for planet in planets:
-        # If the table is empty, just skip
-        if len(planets[planet]) == 0:
-            continue
-
+        planet_pos = planets[planet]
         mag_states = get_planet_mag_states(
             planet, acar.date, CxoTime(acar.date) + duration * u.s
         )
@@ -98,17 +101,9 @@ def check_planets(acar: ACACheckTable) -> list[Message]:
         min_state_idx = np.argmin(mag_states["mag_start"])
         min_state = mag_states[min_state_idx]
 
-        planet_pos = get_planet_chandra_ccd_position(
-            planet,
-            acar.date,
-            duration,
-            acar.att,
-            ephem_source="stk",
-        )
-
         # If planet is within 2 degrees but not on CCD, that's a critical
         if len(planet_pos) == 0:
-            if not np.all(mag_states["label"] == "no action"):
+            if min_state["label"] != "no action":
                 msgs += [
                     Message(
                         "critical",
@@ -141,6 +136,15 @@ def check_planets(acar: ACACheckTable) -> list[Message]:
                 )
             ]
 
+        # Always emit an info message summarizing the planet state.
+        msgs += [
+            Message(
+                "info",
+                f"{planet.capitalize()} on CCD. "
+                f"(mag {min_state['mag_start']:.1f} to {min_state['mag_stop']:.1f}).",
+            )
+        ]
+
         # Run direct spoiler checks for any planet on CCD, even if the
         # current magnitude does not require full or partial mitigation.
         msgs += check_obo_spoilers(acar, planet=planet, planet_pos=planet_pos)
@@ -148,10 +152,11 @@ def check_planets(acar: ACACheckTable) -> list[Message]:
         # Distribution checks apply only in explicit mitigation states.
         if min_state["label"] in ["partial mitigation", "full mitigation"]:
             mitigation = "full" if min_state["label"].startswith("full") else "partial"
+            if mitigation == "full":
+                planet_full_mitigation = True
             msgs += check_run_obo_distribution_checks(
                 acar,
                 mitigation=mitigation,
-                planet=planet,
                 planet_pos=planet_pos,
             )
 
@@ -163,7 +168,10 @@ def check_planets(acar: ACACheckTable) -> list[Message]:
                     f"{planet.capitalize()} in target name '{target_name}' but not on CCD.",
                 )
             ]
-    return msgs
+    return {
+        "messages": msgs,
+        "planet_full_mitigation": planet_full_mitigation,
+    }
 
 
 def check_obo_spoilers(
@@ -176,25 +184,13 @@ def check_obo_spoilers(
 
 
 def check_run_obo_distribution_checks(
-    acar: ACACheckTable, mitigation="partial", planet=None, planet_pos=None
+    acar: ACACheckTable, mitigation="partial", planet_pos=None
 ) -> list[Message]:
     msgs = []
     if mitigation == "full":
         msgs += check_full_obo_distribution(acar, planet_pos)
-        msgs += [
-            Message(
-                "info",
-                f"{planet.capitalize()} mag <= -2.9. Ran Full OBO Mitigation checks.",
-            )
-        ]
     else:
         msgs += check_partial_obo_distribution(acar, planet_pos)
-        msgs += [
-            Message(
-                "info",
-                f"{planet.capitalize()} mag <= -2.0. Ran Partial OBO Mitigation checks.",
-            )
-        ]
     return msgs
 
 
@@ -203,7 +199,7 @@ def check_run_obo_checks(
 ) -> list[Message]:
     msgs = check_obo_spoilers(acar, planet, planet_pos)
     msgs += check_run_obo_distribution_checks(
-        acar, mitigation=mitigation, planet=planet, planet_pos=planet_pos
+        acar, mitigation=mitigation, planet_pos=planet_pos
     )
     return msgs
 

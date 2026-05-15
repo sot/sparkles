@@ -92,10 +92,6 @@ def test_venus_bad():
         },
         {"category": "critical", "text": "Need at least 6 guide stars in the catalog."},
         {"category": "critical", "text": "Full mitigation OBO checks failed."},
-        {
-            "category": "info",
-            "text": "Venus mag <= -2.9. Ran Full OBO Mitigation checks.",
-        },
     ]
 
 
@@ -127,12 +123,7 @@ def test_venus_good():
     aca2 = get_aca_catalog(**kwargs_mod)
     acar2 = aca2.get_review_table()
     check_run_obo_checks(acar2, mitigation="full", planet="venus", planet_pos=pos2)
-    assert acar2.messages == [
-        {
-            "category": "info",
-            "text": "Venus mag <= -2.9. Ran Full OBO Mitigation checks.",
-        }
-    ]
+    assert acar2.messages == []
 
 
 def test_check_planets_instrument_notify_runs_spoiler_checks(monkeypatch):
@@ -165,27 +156,17 @@ def test_check_planets_instrument_notify_runs_spoiler_checks(monkeypatch):
             }
         )
 
-    def fake_get_planet_chandra_ccd_position(
-        planet, date, duration, att, ephem_source="cxc"
-    ):
-        assert ephem_source == "stk"
-        return planet_pos
-
     monkeypatch.setattr(
         sparkle_checks, "check_for_close_planets", fake_check_for_close_planets
     )
     monkeypatch.setattr(
         sparkle_checks, "get_planet_mag_states", fake_get_planet_mag_states
     )
-    monkeypatch.setattr(
-        sparkle_checks,
-        "get_planet_chandra_ccd_position",
-        fake_get_planet_chandra_ccd_position,
-    )
 
     msgs = sparkle_checks.check_planets(acar)
     msg_texts = [msg.text for msg in msgs]
 
+    assert any("Mars on CCD. (mag -1.9 to -1.0)." in text for text in msg_texts)
     assert any("Mars column in acquisition box" in text for text in msg_texts)
     assert any("Mars spoils tracked star" in text for text in msg_texts)
     assert not any("Ran Partial OBO Mitigation checks." in text for text in msg_texts)
@@ -205,6 +186,41 @@ def test_check_planets_handles_none_target_name(monkeypatch):
 
     msgs = sparkle_checks.check_planets(acar)
     assert msgs == []
+
+
+def test_check_planets_warns_when_bright_planet_is_off_ccd(monkeypatch):
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=4, mag=8.5)
+    aca = get_aca_catalog(
+        **mod_std_info(detector="HRC-I"), duration=20000, stars=stars, dark=DARK40
+    )
+    acar = aca.get_review_table()
+
+    off_ccd_planet = Table({"time": [], "row": [], "col": []})
+
+    monkeypatch.setattr(
+        sparkle_checks,
+        "check_for_close_planets",
+        lambda *args: {"mars": off_ccd_planet},
+    )
+    monkeypatch.setattr(
+        sparkle_checks,
+        "get_planet_mag_states",
+        lambda *args, **kwargs: Table(
+            {
+                "label": ["partial mitigation"],
+                "mag_start": [-2.5],
+                "mag_stop": [-2.0],
+            }
+        ),
+    )
+
+    msgs = sparkle_checks.check_planets(acar)
+
+    assert any(
+        msg.category == "critical" and msg.text == "Mars within 2 deg but not on CCD."
+        for msg in msgs
+    )
 
 
 @pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))

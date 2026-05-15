@@ -62,7 +62,7 @@ def test_jupiter_present():
     acar.run_aca_review(make_html=False)
     assert acar.messages[-1] == {
         "category": "info",
-        "text": "Jupiter mag <= -2.0. Ran Partial OBO Mitigation checks.",
+        "text": "Jupiter on CCD. (mag -2.9 to -2.0).",
     }
 
 
@@ -197,7 +197,7 @@ def test_review_mars():
     assert acar.messages == [
         {
             "category": "info",
-            "text": "Mars mag <= -2.0. Ran Partial OBO Mitigation checks.",
+            "text": "Mars on CCD. (mag -2.9 to -2.0).",
         }
     ]
 
@@ -227,14 +227,14 @@ def test_review_venus():
     acar.run_aca_review()
     assert acar.messages == [
         {
+            "category": "info",
+            "text": "Venus on CCD. (mag -5.0 to -2.9).",
+        },
+        {
             "category": "critical",
             "text": "Bright object tracks too close to CCD boundary row=0.",
         },
         {"category": "critical", "text": "Full mitigation OBO checks failed."},
-        {
-            "category": "info",
-            "text": "Venus mag <= -2.9. Ran Full OBO Mitigation checks.",
-        },
         {"category": "caution", "text": "OR with 6 guides requested but 5 is typical"},
         {"category": "caution", "text": "OR requested 2 fids but 3 is typical"},
         {"category": "info", "text": "included fid ID(s): [4, 6]"},
@@ -271,10 +271,7 @@ def test_review_venus_fixed():
     acar = aca.get_review_table()
     acar.run_aca_review()
     assert acar.messages == [
-        {
-            "category": "info",
-            "text": "Venus mag <= -2.9. Ran Full OBO Mitigation checks.",
-        },
+        {"category": "info", "text": "Venus on CCD. (mag -5.0 to -2.9)."},
         {"category": "caution", "text": "OR with 6 guides requested but 5 is typical"},
         {"category": "caution", "text": "OR requested 2 fids but 3 is typical"},
         {
@@ -313,6 +310,10 @@ def test_review_saturn():
         {
             "category": "info",
             "text": "Bright object alert: Saturn on CCD but not in target name\n",
+        },
+        {
+            "category": "info",
+            "text": "Saturn on CCD. (mag 0.0 to 40.0).",
         },
     ]
 
