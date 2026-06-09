@@ -91,12 +91,25 @@ def get_planet_check_data(acar: ACACheckTable) -> dict:
     planets = check_for_close_planets(acar.date, duration, acar.att)
 
     planets_on_ccd = {}
+    planets_skipped_empty_mag_states = set()
 
     for planet in planets:
         planet_pos = planets[planet]
         mag_states = get_planet_mag_states(
             planet, acar.date, CxoTime(acar.date) + duration * u.s
         )
+        if len(mag_states) == 0:
+            planets_skipped_empty_mag_states.add(planet)
+            if len(planet_pos) > 0:
+                msgs += [
+                    Message(
+                        "caution",
+                        f"{planet.capitalize()} on CCD but no mag states available. "
+                        "Skipping planet checks.",
+                    )
+                ]
+            continue
+
         # min/brightest mag state
         min_state_idx = np.argmin(mag_states["mag_start"])
         min_state = mag_states[min_state_idx]
@@ -127,12 +140,12 @@ def get_planet_check_data(acar: ACACheckTable) -> dict:
                 "instrument notify",
             ]:
                 warning_level = "warning"
-            elif min_state["label"] == "no action":
+            else:
                 warning_level = "info"
             msgs += [
                 Message(
                     warning_level,
-                    f"Bright object alert: {planet.title()} on CCD but not in target name\n",
+                    f"Bright object alert: {planet.title()} on CCD but not in target name",
                 )
             ]
 
@@ -161,6 +174,8 @@ def get_planet_check_data(acar: ACACheckTable) -> dict:
             )
 
     for planet in BRIGHT_PLANETS:
+        if planet in planets_skipped_empty_mag_states:
+            continue
         if planet.lower() in target_name_lower and planet not in planets_on_ccd:
             msgs += [
                 Message(

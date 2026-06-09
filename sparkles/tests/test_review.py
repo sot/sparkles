@@ -309,7 +309,7 @@ def test_review_saturn():
         },
         {
             "category": "info",
-            "text": "Bright object alert: Saturn on CCD but not in target name\n",
+            "text": "Bright object alert: Saturn on CCD but not in target name",
         },
         {
             "category": "info",

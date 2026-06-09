@@ -223,6 +223,45 @@ def test_check_planets_warns_when_bright_planet_is_off_ccd(monkeypatch):
     )
 
 
+def test_check_planets_skips_empty_mag_states(monkeypatch):
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=4, mag=8.5)
+    aca = get_aca_catalog(
+        **mod_std_info(detector="HRC-I"), duration=20000, stars=stars, dark=DARK40
+    )
+    acar = aca.get_review_table()
+    acar.target_name = "Mars"
+
+    mars_pos = Table(
+        [
+            {
+                "time": CxoTime(acar.date).secs,
+                "row": stars[0]["row"],
+                "col": stars[0]["col"],
+            }
+        ]
+    )
+
+    monkeypatch.setattr(
+        sparkle_checks,
+        "check_for_close_planets",
+        lambda *args: {"mars": mars_pos},
+    )
+    monkeypatch.setattr(
+        sparkle_checks,
+        "get_planet_mag_states",
+        lambda *args, **kwargs: Table({"label": [], "mag_start": [], "mag_stop": []}),
+    )
+
+    msgs = sparkle_checks.check_planets(acar)
+    assert msgs == [
+        sparkle_checks.Message(
+            "caution",
+            "Mars on CCD but no mag states available. Skipping planet checks.",
+        )
+    ]
+
+
 @pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 def test_check_jupiter_acq_spoilers_fail(aca_review_table):
     stars = StarsTable.empty()
