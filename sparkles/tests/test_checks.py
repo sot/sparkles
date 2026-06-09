@@ -173,6 +173,52 @@ def test_check_planets_instrument_notify_runs_spoiler_checks(monkeypatch):
     assert not any("Ran Full OBO Mitigation checks." in text for text in msg_texts)
 
 
+def test_check_planets_obo_too_bright(monkeypatch):
+    """
+    Do a monkeypatch test on the obo-too-bright path.
+
+    This is justified because none of the current bright planets are actually
+    too bright over the interval out to 2041.
+    """
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=4, mag=8.5)
+    aca = get_aca_catalog(
+        **mod_std_info(detector="HRC-I"), duration=20000, stars=stars, dark=DARK40
+    )
+    acar = aca.get_review_table()
+
+    planet_pos = Table(
+        [
+            {
+                "time": CxoTime(acar.date).secs,
+                "row": stars[0]["row"],
+                "col": stars[0]["col"],
+            }
+        ]
+    )
+
+    monkeypatch.setattr(
+        sparkle_checks,
+        "check_for_close_planets",
+        lambda *args: {"venus": planet_pos},
+    )
+    monkeypatch.setattr(
+        sparkle_checks,
+        "get_planet_mag_states",
+        lambda *args, **kwargs: Table(
+            {
+                "label": ["obo too bright"],
+                "mag_start": [-30.0],
+                "mag_stop": [-5.0],
+            }
+        ),
+    )
+
+    msgs = sparkle_checks.check_planets(acar)
+
+    assert msgs == [sparkle_checks.Message("critical", "Venus too bright.")]
+
+
 def test_check_planets_handles_none_target_name(monkeypatch):
     stars = StarsTable.empty()
     stars.add_fake_constellation(n_stars=4, mag=8.5)
