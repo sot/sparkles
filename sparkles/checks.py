@@ -5,12 +5,14 @@ from itertools import combinations
 import astropy.units as u
 import numpy as np
 import proseco.characteristics as ACA
+import proseco.characteristics_acq as ACQ
 from chandra_aca.planets import (
     BRIGHT_PLANETS,
     get_planet_mag_states,
 )
 from chandra_aca.transform import mag_to_count_rate, snr_mag_for_t_ccd
 from cxotime import CxoTime
+from proseco.acq import get_p_man_err
 from proseco.bright_object import (
     bright_object_distribution_check,
     check_for_close_planets,
@@ -225,9 +227,16 @@ def check_obo_acq_spoilers(
     """
     Check for columns spoiled by a bright object in acquisition boxes.
 
-    This uses a 15 column pad around the bright object.
-
-    It does not explicitly use an estimate of maneuver error.
+    This uses a 15 column pad around the bright object, plus the largest
+    maneuver error (converted to columns) that has non-zero probability for
+    this observation's maneuver angle. The OBC search box is effectively
+    widened by man_err, since the box position is only known to within the
+    maneuver error at the time the search runs (see
+    ``proseco.acq.get_spoiler_stars``, which uses ``box_size = halfw +
+    man_err`` for the equivalent real-star spoiler check). Without this term,
+    a bright-object column that is well outside the nominal search box can
+    still be reachable once the box shifts by man_err, and this check would
+    silently miss it.
 
     Parameters
     ----------
@@ -247,19 +256,28 @@ def check_obo_acq_spoilers(
     ok = np.isin(acar["type"], ("BOT", "ACQ"))
     acqs = acar[ok]
     pad = 15
+    planet_name = str(planet).strip().rstrip(".").capitalize()
 
     _, jcol = get_bright_object_acq_pos(acar.date, planet_pos)
     if jcol is None:
         return []
 
+    # Largest maneuver error (arcsec) with non-zero probability at this
+    # observation's man_angle, converted to columns (5 arcsec / pixel).
+    p_man_errs = np.array(
+        [get_p_man_err(man_err, acar.man_angle) for man_err in ACQ.man_errs]
+    )
+    max_man_err = np.max(ACQ.man_errs[p_man_errs > 0]) if np.any(p_man_errs > 0) else 0
+    man_err_pad_pixels = max_man_err / 5
+
     # For each acquisition box confirm a column spoiled by jupiter isn't in it
     for entry in acqs:
-        col_min = entry["col"] - entry["halfw"] / 5
-        col_max = entry["col"] + entry["halfw"] / 5
+        col_min = entry["col"] - entry["halfw"] / 5 - man_err_pad_pixels
+        col_max = entry["col"] + entry["halfw"] / 5 + man_err_pad_pixels
         in_box = (jcol + pad >= col_min) & (jcol - pad <= col_max)
         if np.any(in_box):
             msg = (
-                f"{planet.capitalize()} column in acquisition box idx "
+                f"{planet_name} column in acquisition box idx "
                 f"{entry['idx']} id {entry['id']} "
                 f"row {entry['row']:.1f} col {entry['col']:.1f}"
             )
@@ -293,10 +311,11 @@ def check_obo_track_spoilers(
     msgs = []
     ok = np.isin(acar["type"], ("GUI", "BOT", "FID"))
     guide_and_fid = acar[ok]
+    planet_name = str(planet).strip().rstrip(".").capitalize()
     spoiled, _ = check_spoiled_by_bright_object(guide_and_fid, planet_pos)
     for row in guide_and_fid[spoiled]:
         msg = (
-            f"{planet.capitalize()} spoils tracked star idx {row['idx']} id {row['id']}"
+            f"{planet_name} spoils tracked star idx {row['idx']} id {row['id']}"
         )
         msgs += [Message("critical", msg, idx=row["idx"])]
     return msgs
