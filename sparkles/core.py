@@ -1031,15 +1031,11 @@ check_guide_fid_position_on_ccd = checks.acar_check_wrapper(
     checks.check_guide_fid_position_on_ccd
 )
 check_guide_geometry = checks.acar_check_wrapper(checks.check_guide_geometry)
-check_run_jupiter_checks = checks.acar_check_wrapper(checks.check_run_jupiter_checks)
-check_jupiter_acq_spoilers = checks.acar_check_wrapper(
-    checks.check_jupiter_acq_spoilers
-)
-check_jupiter_track_spoilers = checks.acar_check_wrapper(
-    checks.check_jupiter_track_spoilers
-)
-check_jupiter_distribution = checks.acar_check_wrapper(
-    checks.check_jupiter_distribution
+check_run_obo_checks = checks.acar_check_wrapper(checks.check_run_obo_checks)
+check_obo_acq_spoilers = checks.acar_check_wrapper(checks.check_obo_acq_spoilers)
+check_obo_track_spoilers = checks.acar_check_wrapper(checks.check_obo_track_spoilers)
+check_partial_obo_distribution = checks.acar_check_wrapper(
+    checks.check_partial_obo_distribution
 )
 check_guide_is_candidate = checks.acar_check_wrapper(checks.check_guide_is_candidate)
 check_guide_overlap = checks.acar_check_wrapper(checks.check_guide_overlap)
@@ -1076,7 +1072,8 @@ def check_catalog(acar: ACACheckTable) -> None:
             msgs += checks.check_fid_spoiler_score(entry["idx"], fid)
 
     msgs += checks.check_guide_overlap(acar)
-    msgs += checks.check_run_jupiter_checks(acar)
+
+    msgs += checks.check_planets(acar)
     msgs += checks.check_guide_geometry(acar)
     msgs += checks.check_acq_p2(acar)
     msgs += checks.check_guide_count(acar)

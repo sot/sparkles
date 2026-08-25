@@ -62,7 +62,7 @@ def test_jupiter_present():
     acar.run_aca_review(make_html=False)
     assert acar.messages[-1] == {
         "category": "info",
-        "text": "Jupiter mag <= -2.0. Ran Partial OBO Mitigation checks.",
+        "text": "Jupiter on CCD. (mag -2.9 to -2.0).",
     }
 
 
@@ -81,7 +81,7 @@ def test_jupiter_not_present():
         msg
         == {
             "category": "warning",
-            "text": "Jupiter not on CCD, expected for target 'NO JUPITER HERE'",
+            "text": "Jupiter in target name 'NO JUPITER HERE' but not on CCD.",
         }
         for msg in acar.messages
     )
@@ -173,6 +173,149 @@ def test_review_catalog(proseco_agasc_1p7, tmpdir):
     assert (obspath / "acq" / "index.html").exists()
     assert (obspath / "guide" / "index.html").exists()
     assert (obspath / "rolls" / "index.html").exists()
+
+
+def test_review_mars():
+    kwargs = {
+        "obsid": 22688,
+        "att": [-0.48255572, -0.10809006, 0.10760397, 0.86248357],
+        "man_angle": 90,
+        "date": "2020:299:15:45:57.000",
+        "t_ccd": -10,
+        "dither": (20.0016, 20.0016),
+        "detector": "HRC-I",
+        "sim_offset": 0,
+        "focus_offset": 0,
+        "n_acq": 8,
+        "n_guide": 5,
+        "n_fid": 3,
+        "target_name": "Mars",
+    }
+    aca = get_aca_catalog(**kwargs)
+    acar = aca.get_review_table()
+    acar.run_aca_review()
+    assert acar.messages == [
+        {
+            "category": "info",
+            "text": "Mars on CCD. (mag -2.9 to -2.0).",
+        }
+    ]
+
+
+def test_review_venus():
+    kwargs = {
+        "obsid": 16500,
+        "att": [-0.39679561, 0.60054118, -0.33972900, 0.60538230],
+        "man_angle": 90,
+        "date": "2013:312:09:00:13.000",
+        "t_ccd": -10,
+        "dither": (7.9992, 7.9992),
+        "detector": "ACIS-I",
+        "sim_offset": 0,
+        "focus_offset": 0,
+        "n_acq": 8,
+        "n_guide": 6,
+        "n_fid": 2,
+        "include_ids_fid": [4, 6],
+        "target_name": "Venus",
+    }
+    aca = get_aca_catalog(**kwargs)
+
+    # Run this one from the pkl to confirm the mitigation data is working
+    aca2 = pickle.loads(pickle.dumps(aca))
+    acar = aca2.get_review_table()
+    acar.run_aca_review()
+    assert acar.messages == [
+        {
+            "category": "info",
+            "text": "Venus on CCD. (mag -5.0 to -2.9).",
+        },
+        {
+            "category": "critical",
+            "text": "Bright object tracks too close to CCD boundary row=0.",
+        },
+        {"category": "critical", "text": "Full mitigation OBO checks failed."},
+        {"category": "caution", "text": "OR with 6 guides requested but 5 is typical"},
+        {"category": "caution", "text": "OR requested 2 fids but 3 is typical"},
+        {"category": "info", "text": "included fid ID(s): [4, 6]"},
+    ]
+
+
+def test_review_venus_fixed():
+    kwargs = {
+        "obsid": -200,
+        "att": [-0.49877014, -0.29681368, 0.20445036, 0.78824491],
+        "duration": 5000,
+        "man_angle": 90,
+        "date": "2026:100:00:00:10.000",
+        "t_ccd": -10,
+        "dither": (16, 16),
+        "detector": "ACIS-I",
+        "sim_offset": 0,
+        "focus_offset": 0,
+        "n_acq": 8,
+        "n_guide": 6,
+        "include_ids_guide": [
+            84545472,
+            159396848,
+            159397320,
+            84541632,
+            160313992,
+            84543464,
+        ],
+        "n_fid": 2,
+        "include_ids_fid": [4, 6],
+        "target_name": "Venus",
+    }
+    aca = get_aca_catalog(**kwargs)
+    acar = aca.get_review_table()
+    acar.run_aca_review()
+    assert acar.messages == [
+        {"category": "info", "text": "Venus on CCD. (mag -5.0 to -2.9)."},
+        {"category": "caution", "text": "OR with 6 guides requested but 5 is typical"},
+        {"category": "caution", "text": "OR requested 2 fids but 3 is typical"},
+        {
+            "category": "info",
+            "text": "included guide ID(s): [84545472, 159396848, 159397320, 84541632, 160313992, 84543464]",
+        },
+        {"category": "info", "text": "included fid ID(s): [4, 6]"},
+    ]
+
+
+def test_review_saturn():
+    kwargs = {
+        "obsid": 24847,
+        "att": [-0.46938362, 0.43566643, -0.28160247, 0.71454449],
+        "man_angle": 90,
+        "date": "2020:328:22:44:10.000",
+        "t_ccd": -10,
+        "dither": (20.0016, 20.0016),
+        "detector": "HRC-I",
+        "sim_offset": 0,
+        "focus_offset": 0,
+        "n_acq": 8,
+        "n_guide": 5,
+        "n_fid": 3,
+        "target_name": "Mystery",
+    }
+    aca = get_aca_catalog(**kwargs)
+    acar = aca.get_review_table()
+    acar.run_aca_review()
+    assert acar.messages == [
+        {
+            "category": "warning",
+            "text": "Fid 3 has yellow spoiler: star 829031248 with mag 11.50",
+            "idx": 2,
+        },
+        {
+            "category": "info",
+            "text": "Bright object alert: Saturn on CCD but not in target name",
+        },
+        {
+            "category": "info",
+            "text": "Saturn on CCD. (mag 0.0 to 40.0).",
+        },
+    ]
 
 
 def test_review_roll_options():

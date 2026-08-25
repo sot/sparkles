@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 import tables
 from astropy.table import Table
+from chandra_aca.planets import get_planet_chandra_ccd_position
 from chandra_aca.transform import mag_to_count_rate
 from cxotime import CxoTime
 from packaging.version import Version
@@ -17,6 +18,7 @@ from proseco.tests.test_common import DARK40, STD_INFO, mod_std_info
 from Quaternion import Quat
 
 from sparkles import ACAReviewTable, get_t_ccds_bonus
+from sparkles import checks as sparkle_checks
 from sparkles.aca_check_table import ACACheckTable
 from sparkles.core import (
     check_acq_p2,
@@ -27,10 +29,11 @@ from sparkles.core import (
     check_guide_geometry,
     check_imposters_guide,
     check_include_exclude,
-    check_jupiter_acq_spoilers,
-    check_jupiter_distribution,
-    check_jupiter_track_spoilers,
+    check_obo_acq_spoilers,
+    check_obo_track_spoilers,
+    check_partial_obo_distribution,
     check_pos_err_guide,
+    check_run_obo_checks,
     check_too_bright_guide,
 )
 
@@ -48,15 +51,90 @@ def test_check_slice_index():
             assert np.all(acar1[name] == acar[name][item])
 
 
-@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
-def test_check_jupiter_acq_spoilers_fail(aca_review_table):
+def test_venus_bad():
+    kwargs_raw = {
+        "obsid": 18696.1,
+        "att": [-0.54152552, 0.17005146, -0.10308105, 0.81682734],
+        "man_angle": 90,
+        "date": "2017:010:06:57:57.000",
+        "t_ccd": -10,
+        "dither": (7.9992, 7.9992),
+        "detector": "ACIS-I",
+        "sim_offset": 0,
+        "focus_offset": 0,
+        "n_acq": 8,
+        "n_guide": 5,
+        "n_fid": 3,
+        "target_name": "Venus",
+    }
+    aca = get_aca_catalog(**kwargs_raw)
+    acar = aca.get_review_table()
+    # acar.run_aca_review(make_html=False)
+    pos = get_planet_chandra_ccd_position(
+        "venus",
+        kwargs_raw["date"],
+        6000,
+        kwargs_raw["att"],
+    )
+    check_run_obo_checks(acar, mitigation="full", planet="venus", planet_pos=pos)
+    assert acar.messages == [
+        {
+            "category": "critical",
+            "text": "Need 5 guide stars on side of CCD opposite bright object.",
+        },
+        {
+            "category": "critical",
+            "text": "Need 2 fid lights on side of CCD opposite bright object.",
+        },
+        {
+            "category": "critical",
+            "text": "Bright object tracks too close to CCD boundary row=0.",
+        },
+        {"category": "critical", "text": "Need at least 6 guide stars in the catalog."},
+        {"category": "critical", "text": "Full mitigation OBO checks failed."},
+    ]
+
+
+def test_venus_good():
+    # This has an attitude munged so that venus doesn't get close to midline
+    # And also specifies guide and fid lights to satisfy full mitigation requirements
+    kwargs_mod = {
+        "obsid": 18696.2,
+        "att": [-0.54159041, 0.16984442, -0.10339331, 0.81678793],
+        "man_angle": 90,
+        "date": "2017:010:06:57:57.000",
+        "t_ccd": -10,
+        "dither": (7.9992, 7.9992),
+        "detector": "ACIS-I",
+        "sim_offset": 0,
+        "focus_offset": 0,
+        "n_acq": 8,
+        "n_guide": 6,
+        "n_fid": 2,
+        "target_name": "Venus",
+        "include_ids_fid": [2, 5],
+    }
+    pos2 = get_planet_chandra_ccd_position(
+        "venus",
+        kwargs_mod["date"],
+        6000,
+        kwargs_mod["att"],
+    )
+    aca2 = get_aca_catalog(**kwargs_mod)
+    acar2 = aca2.get_review_table()
+    check_run_obo_checks(acar2, mitigation="full", planet="venus", planet_pos=pos2)
+    assert acar2.messages == []
+
+
+def test_check_planets_instrument_notify_runs_spoiler_checks(monkeypatch):
     stars = StarsTable.empty()
     stars.add_fake_constellation(n_stars=4, mag=8.5)
     aca = get_aca_catalog(
         **mod_std_info(detector="HRC-I"), duration=20000, stars=stars, dark=DARK40
     )
-    acar = aca_review_table(aca)
-    acar.jupiter = Table(
+    acar = aca.get_review_table()
+
+    planet_pos = Table(
         [
             {
                 "time": CxoTime(acar.date).secs,
@@ -65,17 +143,201 @@ def test_check_jupiter_acq_spoilers_fail(aca_review_table):
             }
         ]
     )
-    check_jupiter_acq_spoilers(acar)
+
+    def fake_check_for_close_planets(date, duration, att):
+        return {"mars": planet_pos}
+
+    def fake_get_planet_mag_states(planet, start, stop):
+        return Table(
+            {
+                "label": ["instrument notify"],
+                "mag_start": [-1.9],
+                "mag_stop": [-1.0],
+            }
+        )
+
+    monkeypatch.setattr(
+        sparkle_checks, "check_for_close_planets", fake_check_for_close_planets
+    )
+    monkeypatch.setattr(
+        sparkle_checks, "get_planet_mag_states", fake_get_planet_mag_states
+    )
+
+    msgs = sparkle_checks.check_planets(acar)
+    msg_texts = [msg.text for msg in msgs]
+
+    assert any("Mars on CCD. (mag -1.9 to -1.0)." in text for text in msg_texts)
+    assert any("Mars column in acquisition box" in text for text in msg_texts)
+    assert any("Mars spoils tracked star" in text for text in msg_texts)
+    assert not any("Ran Partial OBO Mitigation checks." in text for text in msg_texts)
+    assert not any("Ran Full OBO Mitigation checks." in text for text in msg_texts)
+
+
+def test_check_planets_obo_too_bright(monkeypatch):
+    """
+    Do a monkeypatch test on the obo-too-bright path.
+
+    This is justified because none of the current bright planets are actually
+    too bright over the interval out to 2041.
+    """
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=4, mag=8.5)
+    aca = get_aca_catalog(
+        **mod_std_info(detector="HRC-I"), duration=20000, stars=stars, dark=DARK40
+    )
+    acar = aca.get_review_table()
+
+    planet_pos = Table(
+        [
+            {
+                "time": CxoTime(acar.date).secs,
+                "row": stars[0]["row"],
+                "col": stars[0]["col"],
+            }
+        ]
+    )
+
+    monkeypatch.setattr(
+        sparkle_checks,
+        "check_for_close_planets",
+        lambda *args: {"venus": planet_pos},
+    )
+    monkeypatch.setattr(
+        sparkle_checks,
+        "get_planet_mag_states",
+        lambda *args, **kwargs: Table(
+            {
+                "label": ["obo too bright"],
+                "mag_start": [-30.0],
+                "mag_stop": [-5.0],
+            }
+        ),
+    )
+
+    msgs = sparkle_checks.check_planets(acar)
+
+    assert msgs == [sparkle_checks.Message("critical", "Venus too bright.")]
+
+
+def test_check_planets_handles_none_target_name(monkeypatch):
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=4, mag=8.5)
+    aca = get_aca_catalog(
+        **mod_std_info(detector="HRC-I"), duration=20000, stars=stars, dark=DARK40
+    )
+    acar = aca.get_review_table()
+    acar.target_name = None
+
+    monkeypatch.setattr(sparkle_checks, "check_for_close_planets", lambda *args: {})
+
+    msgs = sparkle_checks.check_planets(acar)
+    assert msgs == []
+
+
+def test_check_planets_warns_when_bright_planet_is_off_ccd(monkeypatch):
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=4, mag=8.5)
+    aca = get_aca_catalog(
+        **mod_std_info(detector="HRC-I"), duration=20000, stars=stars, dark=DARK40
+    )
+    acar = aca.get_review_table()
+
+    off_ccd_planet = Table({"time": [], "row": [], "col": []})
+
+    monkeypatch.setattr(
+        sparkle_checks,
+        "check_for_close_planets",
+        lambda *args: {"mars": off_ccd_planet},
+    )
+    monkeypatch.setattr(
+        sparkle_checks,
+        "get_planet_mag_states",
+        lambda *args, **kwargs: Table(
+            {
+                "label": ["partial mitigation"],
+                "mag_start": [-2.5],
+                "mag_stop": [-2.0],
+            }
+        ),
+    )
+
+    msgs = sparkle_checks.check_planets(acar)
+
+    assert any(
+        msg.category == "critical" and msg.text == "Mars within 2 deg but not on CCD."
+        for msg in msgs
+    )
+
+
+def test_check_planets_skips_empty_mag_states(monkeypatch):
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=4, mag=8.5)
+    aca = get_aca_catalog(
+        **mod_std_info(detector="HRC-I"), duration=20000, stars=stars, dark=DARK40
+    )
+    acar = aca.get_review_table()
+    acar.target_name = "Mars"
+
+    mars_pos = Table(
+        [
+            {
+                "time": CxoTime(acar.date).secs,
+                "row": stars[0]["row"],
+                "col": stars[0]["col"],
+            }
+        ]
+    )
+
+    monkeypatch.setattr(
+        sparkle_checks,
+        "check_for_close_planets",
+        lambda *args: {"mars": mars_pos},
+    )
+    monkeypatch.setattr(
+        sparkle_checks,
+        "get_planet_mag_states",
+        lambda *args, **kwargs: Table({"label": [], "mag_start": [], "mag_stop": []}),
+    )
+
+    msgs = sparkle_checks.check_planets(acar)
+    assert msgs == [
+        sparkle_checks.Message(
+            "caution",
+            "Mars on CCD but no mag states available. Skipping planet checks.",
+        )
+    ]
+
+
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
+def test_check_jupiter_acq_spoilers_fail(aca_review_table):
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=4, mag=8.5)
+    aca = get_aca_catalog(
+        **mod_std_info(detector="HRC-I"), duration=20000, stars=stars, dark=DARK40
+    )
+    acar = aca_review_table(aca)
+    acar.planets = {
+        "jupiter": Table(
+            [
+                {
+                    "time": CxoTime(acar.date).secs,
+                    "row": stars[0]["row"],
+                    "col": stars[0]["col"],
+                }
+            ]
+        )
+    }
+    check_obo_acq_spoilers(acar, planet="jupiter", planet_pos=acar.planets["jupiter"])
     assert acar.messages == [
         {
             "category": "critical",
             "text": "Jupiter column in acquisition box idx 4 id 100 row -295.2 col 5.5",
-            "idx": 4,
+            "idx": np.int64(4),
         },
         {
             "category": "critical",
             "text": "Jupiter column in acquisition box idx 6 id 102 row 307.2 col 4.3",
-            "idx": 6,
+            "idx": np.int64(6),
         },
     ]
 
@@ -88,9 +350,35 @@ def test_check_jupiter_acq_spoilers_none(aca_review_table):
         **mod_std_info(detector="HRC-I"), duration=20000, stars=stars, dark=DARK40
     )
     acar = aca_review_table(aca)
-    acar.jupiter = Table([{"time": CxoTime(acar.date).secs, "row": 0, "col": 100}])
-    check_jupiter_acq_spoilers(acar)
+    acar.planets = {
+        "jupiter": Table([{"time": CxoTime(acar.date).secs, "row": 0, "col": 100}])
+    }
+    check_obo_acq_spoilers(acar, planet="jupiter", planet_pos=acar.planets["jupiter"])
     assert acar.messages == []
+
+
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
+def test_check_jupiter_acq_spoilers_man_err_padding(aca_review_table):
+    """A planet column outside the nominal halfw box, but reachable once the
+    search box is widened by maneuver error, must still be flagged.
+
+    For idx=4 (id=100) here, halfw=120 and man_angle=90 (STD_INFO default),
+    so the maximum man_err with non-zero probability is 160 arcsec (32
+    columns). A planet at col=60 is ~54 columns from the star's col=5.5,
+    which is outside the nominal halfw-only box (120/5 + 15 = 39 columns)
+    but inside the man_err-padded box (39 + 32 = 71 columns).
+    """
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=4, mag=8.5)
+    aca = get_aca_catalog(
+        **mod_std_info(detector="HRC-I"), duration=20000, stars=stars, dark=DARK40
+    )
+    acar = aca_review_table(aca)
+    acar.planets = {
+        "jupiter": Table([{"time": CxoTime(acar.date).secs, "row": 0, "col": 60}])
+    }
+    check_obo_acq_spoilers(acar, planet="jupiter", planet_pos=acar.planets["jupiter"])
+    assert any(msg["idx"] == 4 for msg in acar.messages)
 
 
 @pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
@@ -103,10 +391,12 @@ def test_check_jupiter_track_spoilers_true(aca_review_table, jupiter_col_offset)
         **mod_std_info(detector="HRC-I"), duration=20000, stars=stars, dark=DARK40
     )
     acar = aca_review_table(aca)
-    acar.jupiter = Table(
-        [{"time": CxoTime(acar.date).secs, "row": 0, "col": jupiter_col_offset + 5}]
-    )
-    check_jupiter_track_spoilers(acar)
+    acar.planets = {
+        "jupiter": Table(
+            [{"time": CxoTime(acar.date).secs, "row": 0, "col": jupiter_col_offset + 5}]
+        )
+    }
+    check_obo_track_spoilers(acar, planet="jupiter", planet_pos=acar.planets["jupiter"])
     exp_messages = (
         []
         if abs(jupiter_col_offset) > 15
@@ -127,6 +417,24 @@ def test_check_jupiter_track_spoilers_true(aca_review_table, jupiter_col_offset)
 
 
 @pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
+def test_check_track_spoilers_sanitizes_planet_name(aca_review_table):
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=4, mag=8.5)
+    aca = get_aca_catalog(
+        **mod_std_info(detector="HRC-I"), duration=20000, stars=stars, dark=DARK40
+    )
+    acar = aca_review_table(aca)
+    acar.planets = {
+        "venus": Table([{"time": CxoTime(acar.date).secs, "row": 0, "col": 5}])
+    }
+
+    check_obo_track_spoilers(acar, planet="venus.", planet_pos=acar.planets["venus"])
+
+    assert all("Venus. spoils tracked star" not in msg["text"] for msg in acar.messages)
+    assert all("Venus spoils tracked star" in msg["text"] for msg in acar.messages)
+
+
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 @pytest.mark.parametrize("jupiter_row", [-300, 300])
 def test_check_jupiter_distribution(aca_review_table, jupiter_row):
     stars = StarsTable.empty()
@@ -138,18 +446,20 @@ def test_check_jupiter_distribution(aca_review_table, jupiter_row):
         **mod_std_info(detector="HRC-I"), duration=20000, stars=stars, dark=DARK40
     )
     acar = aca_review_table(aca)
-    acar.jupiter = Table(
-        [{"time": CxoTime(acar.date).secs, "row": jupiter_row, "col": 10}]
-    )
-    check_jupiter_distribution(acar)
+    acar.planets = {
+        "jupiter": Table(
+            [{"time": CxoTime(acar.date).secs, "row": jupiter_row, "col": 10}]
+        )
+    }
+    check_partial_obo_distribution(acar, planet_pos=acar.planets["jupiter"])
     exp = (
         []
         if jupiter_row < 0
         else [
             {
                 "category": "critical",
-                "text": "Jupiter guide star distribution check failed. "
-                "Need 2 guide stars always opposite Jupiter.",
+                "text": "Partial OBO guide star distribution check failed. "
+                "Need 2 guide stars always opposite bright object.",
             }
         ]
     )
@@ -164,20 +474,26 @@ def test_check_jupiter_distribution_cross(aca_review_table):
     aca = get_aca_catalog(**STD_INFO, duration=20000, stars=stars, dark=DARK40)
     acar = aca_review_table(aca)
     # And have Jupiter cross the center
-    acar.jupiter = Table(
-        [
-            {"time": CxoTime(acar.date).secs, "row": -0.1, "col": -10},
-            {"time": CxoTime(acar.date).secs + 1000, "row": 0.1, "col": 10},
-        ]
-    )
+    acar.planets = {
+        "jupiter": Table(
+            [
+                {"time": CxoTime(acar.date).secs, "row": -0.1, "col": -10},
+                {"time": CxoTime(acar.date).secs + 1000, "row": 0.1, "col": 10},
+            ]
+        )
+    }
     # There is no way to satisfy the distribution requirement with 3 stars
     # and Jupiter crossing.
-    check_jupiter_distribution(acar)
+    check_partial_obo_distribution(acar, planet_pos=acar.planets["jupiter"])
     assert acar.messages == [
         {
             "category": "critical",
-            "text": "Jupiter guide star distribution check failed. Need 2 guide stars always opposite Jupiter.",
-        }
+            "text": "Partial OBO guide star distribution check failed. Need 2 guide stars always opposite bright object.",
+        },
+        {
+            "category": "info",
+            "text": "Bright object extent crosses midline. 2 guide stars on each side of CCD are required.",
+        },
     ]
 
 
