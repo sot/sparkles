@@ -314,9 +314,7 @@ def check_obo_track_spoilers(
     planet_name = str(planet).strip().rstrip(".").capitalize()
     spoiled, _ = check_spoiled_by_bright_object(guide_and_fid, planet_pos)
     for row in guide_and_fid[spoiled]:
-        msg = (
-            f"{planet_name} spoils tracked star idx {row['idx']} id {row['id']}"
-        )
+        msg = f"{planet_name} spoils tracked star idx {row['idx']} id {row['id']}"
         msgs += [Message("critical", msg, idx=row["idx"])]
     return msgs
 

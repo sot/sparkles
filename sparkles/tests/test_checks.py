@@ -425,9 +425,7 @@ def test_check_track_spoilers_sanitizes_planet_name(aca_review_table):
     )
     acar = aca_review_table(aca)
     acar.planets = {
-        "venus": Table(
-            [{"time": CxoTime(acar.date).secs, "row": 0, "col": 5}]
-        )
+        "venus": Table([{"time": CxoTime(acar.date).secs, "row": 0, "col": 5}])
     }
 
     check_obo_track_spoilers(acar, planet="venus.", planet_pos=acar.planets["venus"])
