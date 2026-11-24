@@ -94,6 +94,27 @@ def test_check_jupiter_acq_spoilers_none(aca_review_table):
 
 
 @pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
+def test_check_jupiter_acq_spoilers_man_err_padding(aca_review_table):
+    """A Jupiter column outside the nominal box but within maneuver error is flagged.
+
+    For idx=4 (id=100) here, halfw=120 and man_angle=90 (STD_INFO default), so the
+    largest man_err with non-zero probability is 160 arcsec (32 columns). Jupiter at
+    col=60 is about 54 columns from the star at col=5.5. That is outside the nominal
+    box (120 / 5 + 15 = 39 columns) but inside the box padded by maneuver error
+    (39 + 32 = 71 columns).
+    """
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=4, mag=8.5)
+    aca = get_aca_catalog(
+        **mod_std_info(detector="HRC-I"), duration=20000, stars=stars, dark=DARK40
+    )
+    acar = aca_review_table(aca)
+    acar.jupiter = Table([{"time": CxoTime(acar.date).secs, "row": 0, "col": 60}])
+    check_jupiter_acq_spoilers(acar)
+    assert any(msg.get("idx") == 4 for msg in acar.messages)
+
+
+@pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
 @pytest.mark.parametrize("jupiter_col_offset", (-16, -14, 0, 14, 16))
 def test_check_jupiter_track_spoilers_true(aca_review_table, jupiter_col_offset):
     stars = StarsTable.empty()

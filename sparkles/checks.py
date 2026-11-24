@@ -132,9 +132,12 @@ def check_jupiter_acq_spoilers(acar: ACACheckTable) -> list[Message]:
     """
     Check for columns spoiled by Jupiter in acquisition boxes.
 
-    This uses a 15 column pad around Jupiter.
-
-    It does not explicitly use an estimate of maneuver error.
+    This uses a 15 column pad around Jupiter, plus the largest maneuver error
+    (converted to columns) that has non-zero probability for this observation's
+    maneuver angle. The search box is only known to within the maneuver error when
+    the search runs, so it is effectively widened by man_err. This matches
+    ``proseco.acq.get_spoiler_stars``, which uses ``box_size = halfw + man_err`` for
+    the equivalent real-star spoiler check.
 
     Parameters
     ----------
@@ -146,6 +149,8 @@ def check_jupiter_acq_spoilers(acar: ACACheckTable) -> list[Message]:
     list of Message
         List of messages from the jupiter acquisition box check.
     """
+    import proseco.characteristics_acq as ACQ
+    from proseco.acq import get_p_man_err
     from proseco.jupiter import get_jupiter_acq_pos
 
     msgs = []
@@ -157,10 +162,18 @@ def check_jupiter_acq_spoilers(acar: ACACheckTable) -> list[Message]:
     if jcol is None:
         return []
 
+    # Largest maneuver error (arcsec) with non-zero probability at this observation's
+    # man_angle, converted to columns (5 arcsec / pixel).
+    p_man_errs = np.array(
+        [get_p_man_err(man_err, acar.man_angle) for man_err in ACQ.man_errs]
+    )
+    max_man_err = np.max(ACQ.man_errs[p_man_errs > 0]) if np.any(p_man_errs > 0) else 0
+    man_err_pad_pixels = max_man_err / 5
+
     # For each acquisition box confirm a column spoiled by jupiter isn't in it
     for entry in acqs:
-        col_min = entry["col"] - entry["halfw"] / 5
-        col_max = entry["col"] + entry["halfw"] / 5
+        col_min = entry["col"] - entry["halfw"] / 5 - man_err_pad_pixels
+        col_max = entry["col"] + entry["halfw"] / 5 + man_err_pad_pixels
         in_box = (jcol + pad >= col_min) & (jcol - pad <= col_max)
         if np.any(in_box):
             msg = (
