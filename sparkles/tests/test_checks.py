@@ -16,7 +16,7 @@ from proseco.core import StarsTable
 from proseco.tests.test_common import DARK40, STD_INFO, mod_std_info
 from Quaternion import Quat
 
-from sparkles import ACAReviewTable, get_t_ccds_bonus
+from sparkles import ACAReviewTable, checks, get_t_ccds_bonus
 from sparkles.aca_check_table import ACACheckTable
 from sparkles.core import (
     check_acq_p2,
@@ -78,6 +78,18 @@ def test_check_jupiter_acq_spoilers_fail(aca_review_table):
             "idx": 6,
         },
     ]
+
+
+def test_check_run_jupiter_checks_no_target_name():
+    """A missing (None) target name runs no Jupiter checks instead of raising."""
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=4, mag=8.5)
+    aca = get_aca_catalog(
+        **mod_std_info(detector="HRC-I"), duration=20000, stars=stars, dark=DARK40
+    )
+    acar = ACACheckTable(aca)
+    acar.target_name = None
+    assert checks.check_run_jupiter_checks(acar) == []
 
 
 @pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))
