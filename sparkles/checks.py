@@ -66,9 +66,18 @@ def check_run_jupiter_checks(acar: ACACheckTable) -> list[Message]:
     """
     Run jupiter checks.
 
-    This is a wrapper to run the jupiter checks.  It first checks if the date
-    is excluded from jupiter checks.  If not, it gets the jupiter position
-    and then runs the individual jupiter checks.
+    This is a wrapper to run the jupiter checks. Nothing is checked on dates when
+    Jupiter is fainter than -2.0 mag. Otherwise the checks run if Jupiter is on the
+    CCD or the target name contains "jupiter":
+
+    - Jupiter in the target name but not on the CCD: warning.
+    - Jupiter on the CCD but not in the target name: warning.
+    - Then the acquisition, tracking and guide star distribution checks.
+
+    Whether Jupiter is on the CCD comes from ``acar.jupiter``. With a proseco that
+    finds Jupiter by position this is independent of the target name. With an older
+    proseco it is only filled in for a target name containing "jupiter", so the
+    not-in-target-name warning never fires.
 
     Parameters
     ----------
@@ -80,23 +89,35 @@ def check_run_jupiter_checks(acar: ACACheckTable) -> list[Message]:
     list of Message
         List of messages from the jupiter checks.
     """
+    from proseco import jupiter
+
     msgs = []
     # target_name can be None (e.g. an engineering obsid with no target name)
     target_name = acar.target_name or ""
-    if "jupiter" not in target_name.lower():
-        return msgs
-
-    from proseco import jupiter
+    jupiter_in_target_name = "jupiter" in target_name.lower()
 
     # First check for exclude dates when Jupiter is fainter than the Optically Bright
     # Object limit of -2.0 mag.
     if jupiter.date_is_excluded(acar.date):
-        msgs += [
-            Message("info", "Jupiter fainter than -2.0 mag - no Jupiter checks run")
-        ]
+        if jupiter_in_target_name:
+            msgs += [
+                Message("info", "Jupiter fainter than -2.0 mag - no Jupiter checks run")
+            ]
         return msgs
 
-    msgs += check_jupiter_on_ccd(acar)
+    jupiter_on_ccd = len(acar.jupiter) > 0
+    if not jupiter_in_target_name and not jupiter_on_ccd:
+        return msgs
+
+    if jupiter_in_target_name:
+        msgs += check_jupiter_on_ccd(acar)
+    else:
+        msgs += [
+            Message(
+                "warning",
+                f"Jupiter on CCD but not in target name '{target_name}'",
+            )
+        ]
     msgs += check_jupiter_acq_spoilers(acar)
     msgs += check_jupiter_track_spoilers(acar)
     msgs += check_jupiter_distribution(acar)

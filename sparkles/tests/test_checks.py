@@ -12,6 +12,7 @@ from cxotime import CxoTime
 from packaging.version import Version
 from proseco import get_aca_catalog
 from proseco.characteristics import CCD, MonCoord, MonFunc
+from proseco.characteristics_jupiter import JupiterPositionTable
 from proseco.core import StarsTable
 from proseco.tests.test_common import DARK40, STD_INFO, mod_std_info
 from Quaternion import Quat
@@ -90,6 +91,60 @@ def test_check_run_jupiter_checks_no_target_name():
     acar = ACACheckTable(aca)
     acar.target_name = None
     assert checks.check_run_jupiter_checks(acar) == []
+
+
+JUPITER_NOT_IN_NAME = "Jupiter on CCD but not in target name 'Europa'"
+RAN_PARTIAL_CHECKS = "Jupiter mag <= -2.0. Ran Partial OBO Mitigation checks."
+
+
+def _acar_with_jupiter(target_name: str, jupiter_on_ccd: bool) -> ACACheckTable:
+    """Review table with a fake star field and Jupiter set on or off the CCD."""
+    stars = StarsTable.empty()
+    stars.add_fake_constellation(n_stars=4, mag=8.5)
+    aca = get_aca_catalog(
+        **mod_std_info(detector="HRC-I"), duration=20000, stars=stars, dark=DARK40
+    )
+    acar = ACACheckTable(aca)
+    acar.target_name = target_name
+    acar.jupiter = (
+        Table([{"time": CxoTime(acar.date).secs, "row": 0, "col": 200}])
+        if jupiter_on_ccd
+        else JupiterPositionTable.empty()
+    )
+    return acar
+
+
+def _category_texts(msgs: list) -> list[tuple[str, str]]:
+    return [(msg.category, msg.text) for msg in msgs]
+
+
+def test_check_run_jupiter_checks_not_in_target_name():
+    """Jupiter on the CCD without Jupiter in the target name warns and runs checks."""
+    acar = _acar_with_jupiter("Europa", jupiter_on_ccd=True)
+    category_texts = _category_texts(checks.check_run_jupiter_checks(acar))
+    assert ("warning", JUPITER_NOT_IN_NAME) in category_texts
+    assert ("info", RAN_PARTIAL_CHECKS) in category_texts
+
+
+def test_check_run_jupiter_checks_not_in_target_name_off_ccd():
+    """No Jupiter on the CCD and no Jupiter in the target name gives no messages."""
+    acar = _acar_with_jupiter("Europa", jupiter_on_ccd=False)
+    assert checks.check_run_jupiter_checks(acar) == []
+
+
+def test_check_run_jupiter_checks_not_in_target_name_dim_date():
+    """When Jupiter is dimmer than -2.0 nothing is reported for an unnamed target."""
+    acar = _acar_with_jupiter("Europa", jupiter_on_ccd=True)
+    acar.date = "2026:150:00:00:00.000"  # In an exclude_dates range
+    assert checks.check_run_jupiter_checks(acar) == []
+
+
+def test_check_run_jupiter_checks_in_target_name():
+    """Jupiter in the target name and on the CCD runs checks without the name warning."""
+    acar = _acar_with_jupiter("Jupiter", jupiter_on_ccd=True)
+    category_texts = _category_texts(checks.check_run_jupiter_checks(acar))
+    assert all("not in target name" not in text for _, text in category_texts)
+    assert ("info", RAN_PARTIAL_CHECKS) in category_texts
 
 
 @pytest.mark.parametrize("aca_review_table", (ACAReviewTable, ACACheckTable))

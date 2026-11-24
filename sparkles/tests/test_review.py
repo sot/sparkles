@@ -4,6 +4,7 @@ from pathlib import Path
 
 import numpy as np
 import proseco.characteristics as ACA
+import proseco.jupiter
 import pytest
 import ska_sun
 from proseco import get_aca_catalog
@@ -60,6 +61,48 @@ def test_jupiter_present():
     aca = get_aca_catalog(**kwargs)
     acar = aca.get_review_table()
     acar.run_aca_review(make_html=False)
+    assert acar.messages[-1] == {
+        "category": "info",
+        "text": "Jupiter mag <= -2.0. Ran Partial OBO Mitigation checks.",
+    }
+
+
+@pytest.mark.skipif(
+    not hasattr(proseco.jupiter, "jupiter_may_be_on_ccd"),
+    reason="Requires proseco that finds Jupiter by position",
+)
+def test_jupiter_present_not_in_target_name():
+    """Jupiter on the CCD for a target named something else gives a warning.
+
+    This is the obsid 29674 Jupiter observation from test_jupiter_present with the
+    target renamed to one of Jupiter's moons.
+    """
+    kwargs = {
+        "att": [0.47935711, 0.44950136, 0.68474659, 0.31509901],
+        "date": "2025:258:14:42:16.000",
+        "detector": "HRC-S",
+        "dither_acq": (20, 20),
+        "dither_guide": (20, 20),
+        "man_angle": 180,
+        "n_acq": 8,
+        "n_fid": 3,
+        "n_guide": 5,
+        "obsid": 29674,
+        "sim_offset": 0,
+        "focus_offset": 0,
+        "t_ccd_acq": -8.6,
+        "t_ccd_guide": -8.6,
+        "dyn_bgd_n_faint": 2,
+        "target_name": "Europa",
+        "duration": 10000,
+    }
+    aca = get_aca_catalog(**kwargs)
+    acar = aca.get_review_table()
+    acar.run_aca_review(make_html=False)
+    assert {
+        "category": "warning",
+        "text": "Jupiter on CCD but not in target name 'Europa'",
+    } in acar.messages
     assert acar.messages[-1] == {
         "category": "info",
         "text": "Jupiter mag <= -2.0. Ran Partial OBO Mitigation checks.",
