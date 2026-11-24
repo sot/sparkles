@@ -81,7 +81,9 @@ def check_run_jupiter_checks(acar: ACACheckTable) -> list[Message]:
         List of messages from the jupiter checks.
     """
     msgs = []
-    if "jupiter" not in acar.target_name.lower():
+    # target_name can be None (e.g. an engineering obsid with no target name)
+    target_name = acar.target_name or ""
+    if "jupiter" not in target_name.lower():
         return msgs
 
     from proseco import jupiter
